@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dmerk"
+version = "0.1.0"
+authors = [
+  { name="Raghuram Krishnaswami", email="krish.raghuram@gmail.com" },
+]
+description = "Generate, Compare and Analyse Directory Merkle Trees"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/krishraghuram/dmerk"
+"Bug Tracker" = "https://github.com/krishraghuram/dmerk/issues"
+
+[project.scripts]
+dmerk = "dmerk.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["dmerk"]
+namespaces = false
