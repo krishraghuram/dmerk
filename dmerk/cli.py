@@ -1,6 +1,5 @@
 import pathlib
 import argparse
-import datetime
 import textwrap
 import json
 import sys
@@ -16,22 +15,23 @@ def _generate(args):
     path = pathlib.Path(args.path).resolve()
     merkle = dmerk.get_merkle_tree(path)
     filename = args.filename
-    if filename is None:
-        filename = f"{datetime.datetime.now().isoformat(timespec='seconds')+str(path).replace('/','_')}.json"
     if not args.no_save:
-        utils.save_merkle(merkle, filename)
+        utils.save_merkle(path, merkle, filename)
     if args.no_save or args.print:
         print(utils.dumps(merkle))
 
 def _compare(args):
-    matches, unmatched_files_1, unmatched_files_2 = compare.compare(utils.generate_or_load(args.path1), utils.generate_or_load(args.path2))
+    matches, unmatched_files_1, unmatched_files_2 = compare.compare(
+        utils.generate_or_load(args.path1, args.no_save),
+        utils.generate_or_load(args.path2, args.no_save)
+    )
     out = {
         "matches": matches,
         "unmatched_files": unmatched_files_1 + unmatched_files_2
     }
     print(json.dumps(utils.path_to_str(out), indent=4))
 
-def _analyse():
+def _analyse(path):
     # TODO
     raise NotImplementedError()
 
@@ -66,16 +66,11 @@ def _main(args):
     )
     parser_compare.add_argument("path1")
     parser_compare.add_argument("path2")
-    # # TODO
-    # parser_compare.add_argument("--no-hashing", action="store_true", help="if specified, comparison will be done without hashing (without directory merkle tree), but just using file timestamps")
-    # parser_compare.add_argument("--use-timestamps-only", action="store_true", help="if specified, comparison will be done using just the file timestamps (without using directory merkle tree)")
+    parser_compare.add_argument("-n", "--no-save", action="store_true", help="this option is same as no-save in generate, and is applicable only when path1 or path2 are paths to directories")
     parser_compare.set_defaults(func=_compare)
 
     parser_analyse = subparsers.add_parser("analyse", description="Analyse a merkle tree to find copies/duplicates within")
     parser_analyse.add_argument("path")
-    # # TODO
-    # parser_compare.add_argument("--no-hashing", action="store_true", help="if specified, comparison will be done without hashing (without directory merkle tree), but just using file timestamps")
-    # parser_compare.add_argument("--use-timestamps-only", action="store_true", help="if specified, comparison will be done using just the file timestamps (without using directory merkle tree)")
     parser_analyse.set_defaults(func=_analyse)
     
     args = parser.parse_args(args)

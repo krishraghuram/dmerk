@@ -1,6 +1,7 @@
 import json
 import pathlib
 import collections.abc
+import datetime
 
 import dmerk.dmerk as dmerk
 
@@ -83,14 +84,17 @@ def loads(json_):
             return pathlib.Path(k) / p
         return formatter
     return format_merkle_paths(json.loads(json_), formatter, formatter_updater)
-def save_merkle(merkle, filename):
+def save_merkle(path, merkle, filename=None):
+    if filename is None:
+        filename = f"{datetime.datetime.now().isoformat(timespec='seconds')+str(path).replace('/','_')}.json"
     with open(filename, mode="w", encoding="utf-8") as file:
         file.write(dumps(merkle))
+    print(f"Saved merkle for path: '{path}' to file: '{filename}'")
 def load_merkle(filename):
     with open(filename, mode="r", encoding="utf-8") as file:
         return loads(file.read())
 
-def generate_or_load(path):
+def generate_or_load(path, no_save=False):
     """
     Return merkle tree from path
     If path is a directory, generate "directory merkle tree" at path and return it
@@ -99,6 +103,9 @@ def generate_or_load(path):
     if isinstance(path, str):
         path = pathlib.Path(path)
     if path.is_dir():
-        return dmerk.get_merkle_tree(path)
+        merkle = dmerk.get_merkle_tree(path)
+        if not no_save:
+            save_merkle(path, merkle)
+        return merkle
     elif path.is_file():
         return load_merkle(path)

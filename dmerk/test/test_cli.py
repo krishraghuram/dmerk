@@ -78,7 +78,7 @@ def test_compare_help(capsys, args):
     with pytest.raises(SystemExit):
         cli._main(["compare", args])
     captured = capsys.readouterr()
-    assert "usage: dmerk compare [-h] path1 path2" in captured.out
+    assert "usage: dmerk compare [-h] [-n] path1 path2" in captured.out
     assert textwrap.dedent("""
         Compare two directory merkle trees and return the diffs and matches.
         path1 and path2 are the paths to the directories,
@@ -89,7 +89,7 @@ def test_compare_paths_required(capsys):
     with pytest.raises(SystemExit):
         cli._main(["compare"])
     captured = capsys.readouterr()
-    assert "usage: dmerk compare [-h] path1 path2" in captured.err
+    assert "usage: dmerk compare [-h] [-n] path1 path2" in captured.err
     assert "dmerk compare: error: the following arguments are required: path1, path2" in captured.err
 
 @pytest.mark.parametrize("args", ("-h", "--help"))

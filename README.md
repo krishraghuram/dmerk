@@ -13,7 +13,7 @@ pip install dmerk
 
 ## Usage / Quickstart
 
-dmerk can be used to generate, compare and analyse directory merkle trees
+Note: All `dmerk` subcommands save merkle trees to json files by default. This behavior can be modified using the `-n, --no-save` flag, but it's not recommended, since constructing merkle trees is expensive (esp. for large directories), so saving can help protect against accidental loss of the output (eg: in cases where terminal gets reset/closed accidentally).
 
 #### generate
 
@@ -22,9 +22,9 @@ To generate a merkle tree for a directory:
 dmerk generate /path/to/directory
 ```
 
-By default, the output is not printed to stdout, since it may be quite large and might pollute the terminal.
-Instead, the output is saved as a json file in the current directory.
-This behavior can be modified using the `--no-save` and `--print` flags to the `generate` subcommand.
+By default, the output is saved as a json file in the current directory.
+This behavior can be modified using the `-n, --no-save` and `-p, --print` flags.
+Custom filename can be specified using `-f FILENAME, --filename FILENAME` option.
 
 #### compare
 
@@ -34,8 +34,12 @@ dmerk compare <path1> <path2>
 ```
 
 The paths path1 and path2 can be paths to directories, or they can be path to json files created using generate.
+If these are paths to directories, the generated merkle trees are saved to files, in the same way as-if generate command was invoked.
+This behavior can be modified using the `-n, --no-save` option.
 
 #### analyse
+
+NotImplementedError 😂
 
 #### help
 
