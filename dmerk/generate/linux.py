@@ -14,9 +14,9 @@ def generate(directory: pathlib.Path):
             # since p.is_file() calls p.stat(), and that requires directory execute permission
             # More info on directory read and execute permissions here - https://unix.stackexchange.com/a/396071/420985
             raise
-        FILE_DIGEST_LOOKUP_TABLE = { pathlib.Path(k):v for k,v in files_digest(allfiles).items() }
+        FILE_DIGEST_LOOKUP_TABLE = { pathlib.Path(k):v for k,v in _files_digest(allfiles).items() }
         return {
-            directory: merkle(directory)
+            directory: _merkle(directory)
         }
     else:
         raise NotADirectoryError(f"Directory '{directory}' does not exist")
@@ -24,21 +24,21 @@ def generate(directory: pathlib.Path):
 # Returns a dict with the following,
 #   digest (of the entire directory)
 #   dict containing all child paths and digests
-def merkle(directory: pathlib.Path):
+def _merkle(directory: pathlib.Path):
     children = [c for c in directory.iterdir()]
     for child in children:
         if (not (child.is_file() or child.is_dir())):
             raise ValueError(f"{child} is neither a file nor a directory")
     contents = {}
-    for c in children:
-        if (c.is_dir()):
-            contents[c] = merkle(c)
-        elif (c.is_file()):
-            contents[c] = {
+    for child in children:
+        if (child.is_dir()):
+            contents[child] = _merkle(child)
+        elif (child.is_file()):
+            contents[child] = {
                 "_type": "file",
-                "_digest": FILE_DIGEST_LOOKUP_TABLE[c]
+                "_digest": FILE_DIGEST_LOOKUP_TABLE[child]
             }
-    digest = directory_digest(contents)
+    digest = _directory_digest(contents)
     return {
         "_type": "directory",
         "_digest": digest,
@@ -50,7 +50,7 @@ _DIGEST_ALGORITHM = "md5"
 _DIGEST_PROGRAM = _DIGEST_ALGORITHM+"sum"
 _DIGEST_FUNCTION = getattr(hashlib, _DIGEST_ALGORITHM)
 
-def files_digest(files):
+def _files_digest(files):
     """
     Compute the digest of a list of files
 
@@ -58,8 +58,7 @@ def files_digest(files):
     It's better to do that than use hashlib because I'm pretty sure sha256sum would be faster
 
     Also, we fork a single process and get hashes of all files in the current directory,
-    because that is much more performant than forking a subprocess for each file,
-    like in below function file_digest(file)
+    because that is much more performant than forking a subprocess for each file.
     """
     files = [f'"{str(file)}"' for file in files]
     ps = subprocess.run(["xargs", _DIGEST_PROGRAM], input=" ".join(files).encode("utf-8"), capture_output=True)
@@ -76,16 +75,7 @@ def files_digest(files):
         contents[file] = digest
     return contents
 
-def file_digest(file):
-    """
-    Compute the digest for a file
-    """
-    ps = subprocess.run([_DIGEST_PROGRAM, str(file)], capture_output=True)
-    out = ps.stdout.decode('utf-8')
-    digest = out.split()[0]
-    return digest
-
-def directory_digest(contents):
+def _directory_digest(contents):
     """
     Compute the digest of a directory from the digests of its contents
 
