@@ -4,7 +4,7 @@ import textwrap
 import json
 import sys
 
-import dmerk.dmerk as dmerk
+import dmerk.generate as generate
 import dmerk.compare as compare
 import dmerk.utils as utils
 
@@ -13,7 +13,7 @@ subparsers = parser.add_subparsers(required=True)
 
 def _generate(args):
     path = pathlib.Path(args.path).resolve()
-    merkle = dmerk.get_merkle_tree(path)
+    merkle = generate.generate(path)
     filename = args.filename
     if not args.no_save:
         utils.save_merkle(path, merkle, filename)
@@ -80,6 +80,6 @@ def _main(args):
 def main():
     _main(sys.argv[1:])
 
-# This runs during tests
+# This runs when dev-testing, when invoked as `python -m dmerk.cli`
 if __name__=="__main__":
     _main(sys.argv[1:])

@@ -5,7 +5,7 @@ import contextlib
 
 import pytest
 
-from .. import dmerk
+from .. import generate
 from .. import utils
 
 @pytest.mark.parametrize("path_and_error",
@@ -32,7 +32,7 @@ def test_specialfiles(path_and_error, request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With path '{path}' and error '{error}'")
     with pytest.raises(error):
-        dmerk.get_merkle_tree(path)
+        generate.generate(path)
 
 
 @pytest.mark.parametrize(
@@ -58,7 +58,7 @@ def test_file_permission(fs, request, mode, error, error_message):
     file.chmod(mode=mode)
     print(f"Updated permissions of file '{file}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})")
     with error as e:
-        m1 = dmerk.get_merkle_tree(fs.basepath)
+        m1 = generate.generate(fs.basepath)
         print(f"Merkle Digest:\n{utils.dumps(m1)}")
     if e is not None:
         assert isinstance(e.value, error.expected_exception)
@@ -93,7 +93,7 @@ def test_directory_permission(fs, request, mode, error):
     directory.chmod(mode=mode)
     print(f"Updated permissions of directory '{directory}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})")
     with error as e:
-        m1 = dmerk.get_merkle_tree(fs.basepath)
+        m1 = generate.generate(fs.basepath)
         print(f"Merkle Digest:\n{utils.dumps(m1)}")
     if e is not None:
         assert isinstance(e.value, error.expected_exception)

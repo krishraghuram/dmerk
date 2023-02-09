@@ -3,7 +3,7 @@ import subprocess
 import hashlib
 
 FILE_DIGEST_LOOKUP_TABLE = None
-def get_merkle_tree(directory: pathlib.Path):
+def generate(directory: pathlib.Path):
     if (directory.exists()):
         global FILE_DIGEST_LOOKUP_TABLE
         try:
@@ -102,9 +102,3 @@ def directory_digest(contents):
     digest_input = ",".join(list(sorted([v["_digest"] for v in contents.values()])))
     digest = _DIGEST_FUNCTION(digest_input.encode('utf-8')).hexdigest()
     return digest
-
-
-
-
-
-

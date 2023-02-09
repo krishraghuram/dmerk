@@ -3,7 +3,7 @@ import pathlib
 import collections.abc
 import datetime
 
-import dmerk.dmerk as dmerk
+import dmerk.generate as generate
 
 # TODO: better names for the functions here?
 
@@ -103,7 +103,7 @@ def generate_or_load(path, no_save=False):
     if isinstance(path, str):
         path = pathlib.Path(path)
     if path.is_dir():
-        merkle = dmerk.get_merkle_tree(path)
+        merkle = generate.generate(path)
         if not no_save:
             save_merkle(path, merkle)
         return merkle
