@@ -2,33 +2,41 @@ import contextlib
 import json
 import pathlib
 import stat
+import sys
 
 import pytest
 
-from ...generate import linux_generate as generate
+from ...generate import linux_generate
 from ... import utils
 from ..conftest import assert_merkle
 
+if sys.platform.startswith('linux'):
+    generates = [linux_generate]
+else:
+    generates = []
+
+@pytest.mark.parametrize("generate_function", generates)
 @pytest.mark.parametrize("fs",
     [
         {"dmerk_tests":{"file":"Hello World","symlink":"Hello World"}},
     ],
     indirect=True)
-def test_symlink(fs, request):
+def test_symlink(generate_function, fs, request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With data:\n{json.dumps(fs.sourcedata, indent=4)}")
-    m1 = generate(fs.basepath)
+    m1 = generate_function(fs.basepath)
     print(f"Merkle Digest Before:\n{utils.dumps(m1)}")
     file = fs.basepath/"dmerk_tests"/"file"
     symlink = fs.basepath.resolve()/"dmerk_tests"/"symlink"
     symlink.unlink()
     symlink.symlink_to(file.name)
     print(f"Created symlink to file: {file}")
-    m2 = generate(fs.basepath)
+    m2 = generate_function(fs.basepath)
     print(f"Merkle Digest After:\n{utils.dumps(m2)}")
     assert_merkle(m1,m2)
 
 
+@pytest.mark.parametrize("generate_function", generates)
 @pytest.mark.parametrize("path_and_error",
     [
         (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/BLOCK_DEVICE", ValueError),
@@ -40,7 +48,7 @@ def test_symlink(fs, request):
         (pathlib.Path.cwd() / "TEST_NONEXISTENT_DIRECTORY", NotADirectoryError),
     ]
 )
-def test_specialfiles(path_and_error, request):
+def test_specialfiles(generate_function, path_and_error, request):
     """
     Run create_test_directories.sh before running tests
     
@@ -53,9 +61,10 @@ def test_specialfiles(path_and_error, request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With path '{path}' and error '{error}'")
     with pytest.raises(error):
-        generate(path)
+        generate_function(path)
 
 
+@pytest.mark.parametrize("generate_function", generates)
 @pytest.mark.parametrize(
     "fs",
     [
@@ -69,7 +78,7 @@ def test_specialfiles(path_and_error, request):
         (0o333, pytest.raises(ChildProcessError), "Permission denied"),
     ]
 )
-def test_file_permission(fs, request, mode, error, error_message):
+def test_file_permission(generate_function, fs, request, mode, error, error_message):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With data:\n{json.dumps(fs.sourcedata, indent=4)}")
     file = fs.basepath/"dmerk_tests"/"file"
@@ -79,7 +88,7 @@ def test_file_permission(fs, request, mode, error, error_message):
     file.chmod(mode=mode)
     print(f"Updated permissions of file '{file}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})")
     with error as e:
-        m1 = generate(fs.basepath)
+        m1 = generate_function(fs.basepath)
         print(f"Merkle Digest:\n{utils.dumps(m1)}")
     if e is not None:
         assert isinstance(e.value, error.expected_exception)
@@ -90,6 +99,7 @@ def test_file_permission(fs, request, mode, error, error_message):
     file.chmod(mode=original_mode)
 
 
+@pytest.mark.parametrize("generate_function", generates)
 @pytest.mark.parametrize(
     "fs",
     [
@@ -104,7 +114,7 @@ def test_file_permission(fs, request, mode, error, error_message):
         (0o333, pytest.raises(PermissionError)),
     ]
 )
-def test_directory_permission(fs, request, mode, error):
+def test_directory_permission(generate_function, fs, request, mode, error):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With data: {json.dumps(fs.sourcedata)}")
     directory = fs.basepath/"dmerk_tests"
@@ -114,7 +124,7 @@ def test_directory_permission(fs, request, mode, error):
     directory.chmod(mode=mode)
     print(f"Updated permissions of directory '{directory}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})")
     with error as e:
-        m1 = generate(fs.basepath)
+        m1 = generate_function(fs.basepath)
         print(f"Merkle Digest:\n{utils.dumps(m1)}")
     if e is not None:
         assert isinstance(e.value, error.expected_exception)
