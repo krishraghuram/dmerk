@@ -42,36 +42,35 @@ def test_generate_path_required(capsys):
 def test_generate(capsys, fs):
     cli._main(["generate", str(fs.basepath.resolve()), "--no-save"])
     captured = capsys.readouterr()
-    assert textwrap.dedent('''
-        {
-            "/home/raghuram/Workspace/dmerk/TEST_DATA/NORMAL": {
+    expected = textwrap.dedent('''
+        "_children": {
+            "dmerk_tests": {
                 "_children": {
-                    "dmerk_tests": {
+                    "dir1": {
                         "_children": {
-                            "dir1": {
-                                "_children": {
-                                    "file1": {
-                                        "_digest": "3fe10bf44e9a7deab63ea946c04fbcd8",
-                                        "_type": "file"
-                                    },
-                                    "file2": {
-                                        "_digest": "4c24aac86aa49adce486631bf365098f",
-                                        "_type": "file"
-                                    }
-                                },
-                                "_digest": "1ccaa0c417f6a789bbff45e836fcfa1b",
-                                "_type": "directory"
+                            "file1": {
+                                "_digest": "3fe10bf44e9a7deab63ea946c04fbcd8",
+                                "_type": "file"
+                            },
+                            "file2": {
+                                "_digest": "4c24aac86aa49adce486631bf365098f",
+                                "_type": "file"
                             }
                         },
-                        "_digest": "392849b97d29bf246fdea845a8393b10",
+                        "_digest": "1ccaa0c417f6a789bbff45e836fcfa1b",
                         "_type": "directory"
                     }
                 },
-                "_digest": "622e8ed459729cc72f6b63f7628ed390",
+                "_digest": "392849b97d29bf246fdea845a8393b10",
                 "_type": "directory"
             }
-        }
-    ''').strip() in captured.out
+        },
+        "_digest": "622e8ed459729cc72f6b63f7628ed390",
+        "_type": "directory"
+    ''').strip()
+    def remove_all_whitespace(s):
+        return "".join(s.split())
+    assert remove_all_whitespace(expected) in remove_all_whitespace(captured.out)
 
 @pytest.mark.parametrize("args", ("-h", "--help"))
 def test_compare_help(capsys, args):
