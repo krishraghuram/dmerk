@@ -25,5 +25,5 @@ classifiers = [
 dmerk = "dmerk.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["dmerk"]
+include = ["dmerk", "dmerk.generate"]
 namespaces = false
