@@ -84,11 +84,17 @@ def loads(json_):
             return pathlib.Path(k) / p
         return formatter
     return format_merkle_paths(json.loads(json_), formatter, formatter_updater)
+def _get_filename(path):
+    date = datetime.datetime.now().isoformat(timespec='seconds').replace(':','-')
+    table = str.maketrans({
+        '\\': '_',
+        '/': '_',
+        ':': '_'
+    })
+    return f"{date}__{str(path).translate(table)}.json"
 def save_merkle(path, merkle, filename=None):
     if filename is None:
-        date = datetime.datetime.now().isoformat(timespec='seconds').replace(':','-')
-        path = str(path).replace('\\','_').replace('/','_').replace(':','_')
-        filename = date + "__" + path + ".json"
+        filename = _get_filename(path)
     with open(filename, mode="w", encoding="utf-8") as file:
         file.write(dumps(merkle))
     print(f"Saved merkle for path: '{path}' to file: '{filename}'")
