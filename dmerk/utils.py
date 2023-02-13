@@ -87,7 +87,7 @@ def loads(json_):
 def save_merkle(path, merkle, filename=None):
     if filename is None:
         date = datetime.datetime.now().isoformat(timespec='seconds').replace(':','-')
-        path = str(path).replace('/','_').replace(':','_')
+        path = str(path).replace('\\','_').replace('/','_').replace(':','_')
         filename = date + "__" + path + ".json"
     with open(filename, mode="w", encoding="utf-8") as file:
         file.write(dumps(merkle))
