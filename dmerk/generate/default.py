@@ -1,7 +1,14 @@
 import hashlib
 import pathlib
 
-_DIGEST_ALGORITHM = "md5" # md5 takes 10-20 percent less time to run than sha256
+_DIGEST_ALGORITHM = "md5" # takes 10-20 percent less time to run than sha256
+
+# hashlib.file_digest is only in python 3.11, we might need to backport/polyfill if its not there
+try:
+    hashlib.file_digest
+except AttributeError:
+    from . import hashlib_file_digest
+    hashlib.file_digest = hashlib_file_digest.file_digest
 
 def generate(directory: pathlib.Path):
     if (directory.exists()):
