@@ -3,7 +3,7 @@ import pathlib
 
 _DIGEST_ALGORITHM = "md5" # takes 10-20 percent less time to run than sha256
 
-# hashlib.file_digest is only in python 3.11, we might need to backport/polyfill if its not there
+# hashlib.file_digest is only in python 3.11, we might need to backport/polyfill/monkey-patch if its not there
 try:
     hashlib.file_digest
 except AttributeError:

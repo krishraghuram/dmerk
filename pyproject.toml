@@ -4,6 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dmerk"
+dependencies = [
+  "orjson==3.8.6",
+]
 version = "0.1.0"
 authors = [
   { name="Raghuram Krishnaswami", email="krish.raghuram@gmail.com" },

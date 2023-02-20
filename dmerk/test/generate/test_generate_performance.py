@@ -4,7 +4,9 @@ import pstats
 
 from ...generate import default_generate
 
-TEST_PATH = pathlib.Path("/media/raghuram/dmerk_test_disk/TEST_DATA/PERFORMANCE/1M")
+TEST_PATH = pathlib.Path("/media/raghuram/dmerk_test_disk/TEST_DATA/PERFORMANCE")
+
+# TODO: add assertions in performance tests that ensure that performance does not regress over time
 
 def test_performance_benchmark(request, benchmark):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")

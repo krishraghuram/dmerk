@@ -166,3 +166,4 @@ TEST_DATA
 # Sublime Text
 *.sublime-project
 *.sublime-workspace
+dmerk/test/generate/test_performance_profile.prof
