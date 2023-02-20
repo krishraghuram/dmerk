@@ -6,12 +6,12 @@ import sys
 
 import pytest
 
-from ...generate import linux_generate
+from ...generate import default_generate
 from ... import utils
 from ..conftest import assert_merkle
 
 if sys.platform.startswith('linux'):
-    generates = [linux_generate]
+    generates = [default_generate]
 else:
     generates = []
 
@@ -75,7 +75,7 @@ def test_specialfiles(generate_function, path_and_error, request):
 @pytest.mark.parametrize("mode,error,error_message",
     [
         (0o444, contextlib.nullcontext(None), None),
-        (0o333, pytest.raises(ChildProcessError), "Permission denied"),
+        (0o333, pytest.raises(PermissionError), "Permission denied"),
     ]
 )
 def test_file_permission(generate_function, fs, request, mode, error, error_message):
@@ -92,7 +92,7 @@ def test_file_permission(generate_function, fs, request, mode, error, error_mess
         print(f"Merkle Digest:\n{utils.dumps(m1, encoding='utf-8')}")
     if e is not None:
         assert isinstance(e.value, error.expected_exception)
-        assert error_message in e.value.args[0]
+        assert error_message in [str(i) for i in e.value.args]
         print(f"Got expected exception: {repr(e.value)}")
 
     print("Resetting permissions so that fs fixture cleanup can occur properly...")

@@ -2,19 +2,14 @@ import hashlib
 import json
 import random
 import pathlib
-import sys
 
 import pytest
 
-from ...generate import linux_generate
 from ...generate import default_generate
 from ... import utils
 from ..conftest import update_metadata, assert_merkle
 
-if sys.platform.startswith('linux'):
-    generates = [linux_generate, default_generate]
-else:
-    generates = [default_generate]
+generates = [default_generate]
 
 @pytest.mark.parametrize("generate_function", generates)
 @pytest.mark.parametrize("fs",
