@@ -3,6 +3,8 @@ import cProfile
 import pstats
 import time
 
+import pytest
+
 from ...generate import default_generate
 
 TEST_PATH = pathlib.Path("/media/raghuram/dmerk_test_disk/TEST_DATA/PERFORMANCE")
@@ -15,6 +17,8 @@ def test_performance_time(request):
     print(f"Time Taken = {end-start}s")
     assert end-start < 20  # TODO: don't hardcode
 
+@pytest.mark.slow
+@pytest.mark.profile
 def test_performance_profile(request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     filename = "dmerk/test/generate/test_performance_profile.prof"

@@ -20,6 +20,12 @@ def format(session):
 def test(session):
     session.install("coverage", "pytest")
     session.install(".")
-    session.run("coverage", "run", "-m", "pytest")
+    session.run("coverage", "run", "-m", "pytest", "-m", "not slow")
     session.run("coverage", "html", "--skip-empty", "--omit=dmerk/test/*")
     print("Coverage HTML Report: " + "file://" + str(pathlib.Path("htmlcov/index.html").absolute()))
+
+@nox.session()
+def profile(session):
+    session.install("pytest")
+    session.install(".")
+    session.run("pytest", "-sm", "profile")

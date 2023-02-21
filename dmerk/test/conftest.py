@@ -6,6 +6,10 @@ import typing
 
 import pytest
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "slow: mark test as slow to run")
+    config.addinivalue_line("markers", "profile: mark test as a profiling test")
+
 def _fs(data: dict, base_path: pathlib.Path) -> None:
     for k,v in data.items():
         if not isinstance(k, typing.Union[str, bytes, os.PathLike]):
