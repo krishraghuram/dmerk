@@ -18,7 +18,7 @@ def format(session):
 
 @nox.session(python=["3.8", "3.10", "3.11"])
 def test(session):
-    session.install("coverage", "pytest", "pytest-benchmark")
+    session.install("coverage", "pytest")
     session.install(".")
     session.run("coverage", "run", "-m", "pytest")
     session.run("coverage", "html", "--skip-empty", "--omit=dmerk/test/*")
