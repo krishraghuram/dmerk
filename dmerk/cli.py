@@ -18,7 +18,7 @@ def _generate(args):
     if not args.no_save:
         utils.save_merkle(path, merkle, filename)
     if args.no_save or args.print:
-        print(utils.dumps(merkle))
+        utils.dump(merkle, sys.stdout)
 
 def _compare(args):
     matches, unmatched_files_1, unmatched_files_2 = compare.compare(

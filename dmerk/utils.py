@@ -68,22 +68,22 @@ def format_merkle_paths(merkle, formatter, formatter_updater):
             children = format_merkle_paths(v["_children"], formatter_updater(formatter, k, v), formatter_updater)
             new_merkle[k] |= {"_children": children}
     return new_merkle
-def dumps(merkle):
+def dump(merkle, file):
     def formatter(p):
         return str(p.resolve())
     def formatter_updater(formatter, k, v):
         def formatter(p):
             return p.name
         return formatter
-    return json.dumps(format_merkle_paths(merkle, formatter, formatter_updater), sort_keys=True, indent=4, ensure_ascii=False)
-def loads(json_):
+    return json.dump(format_merkle_paths(merkle, formatter, formatter_updater), file, sort_keys=True, indent=4, ensure_ascii=False)
+def load(file):
     def formatter(p):
         return pathlib.Path(p)
     def formatter_updater(formatter, k, v):
         def formatter(p):
             return pathlib.Path(k) / p
         return formatter
-    return format_merkle_paths(json.loads(json_), formatter, formatter_updater)
+    return format_merkle_paths(json.load(file), formatter, formatter_updater)
 def _get_filename(path):
     date = datetime.datetime.now().isoformat(timespec='seconds').replace(':','-')
     table = str.maketrans({
@@ -96,11 +96,11 @@ def save_merkle(path, merkle, filename=None):
     if filename is None:
         filename = _get_filename(path)
     with open(filename, mode="w", encoding="utf-8") as file:
-        file.write(dumps(merkle))
+        dump(merkle, file)
     print(f"Saved merkle for path: '{path}' to file: '{filename}'")
 def load_merkle(filename):
     with open(filename, mode="r", encoding="utf-8") as file:
-        return loads(file.read())
+        return load(file)
 
 def generate_or_load(path, no_save=False):
     """

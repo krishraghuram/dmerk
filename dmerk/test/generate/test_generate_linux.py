@@ -25,14 +25,14 @@ def test_symlink(generate_function, fs, request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With data:\n{json.dumps(fs.sourcedata, indent=4)}")
     m1 = generate_function(fs.basepath)
-    print(f"Merkle Digest Before:\n{utils.dumps(m1)}")
+    print("Merkle Digest Before:"); utils.dump(m1, sys.stdout); print()
     file = fs.basepath/"dmerk_tests"/"file"
     symlink = fs.basepath.resolve()/"dmerk_tests"/"symlink"
     symlink.unlink()
     symlink.symlink_to(file.name)
     print(f"Created symlink to file: {file}")
     m2 = generate_function(fs.basepath)
-    print(f"Merkle Digest After:\n{utils.dumps(m2)}")
+    print("Merkle Digest After:"); utils.dump(m2, sys.stdout); print()
     assert_merkle(m1,m2)
 
 
@@ -89,7 +89,7 @@ def test_file_permission(generate_function, fs, request, mode, error, error_mess
     print(f"Updated permissions of file '{file}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})")
     with error as e:
         m1 = generate_function(fs.basepath)
-        print(f"Merkle Digest:\n{utils.dumps(m1)}")
+        print("Merkle Digest:"); utils.dump(m1, sys.stdout); print()
     if e is not None:
         assert isinstance(e.value, error.expected_exception)
         assert error_message in [str(i) for i in e.value.args]
@@ -125,7 +125,7 @@ def test_directory_permission(generate_function, fs, request, mode, error):
     print(f"Updated permissions of directory '{directory}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})")
     with error as e:
         m1 = generate_function(fs.basepath)
-        print(f"Merkle Digest:\n{utils.dumps(m1)}")
+        print("Merkle Digest:"); utils.dump(m1, sys.stdout); print()
     if e is not None:
         assert isinstance(e.value, error.expected_exception)
         print(f"Got expected exception: {repr(e.value)}")
