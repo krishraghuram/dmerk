@@ -1,4 +1,4 @@
-import orjson
+import json
 import pathlib
 import collections.abc
 import datetime
@@ -24,13 +24,10 @@ def flatten_merkle(merkle, prefix=None):
 
 """
 The next few functions are a hack/workaround for the issue that
-orjson.dumps cannot handle pathlib.Path instances when present in dict keys
-The default/cls options of orjson.dumps also dont work, as those options only work on values, and not keys
+json.dumps cannot handle pathlib.Path instances when present in dict keys
+The default/cls options of json.dumps also dont work, as those options only work on values, and not keys
 https://stackoverflow.com/a/63455796/5530864
 https://github.com/python/cpython/issues/63020
-orjson's option OPT_NON_STR_KEYS also does not work, and leads to error,
-"TypeError: Dict key must a type serializable with OPT_NON_STR_KEYS"
-https://github.com/ijl/orjson#opt_non_str_keys
 
 I really hate this hack for the following reasons:
 1. The problem statement is quite simple, but the code is complicated - In other words, the code is not pythonic
@@ -71,20 +68,14 @@ def format_merkle_paths(merkle, formatter, formatter_updater):
             children = format_merkle_paths(v["_children"], formatter_updater(formatter, k, v), formatter_updater)
             new_merkle[k] |= {"_children": children}
     return new_merkle
-def dumps(merkle, encoding=None):
+def dumps(merkle):
     def formatter(p):
         return str(p.resolve())
     def formatter_updater(formatter, k, v):
         def formatter(p):
             return p.name
         return formatter
-    out = orjson.dumps(
-        format_merkle_paths(merkle, formatter, formatter_updater),
-        option=orjson.OPT_SORT_KEYS | orjson.OPT_INDENT_2
-    )
-    if encoding is not None:
-        out = out.decode(encoding)
-    return out
+    return json.dumps(format_merkle_paths(merkle, formatter, formatter_updater), sort_keys=True, indent=4, ensure_ascii=False)
 def loads(json_):
     def formatter(p):
         return pathlib.Path(p)
@@ -92,7 +83,7 @@ def loads(json_):
         def formatter(p):
             return pathlib.Path(k) / p
         return formatter
-    return format_merkle_paths(orjson.loads(json_), formatter, formatter_updater)
+    return format_merkle_paths(json.loads(json_), formatter, formatter_updater)
 def _get_filename(path):
     date = datetime.datetime.now().isoformat(timespec='seconds').replace(':','-')
     table = str.maketrans({
@@ -104,11 +95,11 @@ def _get_filename(path):
 def save_merkle(path, merkle, filename=None):
     if filename is None:
         filename = _get_filename(path)
-    with open(filename, mode="wb") as file:
+    with open(filename, mode="w", encoding="utf-8") as file:
         file.write(dumps(merkle))
     print(f"Saved merkle for path: '{path}' to file: '{filename}'")
 def load_merkle(filename):
-    with open(filename, mode="rb") as file:
+    with open(filename, mode="r", encoding="utf-8") as file:
         return loads(file.read())
 
 def generate_or_load(path, no_save=False):
