@@ -3,6 +3,9 @@ import pathlib
 
 import nox
 
+# Usage: nox --session <session-name>
+# Example: nox --session lint
+
 @nox.session()
 def lint(session):
     session.install("pyflakes")
@@ -20,7 +23,7 @@ def format(session):
 def test(session):
     session.install("coverage", "pytest")
     session.install(".")
-    session.run("coverage", "run", "-m", "pytest", "-m", "not slow")
+    session.run("coverage", "run", "-m", "pytest", "-x", "-m", "not slow")
     session.run("coverage", "html", "--skip-empty", "--omit=dmerk/test/*")
     print("Coverage HTML Report: " + "file://" + str(pathlib.Path("htmlcov/index.html").absolute()))
 
