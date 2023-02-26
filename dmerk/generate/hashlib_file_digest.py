@@ -1,7 +1,10 @@
 # backport/polyfill of python 3.11's hashlib.file_digest
 # copied from https://github.com/python/cpython/blob/3.11/Lib/hashlib.py
 import hashlib
+
 new = hashlib.new
+
+
 def file_digest(fileobj, digest, /, *, _bufsize=2**18):
     """Hash the contents of a file-like object. Returns a digest object.
     *fileobj* must be a file-like object opened for reading in binary mode.

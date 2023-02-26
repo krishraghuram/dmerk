@@ -4,20 +4,29 @@ import pytest
 
 from .. import cli
 
+
 @pytest.mark.parametrize("args", ("-h", "--help"))
 def test_help(capsys, args):
     with pytest.raises(SystemExit):
         cli._main([args])
     captured = capsys.readouterr()
     assert "usage: dmerk [-h] {generate,compare,analyse}" in captured.out
-    assert "Program to generate, compare and analyse directory merkle trees" in captured.out
+    assert (
+        "Program to generate, compare and analyse directory merkle trees"
+        in captured.out
+    )
+
 
 def test_subcommand_required(capsys):
     with pytest.raises(SystemExit):
         cli._main([])
     captured = capsys.readouterr()
     assert "usage: dmerk [-h] {generate,compare,analyse}" in captured.err
-    assert "dmerk: error: the following arguments are required: {generate,compare,analyse}" in captured.err
+    assert (
+        "dmerk: error: the following arguments are required: {generate,compare,analyse}"
+        in captured.err
+    )
+
 
 @pytest.mark.parametrize("args", ("-h", "--help"))
 def test_generate_help(capsys, args):
@@ -27,22 +36,30 @@ def test_generate_help(capsys, args):
     assert "usage: dmerk generate [-h] [-n] [-p] [-f FILENAME] path" in captured.out
     assert "Generate a merkle tree for a given directory" in captured.out
 
+
 def test_generate_path_required(capsys):
     with pytest.raises(SystemExit):
         cli._main(["generate"])
     captured = capsys.readouterr()
     assert "usage: dmerk generate [-h] [-n] [-p] [-f FILENAME] path" in captured.err
-    assert "dmerk generate: error: the following arguments are required: path" in captured.err
+    assert (
+        "dmerk generate: error: the following arguments are required: path"
+        in captured.err
+    )
 
-@pytest.mark.parametrize("fs",
+
+@pytest.mark.parametrize(
+    "fs",
     [
-        {"dmerk_tests":{"dir1":{"file1":"Hello World 1","file2":"Hello World 2"}}},
+        {"dmerk_tests": {"dir1": {"file1": "Hello World 1", "file2": "Hello World 2"}}},
     ],
-    indirect=True)
+    indirect=True,
+)
 def test_generate(capsys, fs):
     cli._main(["generate", str(fs.basepath.resolve()), "--no-save"])
     captured = capsys.readouterr()
-    expected = textwrap.dedent('''
+    expected = textwrap.dedent(
+        """
         "_children": {
             "dmerk_tests": {
                 "_children": {
@@ -67,10 +84,14 @@ def test_generate(capsys, fs):
         },
         "_digest": "622e8ed459729cc72f6b63f7628ed390",
         "_type": "directory"
-    ''').strip()
+    """
+    ).strip()
+
     def remove_all_whitespace(s):
         return "".join(s.split())
+
     assert remove_all_whitespace(expected) in remove_all_whitespace(captured.out)
+
 
 @pytest.mark.parametrize("args", ("-h", "--help"))
 def test_compare_help(capsys, args):
@@ -78,18 +99,28 @@ def test_compare_help(capsys, args):
         cli._main(["compare", args])
     captured = capsys.readouterr()
     assert "usage: dmerk compare [-h] [-n] path1 path2" in captured.out
-    assert textwrap.dedent("""
+    assert (
+        textwrap.dedent(
+            """
         Compare two directory merkle trees and return the diffs and matches.
         path1 and path2 are the paths to the directories,
         but they can also be paths to json files that were created using generate.
-    """) in captured.out
+    """
+        )
+        in captured.out
+    )
+
 
 def test_compare_paths_required(capsys):
     with pytest.raises(SystemExit):
         cli._main(["compare"])
     captured = capsys.readouterr()
     assert "usage: dmerk compare [-h] [-n] path1 path2" in captured.err
-    assert "dmerk compare: error: the following arguments are required: path1, path2" in captured.err
+    assert (
+        "dmerk compare: error: the following arguments are required: path1, path2"
+        in captured.err
+    )
+
 
 @pytest.mark.parametrize("args", ("-h", "--help"))
 def test_analyse_help(capsys, args):
@@ -99,12 +130,17 @@ def test_analyse_help(capsys, args):
     assert "usage: dmerk analyse [-h] path" in captured.out
     assert "Analyse a merkle tree to find copies/duplicates within" in captured.out
 
+
 def test_analyse_path_required(capsys):
     with pytest.raises(SystemExit):
         cli._main(["analyse"])
     captured = capsys.readouterr()
     assert "usage: dmerk analyse [-h] path" in captured.err
-    assert "dmerk analyse: error: the following arguments are required: path" in captured.err
+    assert (
+        "dmerk analyse: error: the following arguments are required: path"
+        in captured.err
+    )
+
 
 # Note:
 #  Not adding tests that validates that generate saves output to json file.

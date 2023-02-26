@@ -10,34 +10,42 @@ from ...generate import default_generate
 from ... import utils
 from ..conftest import assert_merkle
 
-if sys.platform.startswith('linux'):
+if sys.platform.startswith("linux"):
     generates = [default_generate]
 else:
     generates = []
 
+
 @pytest.mark.parametrize("generate_function", generates)
-@pytest.mark.parametrize("fs",
+@pytest.mark.parametrize(
+    "fs",
     [
-        {"dmerk_tests":{"file":"Hello World","symlink":"Hello World"}},
+        {"dmerk_tests": {"file": "Hello World", "symlink": "Hello World"}},
     ],
-    indirect=True)
+    indirect=True,
+)
 def test_symlink(generate_function, fs, request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With data:\n{json.dumps(fs.sourcedata, indent=4)}")
     m1 = generate_function(fs.basepath)
-    print("Merkle Digest Before:"); utils.dump(m1, sys.stdout); print()
-    file = fs.basepath/"dmerk_tests"/"file"
-    symlink = fs.basepath.resolve()/"dmerk_tests"/"symlink"
+    print("Merkle Digest Before:")
+    utils.dump(m1, sys.stdout)
+    print()
+    file = fs.basepath / "dmerk_tests" / "file"
+    symlink = fs.basepath.resolve() / "dmerk_tests" / "symlink"
     symlink.unlink()
     symlink.symlink_to(file.name)
     print(f"Created symlink to file: {file}")
     m2 = generate_function(fs.basepath)
-    print("Merkle Digest After:"); utils.dump(m2, sys.stdout); print()
-    assert_merkle(m1,m2)
+    print("Merkle Digest After:")
+    utils.dump(m2, sys.stdout)
+    print()
+    assert_merkle(m1, m2)
 
 
 @pytest.mark.parametrize("generate_function", generates)
-@pytest.mark.parametrize("path_and_error",
+@pytest.mark.parametrize(
+    "path_and_error",
     [
         (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/BLOCK_DEVICE", ValueError),
         (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/CHAR_DEVICE", ValueError),
@@ -46,18 +54,18 @@ def test_symlink(generate_function, fs, request):
         (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/SYMLINK_BROKEN", ValueError),
         (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/SYMLINK_TO_SPECIAL", ValueError),
         (pathlib.Path.cwd() / "TEST_NONEXISTENT_DIRECTORY", NotADirectoryError),
-    ]
+    ],
 )
 def test_specialfiles(generate_function, path_and_error, request):
     """
     Run create_test_directories.sh before running tests
-    
+
     TODO:
     Create the test directories within the test setup itself, and tear them down at the end
     Currently I've created create_test_directories.sh as a separate script because some commands inside it require sudo,
     and I don't want to run the entire suite of tests with root privileges.
     """
-    (path,error) = path_and_error
+    (path, error) = path_and_error
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With path '{path}' and error '{error}'")
     with pytest.raises(error):
@@ -68,28 +76,33 @@ def test_specialfiles(generate_function, path_and_error, request):
 @pytest.mark.parametrize(
     "fs",
     [
-        {"dmerk_tests":{"file":"Hello World"}},
+        {"dmerk_tests": {"file": "Hello World"}},
     ],
-    indirect=True
+    indirect=True,
 )
-@pytest.mark.parametrize("mode,error,error_message",
+@pytest.mark.parametrize(
+    "mode,error,error_message",
     [
         (0o444, contextlib.nullcontext(None), None),
         (0o333, pytest.raises(PermissionError), "Permission denied"),
-    ]
+    ],
 )
 def test_file_permission(generate_function, fs, request, mode, error, error_message):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With data:\n{json.dumps(fs.sourcedata, indent=4)}")
-    file = fs.basepath/"dmerk_tests"/"file"
-    
+    file = fs.basepath / "dmerk_tests" / "file"
+
     original_mode = file.stat().st_mode
 
     file.chmod(mode=mode)
-    print(f"Updated permissions of file '{file}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})")
+    print(
+        f"Updated permissions of file '{file}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})"
+    )
     with error as e:
         m1 = generate_function(fs.basepath)
-        print("Merkle Digest:"); utils.dump(m1, sys.stdout); print()
+        print("Merkle Digest:")
+        utils.dump(m1, sys.stdout)
+        print()
     if e is not None:
         assert isinstance(e.value, error.expected_exception)
         assert error_message in [str(i) for i in e.value.args]
@@ -103,29 +116,34 @@ def test_file_permission(generate_function, fs, request, mode, error, error_mess
 @pytest.mark.parametrize(
     "fs",
     [
-        {"dmerk_tests":{"file":"Hello World"}},
+        {"dmerk_tests": {"file": "Hello World"}},
     ],
-    indirect=True
+    indirect=True,
 )
-@pytest.mark.parametrize("mode,error",
+@pytest.mark.parametrize(
+    "mode,error",
     [
         (0o555, contextlib.nullcontext(None)),
         (0o666, pytest.raises(PermissionError)),
         (0o333, pytest.raises(PermissionError)),
-    ]
+    ],
 )
 def test_directory_permission(generate_function, fs, request, mode, error):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With data: {json.dumps(fs.sourcedata)}")
-    directory = fs.basepath/"dmerk_tests"
+    directory = fs.basepath / "dmerk_tests"
 
     original_mode = directory.stat().st_mode
 
     directory.chmod(mode=mode)
-    print(f"Updated permissions of directory '{directory}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})")
+    print(
+        f"Updated permissions of directory '{directory}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})"
+    )
     with error as e:
         m1 = generate_function(fs.basepath)
-        print("Merkle Digest:"); utils.dump(m1, sys.stdout); print()
+        print("Merkle Digest:")
+        utils.dump(m1, sys.stdout)
+        print()
     if e is not None:
         assert isinstance(e.value, error.expected_exception)
         print(f"Got expected exception: {repr(e.value)}")
