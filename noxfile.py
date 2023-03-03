@@ -15,7 +15,7 @@ def lint(session):
 def format(session):
     session.install("black")
     out = session.run("black", "dmerk", silent=True)
-    match = re.search(r"(\d*?)(?: files reformatted, )?(\d*?) files left unchanged.", out)
+    match = re.search(r"(\d*?)(?: files? reformatted, )?(\d*?) files? left unchanged.", out)
     if int(match.groups()[0] or 0)>0:  # https://stackoverflow.com/a/46254991/5530864
         raise Exception(f"black has formatted {int(match.groups()[0])} files, please check them")
 
