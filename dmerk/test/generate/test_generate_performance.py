@@ -2,6 +2,7 @@ import pathlib
 import cProfile
 import pstats
 import time
+import platform
 
 import pytest
 
@@ -16,7 +17,11 @@ def test_performance_time(request):
     default_generate(TEST_PATH)
     end = time.time()
     print(f"Time Taken = {end-start}s")
-    assert end - start < 20  # TODO: don't hardcode
+    # TODO: don't hardcode the time thresholds
+    if platform.python_implementation() == "PyPy":
+        assert end - start < 40  # PyPy slow to startup I guess...
+    else:
+        assert end - start < 20
 
 
 @pytest.mark.slow
