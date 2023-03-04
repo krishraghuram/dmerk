@@ -8,12 +8,6 @@ import dmerk.generate as generate
 import dmerk.compare as compare
 import dmerk.utils as utils
 
-parser = argparse.ArgumentParser(
-    prog="dmerk",
-    description="Program to generate, compare and analyse directory merkle trees",
-)
-subparsers = parser.add_subparsers(required=True)
-
 
 def _generate(args):
     path = pathlib.Path(args.path).resolve()
