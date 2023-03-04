@@ -10,7 +10,7 @@ def test_help(capsys, args):
     with pytest.raises(SystemExit):
         cli._main([args])
     captured = capsys.readouterr()
-    assert "usage: dmerk [-h] {generate,compare,analyse}" in captured.out
+    assert "usage: dmerk [-h] [--no-save] {generate,compare,analyse}" in captured.out
     assert (
         "Program to generate, compare and analyse directory merkle trees"
         in captured.out
@@ -21,7 +21,7 @@ def test_subcommand_required(capsys):
     with pytest.raises(SystemExit):
         cli._main([])
     captured = capsys.readouterr()
-    assert "usage: dmerk [-h] {generate,compare,analyse}" in captured.err
+    assert "usage: dmerk [-h] [--no-save] {generate,compare,analyse}" in captured.err
     assert (
         "dmerk: error: the following arguments are required: {generate,compare,analyse}"
         in captured.err
@@ -33,7 +33,7 @@ def test_generate_help(capsys, args):
     with pytest.raises(SystemExit):
         cli._main(["generate", args])
     captured = capsys.readouterr()
-    assert "usage: dmerk generate [-h] [-n] [-p] [-f FILENAME] path" in captured.out
+    assert "usage: dmerk generate [-h] [-p] [-f FILENAME] path" in captured.out
     assert "Generate a merkle tree for a given directory" in captured.out
 
 
@@ -41,7 +41,7 @@ def test_generate_path_required(capsys):
     with pytest.raises(SystemExit):
         cli._main(["generate"])
     captured = capsys.readouterr()
-    assert "usage: dmerk generate [-h] [-n] [-p] [-f FILENAME] path" in captured.err
+    assert "usage: dmerk generate [-h] [-p] [-f FILENAME] path" in captured.err
     assert (
         "dmerk generate: error: the following arguments are required: path"
         in captured.err
@@ -56,7 +56,7 @@ def test_generate_path_required(capsys):
     indirect=True,
 )
 def test_generate(capsys, fs):
-    cli._main(["generate", str(fs.basepath.resolve()), "--no-save"])
+    cli._main(["--no-save", "generate", str(fs.basepath.resolve())])
     captured = capsys.readouterr()
     expected = textwrap.dedent(
         """
@@ -98,7 +98,7 @@ def test_compare_help(capsys, args):
     with pytest.raises(SystemExit):
         cli._main(["compare", args])
     captured = capsys.readouterr()
-    assert "usage: dmerk compare [-h] [-n] path1 path2" in captured.out
+    assert "usage: dmerk compare [-h] path1 path2" in captured.out
     assert (
         textwrap.dedent(
             """
@@ -115,7 +115,7 @@ def test_compare_paths_required(capsys):
     with pytest.raises(SystemExit):
         cli._main(["compare"])
     captured = capsys.readouterr()
-    assert "usage: dmerk compare [-h] [-n] path1 path2" in captured.err
+    assert "usage: dmerk compare [-h] path1 path2" in captured.err
     assert (
         "dmerk compare: error: the following arguments are required: path1, path2"
         in captured.err

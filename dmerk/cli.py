@@ -44,18 +44,17 @@ def _main(args):
         prog="dmerk",
         description="Program to generate, compare and analyse directory merkle trees",
     )
+    parser.add_argument(
+        "--no-save",
+        action="store_true",
+        help="If specified, the generated merkle tree will not be saved to file. This is almost never a good idea, as generating merkle tree is expensive operation, and is worth saving into a file.",
+    )
     subparsers = parser.add_subparsers(required=True)
 
     parser_generate = subparsers.add_parser(
         "generate", description="Generate a merkle tree for a given directory"
     )
     parser_generate.add_argument("path", help="the path to the directory")
-    parser_generate.add_argument(
-        "-n",
-        "--no-save",
-        action="store_true",
-        help="if specified, the merkle output will not be saved to file",
-    )
     parser_generate.add_argument(
         "-p",
         "--print",
@@ -91,12 +90,6 @@ def _main(args):
     )
     parser_compare.add_argument("path1")
     parser_compare.add_argument("path2")
-    parser_compare.add_argument(
-        "-n",
-        "--no-save",
-        action="store_true",
-        help="this option is same as no-save in generate, and is applicable only when path1 or path2 are paths to directories",
-    )
     parser_compare.set_defaults(func=_compare)
 
     parser_analyse = subparsers.add_parser(
