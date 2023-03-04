@@ -14,7 +14,10 @@ def pytest_configure(config):
 
 def _fs(data: dict, base_path: pathlib.Path) -> None:
     for k, v in data.items():
-        if not isinstance(k, typing.Union[str, bytes, os.PathLike]):
+        # Python 3.9 Compat
+        # https://bugs.python.org/issue44529
+        # https://stackoverflow.com/a/64643971/5530864
+        if not isinstance(k, typing.get_args(typing.Union[str, bytes, os.PathLike])):
             raise TypeError(f"Bad type {type(k)}")
         if isinstance(v, dict):
             (base_path / k).mkdir()
