@@ -32,11 +32,15 @@ def _merkle(directory: pathlib.Path):
         if child.is_dir():
             contents[child] = _merkle(child)
         elif child.is_file():
-            contents[child] = {"_type": "file", "_digest": _file_digest(child)}
-    digest = _directory_digest(contents)
+            contents[child] = {
+                "_type": "file",
+                "_size": child.stat().st_size,
+                "_digest": _file_digest(child),
+            }
     return {
         "_type": "directory",
-        "_digest": digest,
+        "_size": _directory_size(contents, directory),
+        "_digest": _directory_digest(contents),
         "_children": contents,
     }
 
@@ -57,3 +61,11 @@ def _directory_digest(contents):
     digest_input = ",".join(list(sorted([v["_digest"] for v in contents.values()])))
     digest = hashlib.new(_DIGEST_ALGORITHM, digest_input.encode("utf-8")).hexdigest()
     return digest
+
+
+def _directory_size(contents, directory):
+    """
+    Compute the size of a directory from the contents
+    """
+    contents_total_size = sum([v["_size"] for v in contents.values()])
+    return contents_total_size + directory.stat().st_size

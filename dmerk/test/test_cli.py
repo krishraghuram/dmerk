@@ -67,22 +67,27 @@ def test_generate(capsys, fs):
                         "_children": {
                             "file1": {
                                 "_digest": "3fe10bf44e9a7deab63ea946c04fbcd8",
+                                "_size": 13,
                                 "_type": "file"
                             },
                             "file2": {
                                 "_digest": "4c24aac86aa49adce486631bf365098f",
+                                "_size": 13,
                                 "_type": "file"
                             }
                         },
                         "_digest": "1ccaa0c417f6a789bbff45e836fcfa1b",
+                        "_size": 4122,
                         "_type": "directory"
                     }
                 },
                 "_digest": "392849b97d29bf246fdea845a8393b10",
+                "_size": 8218,
                 "_type": "directory"
             }
         },
         "_digest": "622e8ed459729cc72f6b63f7628ed390",
+        "_size": 12314,
         "_type": "directory"
     """
     ).strip()

@@ -65,7 +65,11 @@ def format_merkle_paths(merkle, formatter, formatter_updater):
     """
     new_merkle = {}
     for k, v in merkle.items():
-        new_merkle[formatter(k)] = {"_type": v["_type"], "_digest": v["_digest"]}
+        new_merkle[formatter(k)] = {
+            "_type": v["_type"],
+            "_digest": v["_digest"],
+            "_size": v["_size"],
+        }
         if v["_type"] == "directory":
             k = formatter(k)
             children = format_merkle_paths(

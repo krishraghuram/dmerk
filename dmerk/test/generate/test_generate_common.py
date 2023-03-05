@@ -47,11 +47,18 @@ def test_digest_correct(generate_function, fs, request):
         out = {}
         for k, v in data.items():
             if isinstance(v, str):
-                out[prefix / pathlib.Path(k)] = {"_type": "file", "_digest": digest(v)}
+                out[prefix / pathlib.Path(k)] = {
+                    "_type": "file",
+                    "_size": len(v.encode("utf-8")),
+                    "_digest": digest(v),
+                }
             elif isinstance(v, dict):
                 children = get_merkle_tree_test(v, prefix=prefix / k)
                 out[prefix / pathlib.Path(k)] = {
                     "_type": "directory",
+                    # TODO: remove hardcoded value of 4096
+                    # 4096 is size of a "directory file" in ext4 - https://unix.stackexchange.com/a/503055/420985
+                    "_size": sum([v["_size"] for v in children.values()]) + 4096,
                     "_digest": digest(
                         ",".join(sorted([v["_digest"] for v in children.values()]))
                     ),
