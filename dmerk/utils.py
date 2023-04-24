@@ -4,7 +4,6 @@ import collections.abc
 import datetime
 import random
 import string
-import types
 
 import dmerk.generate as generate
 
@@ -14,7 +13,8 @@ def path_to_str(obj):
     Convert all pathlib.PurePath instances in obj to absolute path strings
     This is generic, in the sense that obj can be any python object, and not necessarily a merkle tree dictionary.
     """
-    if isinstance(obj, (str, int, float, bool, types.NoneType)):
+    # Python 3.9 Compat
+    if isinstance(obj, (str, int, float, bool, type(None))):
         return obj
     elif isinstance(obj, collections.abc.Mapping):
         return {path_to_str(k): path_to_str(v) for k, v in obj.items()}
@@ -42,7 +42,8 @@ def str_to_path(obj):
         return {str_to_path(k): str_to_path(v) for k, v in obj.items()}
     elif isinstance(obj, collections.abc.Iterable):
         return [str_to_path(i) for i in obj]
-    elif isinstance(obj, (int, float, bool, types.NoneType)):
+    # Python 3.9 Compat
+    elif isinstance(obj, (int, float, bool, type(None))):
         return obj
     else:
         raise TypeError(f"Can't handle type: {type(obj)}")
