@@ -3,6 +3,8 @@ import textwrap
 import pytest
 
 from .. import cli
+from .. import generate
+from .. import utils
 
 
 @pytest.mark.parametrize("args", ("-h", "--help"))
@@ -58,44 +60,7 @@ def test_generate_path_required(capsys):
 def test_generate(capsys, fs):
     cli._main(["--no-save", "generate", str(fs.basepath.resolve())])
     captured = capsys.readouterr()
-    expected = textwrap.dedent(
-        """
-        "_children": {
-            "dmerk_tests": {
-                "_children": {
-                    "dir1": {
-                        "_children": {
-                            "file1": {
-                                "_digest": "3fe10bf44e9a7deab63ea946c04fbcd8",
-                                "_size": 13,
-                                "_type": "file"
-                            },
-                            "file2": {
-                                "_digest": "4c24aac86aa49adce486631bf365098f",
-                                "_size": 13,
-                                "_type": "file"
-                            }
-                        },
-                        "_digest": "1ccaa0c417f6a789bbff45e836fcfa1b",
-                        "_size": 4122,
-                        "_type": "directory"
-                    }
-                },
-                "_digest": "392849b97d29bf246fdea845a8393b10",
-                "_size": 8218,
-                "_type": "directory"
-            }
-        },
-        "_digest": "622e8ed459729cc72f6b63f7628ed390",
-        "_size": 12314,
-        "_type": "directory"
-    """
-    ).strip()
-
-    def remove_all_whitespace(s):
-        return "".join(s.split())
-
-    assert remove_all_whitespace(expected) in remove_all_whitespace(captured.out)
+    assert captured.out == utils.dumps(generate.generate(fs.basepath))
 
 
 @pytest.mark.parametrize("args", ("-h", "--help"))

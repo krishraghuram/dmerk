@@ -2,44 +2,11 @@ import json
 import pathlib
 import collections.abc
 import datetime
+import random
+import string
+import types
 
 import dmerk.generate as generate
-
-# TODO: better names for the functions here?
-
-
-def flatten_merkle(merkle, prefix=None):
-    """
-    Reformat the merkle structure into a format similar to what `find` command on linux would output
-    """
-    if prefix:
-        prefix = prefix + "/"
-    else:
-        prefix = ""
-    flattened_merkle = {}
-    for k, v in merkle.items():
-        flattened_merkle[prefix + k] = v["_digest"]
-        if v["_type"] == "directory":
-            flattened_merkle |= flatten_merkle(v["_children"], prefix=prefix + k)
-    return flattened_merkle
-
-
-"""
-The next few functions are a hack/workaround for the issue that
-json.dumps cannot handle pathlib.Path instances when present in dict keys
-The default/cls options of json.dumps also dont work, as those options only work on values, and not keys
-https://stackoverflow.com/a/63455796/5530864
-https://github.com/python/cpython/issues/63020
-
-I really hate this hack for the following reasons:
-1. The problem statement is quite simple, but the code is complicated - In other words, the code is not pythonic
-2. format_merkle_paths re-creates a ton of dict's, and I am unsure of how badly it will pull-down the performance
-
-But this is a hack I'm willing to live with until I figure out the "Right Thing To Do TM",
-which could (or could not) be any one of,
-* Custom JsonEncoder
-* For saving-loading, use hmac+pickle, and for printing/saving (for human-readability) use json with the below hack.
-"""
 
 
 def path_to_str(obj):
@@ -47,87 +14,87 @@ def path_to_str(obj):
     Convert all pathlib.PurePath instances in obj to absolute path strings
     This is generic, in the sense that obj can be any python object, and not necessarily a merkle tree dictionary.
     """
-    if isinstance(obj, collections.abc.Mapping):
-        return {path_to_str(k): path_to_str(v) for k, v in obj.items()}
-    elif isinstance(obj, str):
+    if isinstance(obj, (str, int, float, bool, types.NoneType)):
         return obj
+    elif isinstance(obj, collections.abc.Mapping):
+        return {path_to_str(k): path_to_str(v) for k, v in obj.items()}
     elif isinstance(obj, collections.abc.Iterable):
         return [path_to_str(i) for i in obj]
     elif isinstance(obj, pathlib.PurePath):
-        return str(obj.resolve())
+        return repr(obj.resolve())
     else:
         raise TypeError(f"Can't handle type: {type(obj)}")
 
 
-def format_merkle_paths(merkle, formatter, formatter_updater):
+def str_to_path(obj):
     """
-    Format paths in a merkle tree using the given formatter
+    Convert's all strings that begin with "PosixPath" or "WindowsPath" to pathlib.Path instances
+    TODO: since we are using eval here, maybe we should probably use hmac to sign the output file, and verify signature while loading
     """
-    new_merkle = {}
-    for k, v in merkle.items():
-        new_merkle[formatter(k)] = {
-            "_type": v["_type"],
-            "_digest": v["_digest"],
-            "_size": v["_size"],
-        }
-        if v["_type"] == "directory":
-            k = formatter(k)
-            children = format_merkle_paths(
-                v["_children"], formatter_updater(formatter, k, v), formatter_updater
-            )
-            new_merkle[k] |= {"_children": children}
-    return new_merkle
+    PosixPath = pathlib.PosixPath
+    WindowsPath = pathlib.WindowsPath
+    if isinstance(obj, str):
+        if obj.startswith("PosixPath") or obj.startswith("WindowsPath"):
+            return eval(obj)
+        else:
+            return obj
+    elif isinstance(obj, collections.abc.Mapping):
+        return {str_to_path(k): str_to_path(v) for k, v in obj.items()}
+    elif isinstance(obj, collections.abc.Iterable):
+        return [str_to_path(i) for i in obj]
+    elif isinstance(obj, (int, float, bool, types.NoneType)):
+        return obj
+    else:
+        raise TypeError(f"Can't handle type: {type(obj)}")
 
 
-def dump(merkle, file):
-    def formatter(p):
-        return str(p.resolve())
-
-    def formatter_updater(formatter, k, v):
-        def formatter(p):
-            return p.name
-
-        return formatter
-
-    return json.dump(
-        format_merkle_paths(merkle, formatter, formatter_updater),
-        file,
-        sort_keys=True,
-        indent=4,
+def dump(obj, fp):
+    json.dump(
+        path_to_str(obj),
+        fp,
         ensure_ascii=False,
     )
 
 
-def load(file):
-    def formatter(p):
-        return pathlib.Path(p)
+def dumps(obj):
+    return json.dumps(
+        path_to_str(obj),
+        ensure_ascii=False,
+    )
 
-    def formatter_updater(formatter, k, v):
-        def formatter(p):
-            return pathlib.Path(k) / p
 
-        return formatter
+def load(fp):
+    return str_to_path(json.load(fp))
 
-    return format_merkle_paths(json.load(file), formatter, formatter_updater)
+
+def loads(s):
+    return str_to_path(json.loads(s))
 
 
 def _get_filename(path):
-    date = datetime.datetime.now().isoformat(timespec="seconds").replace(":", "-")
-    table = str.maketrans({"\\": "_", "/": "_", ":": "_"})
-    return f"{date}__{str(path).translate(table)}.json"
+    filename_path = pathlib.Path(f"{path.name}.dmerk")
+    while filename_path.exists():
+        random_hex_string = "".join(random.choices(string.hexdigits.lower(), k=8))
+        filename_path = pathlib.Path(f"{path.name}_{random_hex_string}.dmerk")
+    return filename_path.name
 
 
 def save_merkle(path, merkle, filename=None):
     if filename is None:
         filename = _get_filename(path)
     with open(filename, mode="w", encoding="utf-8") as file:
-        dump(merkle, file)
+        output = {
+            "_created": f"{datetime.datetime.now().isoformat(timespec='seconds')}",
+            "_path": str(path.resolve()),
+            "_merkle": merkle,
+        }
+        dump(output, file)
     print(f"Saved merkle for path: '{path}' to file: '{filename}'")
 
 
 def load_merkle(filename):
     with open(filename, mode="r", encoding="utf-8") as file:
-        return load(file)
+        return load(file)["_merkle"]
 
 
 def generate_or_load(path, no_save=False):
