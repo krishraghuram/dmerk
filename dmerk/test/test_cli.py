@@ -7,12 +7,18 @@ from .. import generate
 from .. import utils
 
 
+def _remove_all_whitespace(s):
+    return "".join(s.split())
+
+
 @pytest.mark.parametrize("args", ("-h", "--help"))
 def test_help(capsys, args):
     with pytest.raises(SystemExit):
         cli._main([args])
     captured = capsys.readouterr()
-    assert "usage: dmerk [-h] [--no-save] {generate,compare,analyse}" in captured.out
+    assert _remove_all_whitespace(
+        "usage: dmerk [-h] [--no-save] [--exclude EXCLUDE] {generate,compare,analyse}"
+    ) in _remove_all_whitespace(captured.out)
     assert (
         "Program to generate, compare and analyse directory merkle trees"
         in captured.out
@@ -23,7 +29,9 @@ def test_subcommand_required(capsys):
     with pytest.raises(SystemExit):
         cli._main([])
     captured = capsys.readouterr()
-    assert "usage: dmerk [-h] [--no-save] {generate,compare,analyse}" in captured.err
+    assert _remove_all_whitespace(
+        "usage: dmerk [-h] [--no-save] [--exclude EXCLUDE] {generate,compare,analyse}"
+    ) in _remove_all_whitespace(captured.err)
     assert (
         "dmerk: error: the following arguments are required: {generate,compare,analyse}"
         in captured.err
@@ -60,7 +68,7 @@ def test_generate_path_required(capsys):
 def test_generate(capsys, fs):
     cli._main(["--no-save", "generate", str(fs.basepath.resolve())])
     captured = capsys.readouterr()
-    assert captured.out == utils.dumps(generate.generate(fs.basepath))
+    assert captured.out == utils.dumps(generate.generate(fs.basepath, exclude=[]))
 
 
 @pytest.mark.parametrize("args", ("-h", "--help"))

@@ -27,7 +27,7 @@ else:
 def test_symlink(generate_function, fs, request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With data:\n{json.dumps(fs.sourcedata, indent=4)}")
-    m1 = generate_function(fs.basepath)
+    m1 = generate_function(fs.basepath, exclude=[])
     print("Merkle Digest Before:")
     utils.dump(m1, sys.stdout)
     print()
@@ -36,7 +36,7 @@ def test_symlink(generate_function, fs, request):
     symlink.unlink()
     symlink.symlink_to(file.name)
     print(f"Created symlink to file: {file}")
-    m2 = generate_function(fs.basepath)
+    m2 = generate_function(fs.basepath, exclude=[])
     print("Merkle Digest After:")
     utils.dump(m2, sys.stdout)
     print()
@@ -69,7 +69,7 @@ def test_specialfiles(generate_function, path_and_error, request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With path '{path}' and error '{error}'")
     with pytest.raises(error):
-        generate_function(path)
+        generate_function(path, exclude=[])
 
 
 @pytest.mark.parametrize("generate_function", generates)
@@ -99,7 +99,7 @@ def test_file_permission(generate_function, fs, request, mode, error, error_mess
         f"Updated permissions of file '{file}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})"
     )
     with error as e:
-        m1 = generate_function(fs.basepath)
+        m1 = generate_function(fs.basepath, exclude=[])
         print("Merkle Digest:")
         utils.dump(m1, sys.stdout)
         print()
@@ -140,7 +140,7 @@ def test_directory_permission(generate_function, fs, request, mode, error):
         f"Updated permissions of directory '{directory}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})"
     )
     with error as e:
-        m1 = generate_function(fs.basepath)
+        m1 = generate_function(fs.basepath, exclude=[])
         print("Merkle Digest:")
         utils.dump(m1, sys.stdout)
         print()

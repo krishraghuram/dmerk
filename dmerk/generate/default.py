@@ -1,5 +1,6 @@
 import hashlib
 import pathlib
+import glob
 
 _DIGEST_ALGORITHM = "md5"  # takes 10-20 percent less time to run than sha256
 
@@ -12,9 +13,13 @@ except AttributeError:
     hashlib.file_digest = hashlib_file_digest.file_digest
 
 
-def generate(directory: pathlib.Path):
+def generate(directory: pathlib.Path, *, exclude: list[str]):
     if directory.exists():
-        return {directory: _merkle(directory)}
+        paths_to_exclude = []
+        for pattern in exclude:
+            for match in glob.glob(pattern, root_dir=directory, recursive=True):
+                paths_to_exclude.append(directory / pathlib.Path(match))
+        return {directory: _merkle(directory, paths_to_exclude)}
     else:
         raise NotADirectoryError(f"Directory '{directory}' does not exist")
 
@@ -22,15 +27,17 @@ def generate(directory: pathlib.Path):
 # Returns a dict with the following,
 #   digest (of the entire directory)
 #   dict containing all child paths and digests
-def _merkle(directory: pathlib.Path):
-    children = [c for c in directory.iterdir()]
-    for child in children:
-        if not (child.is_file() or child.is_dir()):
-            raise ValueError(f"{child} is neither a file nor a directory")
+def _merkle(directory: pathlib.Path, paths_to_exclude: list[pathlib.Path]):
+    children = []
+    for child in directory.iterdir():
+        if not any([child.is_relative_to(i) for i in paths_to_exclude]):
+            if not (child.is_file() or child.is_dir()):
+                raise ValueError(f"{child} is neither a file nor a directory")
+            children.append(child)
     contents = {}
     for child in children:
         if child.is_dir():
-            contents[child] = _merkle(child)
+            contents[child] = _merkle(child, paths_to_exclude)
         elif child.is_file():
             contents[child] = {
                 "_type": "file",
