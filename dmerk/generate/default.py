@@ -31,17 +31,24 @@ def _merkle(directory: pathlib.Path, paths_to_exclude: list[pathlib.Path]):
     children = []
     for child in directory.iterdir():
         if not any([child.is_relative_to(i) for i in paths_to_exclude]):
-            if not (child.is_file() or child.is_dir()):
+            if not (child.is_symlink() or child.is_dir() or child.is_file()):
                 raise ValueError(f"{child} is neither a file nor a directory")
             children.append(child)
     contents = {}
     for child in children:
-        if child.is_dir():
+        # is_symlink needs to be first because is_dir and is_file are True for symlinks
+        if child.is_symlink():
+            contents[child] = {
+                "_type": "symlink",
+                "_size": child.stat(follow_symlinks=False).st_size,
+                "_digest": _symlink_digest(child),
+            }
+        elif child.is_dir():
             contents[child] = _merkle(child, paths_to_exclude)
         elif child.is_file():
             contents[child] = {
                 "_type": "file",
-                "_size": child.stat().st_size,
+                "_size": child.stat(follow_symlinks=False).st_size,
                 "_digest": _file_digest(child),
             }
     return {
@@ -61,6 +68,15 @@ def _file_digest(file):
     return digest
 
 
+def _symlink_digest(symlink):
+    """
+    Compute the digest of a symlink
+    """
+    digest_input = str(symlink.readlink())
+    digest = hashlib.new(_DIGEST_ALGORITHM, digest_input.encode("utf-8")).hexdigest()
+    return digest
+
+
 def _directory_digest(contents):
     """
     Compute the digest of a directory from the digests of its contents
@@ -75,4 +91,4 @@ def _directory_size(contents, directory):
     Compute the size of a directory from the contents
     """
     contents_total_size = sum([v["_size"] for v in contents.values()])
-    return contents_total_size + directory.stat().st_size
+    return contents_total_size + directory.stat(follow_symlinks=False).st_size

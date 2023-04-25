@@ -21,7 +21,7 @@ def path_to_str(obj):
     elif isinstance(obj, collections.abc.Iterable):
         return [path_to_str(i) for i in obj]
     elif isinstance(obj, pathlib.PurePath):
-        return repr(obj.resolve())
+        return repr(obj.absolute())
     else:
         raise TypeError(f"Can't handle type: {type(obj)}")
 

@@ -20,19 +20,22 @@ else:
 @pytest.mark.parametrize(
     "fs",
     [
-        {"dmerk_tests": {"file": "Hello World", "symlink": "Hello World"}},
+        {"dmerk_tests": {"file": "Hello World", "symlink": "file"}},
     ],
     indirect=True,
 )
 def test_symlink(generate_function, fs, request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With data:\n{json.dumps(fs.sourcedata, indent=4)}")
+    dmerk_tests = fs.basepath / "dmerk_tests"
+    file = dmerk_tests / "file"
+    symlink = dmerk_tests / "symlink"
     m1 = generate_function(fs.basepath, exclude=[])
+    # need to manually modify _type of symlink
+    m1[fs.basepath]["_children"][dmerk_tests]["_children"][symlink]["_type"] = "symlink"
     print("Merkle Digest Before:")
     utils.dump(m1, sys.stdout)
     print()
-    file = fs.basepath / "dmerk_tests" / "file"
-    symlink = fs.basepath.resolve() / "dmerk_tests" / "symlink"
     symlink.unlink()
     symlink.symlink_to(file.name)
     print(f"Created symlink to file: {file}")
@@ -51,8 +54,6 @@ def test_symlink(generate_function, fs, request):
         (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/CHAR_DEVICE", ValueError),
         (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/NAMEDPIPE", ValueError),
         (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/SOCKET", ValueError),
-        (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/SYMLINK_BROKEN", ValueError),
-        (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/SYMLINK_TO_SPECIAL", ValueError),
         (pathlib.Path.cwd() / "TEST_NONEXISTENT_DIRECTORY", NotADirectoryError),
     ],
 )
