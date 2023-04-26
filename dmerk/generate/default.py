@@ -40,7 +40,8 @@ def _merkle(directory: pathlib.Path, paths_to_exclude: list[pathlib.Path]):
         if child.is_symlink():
             contents[child] = {
                 "_type": "symlink",
-                "_size": child.stat(follow_symlinks=False).st_size,
+                # Python 3.9 Compat
+                "_size": child.lstat().st_size,
                 "_digest": _symlink_digest(child),
             }
         elif child.is_dir():
@@ -48,7 +49,8 @@ def _merkle(directory: pathlib.Path, paths_to_exclude: list[pathlib.Path]):
         elif child.is_file():
             contents[child] = {
                 "_type": "file",
-                "_size": child.stat(follow_symlinks=False).st_size,
+                # Python 3.9 Compat
+                "_size": child.stat().st_size,
                 "_digest": _file_digest(child),
             }
     return {
@@ -91,4 +93,5 @@ def _directory_size(contents, directory):
     Compute the size of a directory from the contents
     """
     contents_total_size = sum([v["_size"] for v in contents.values()])
-    return contents_total_size + directory.stat(follow_symlinks=False).st_size
+    # Python 3.9 Compat
+    return contents_total_size + directory.stat().st_size
