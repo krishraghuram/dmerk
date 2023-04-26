@@ -1,25 +1,31 @@
-def _get_digest_to_path_map(merkle):
-    return {v["_digest"]: k for k, v in merkle.items()}
+import collections
+
+
+def _get_digest_to_paths_map(merkle):
+    digest_to_paths = collections.defaultdict(list)
+    for k, v in merkle.items():
+        digest_to_paths[v["_digest"]].append(k)
+    return digest_to_paths
 
 
 def _get_digest_set(merkle):
     return set([v["_digest"] for v in merkle.values()])
 
 
-def _get_children_merkle(merkle, digest_to_path, digest_set):
+def _get_children_merkle(merkle, digest_to_paths, digest_set):
     children_merkle = {}
     for digest in digest_set:
-        path = digest_to_path[digest]
-        if merkle[path]["_type"] == "directory":
-            children_merkle.update(merkle[path]["_children"])
+        for path in digest_to_paths[digest]:
+            if merkle[path]["_type"] == "directory":
+                children_merkle.update(merkle[path]["_children"])
     return children_merkle
 
 
-def _get_unmatched_merkle(merkle, digest_to_path, exclusive_digests):
+def _get_unmatched_merkle(merkle, digest_to_paths, exclusive_digests):
     unmatched_merkle = {}
     for digest in exclusive_digests:
-        path = digest_to_path[digest]
-        unmatched_merkle.update({path: merkle[path]})
+        for path in digest_to_paths[digest]:
+            unmatched_merkle.update({path: merkle[path]})
     return unmatched_merkle
 
 
@@ -46,32 +52,32 @@ def compare(
         unmatched_parent_merkle_1 = {}
     if unmatched_parent_merkle_2 is None:
         unmatched_parent_merkle_2 = {}
-    digest_to_path_1 = _get_digest_to_path_map(unmatched_parent_merkle_1 | merkle_1)
-    digest_to_path_2 = _get_digest_to_path_map(unmatched_parent_merkle_2 | merkle_2)
+    digest_to_paths_1 = _get_digest_to_paths_map(unmatched_parent_merkle_1 | merkle_1)
+    digest_to_paths_2 = _get_digest_to_paths_map(unmatched_parent_merkle_2 | merkle_2)
     digest_set_1 = _get_digest_set(unmatched_parent_merkle_1 | merkle_1)
     digest_set_2 = _get_digest_set(unmatched_parent_merkle_2 | merkle_2)
     matching_digests = digest_set_1 & digest_set_2
     exclusive_digests_1 = digest_set_1 - matching_digests
     exclusive_digests_2 = digest_set_2 - matching_digests
     matches = [
-        (digest_to_path_1[digest], digest_to_path_2[digest])
+        (digest_to_paths_1[digest], digest_to_paths_2[digest])
         for digest in matching_digests
     ]
     matches = list(sorted(matches, key=lambda i: i[0]))
     unmatched_merkle_1 = _get_unmatched_merkle(
-        unmatched_parent_merkle_1 | merkle_1, digest_to_path_1, exclusive_digests_1
+        unmatched_parent_merkle_1 | merkle_1, digest_to_paths_1, exclusive_digests_1
     )
     unmatched_merkle_2 = _get_unmatched_merkle(
-        unmatched_parent_merkle_2 | merkle_2, digest_to_path_2, exclusive_digests_2
+        unmatched_parent_merkle_2 | merkle_2, digest_to_paths_2, exclusive_digests_2
     )
     children_merkle_1 = _get_children_merkle(
         merkle_1,
-        digest_to_path_1,
+        digest_to_paths_1,
         exclusive_digests_1 - _get_digest_set(unmatched_parent_merkle_1),
     )
     children_merkle_2 = _get_children_merkle(
         merkle_2,
-        digest_to_path_2,
+        digest_to_paths_2,
         exclusive_digests_2 - _get_digest_set(unmatched_parent_merkle_2),
     )
     if len(children_merkle_1) > 0 and len(children_merkle_2) > 0:
