@@ -11,7 +11,7 @@ import dmerk.utils as utils
 
 def _generate(args):
     path = pathlib.Path(args.path).resolve()
-    merkle = generate.generate(path, exclude=args.exclude)
+    merkle = generate.generate(path)
     filename = args.filename
     if not args.no_save:
         utils.save_merkle(path, merkle, filename)
@@ -21,8 +21,8 @@ def _generate(args):
 
 def _compare(args):
     matches, unmatched_files_1, unmatched_files_2 = compare.compare(
-        utils.generate_or_load(args.path1, args.exclude, args.no_save),
-        utils.generate_or_load(args.path2, args.exclude, args.no_save),
+        utils.generate_or_load(args.path1, args.no_save),
+        utils.generate_or_load(args.path2, args.no_save),
     )
     out = {"matches": matches, "unmatched_files": unmatched_files_1 + unmatched_files_2}
     print(json.dumps(utils.path_to_str(out), indent=4))
@@ -42,12 +42,6 @@ def _main(args):
         "--no-save",
         action="store_true",
         help="If specified, the generated merkle tree will not be saved to file. This is almost never a good idea, as generating merkle tree is expensive operation, and is worth saving into a file.",
-    )
-    parser.add_argument(
-        "--exclude",
-        action="append",
-        help="A pattern to exclude. Can be specified multiple times.",
-        default=[],
     )
     subparsers = parser.add_subparsers(required=True)
 

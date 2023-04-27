@@ -30,7 +30,7 @@ def test_symlink(generate_function, fs, request):
     dmerk_tests = fs.basepath / "dmerk_tests"
     file = dmerk_tests / "file"
     symlink = dmerk_tests / "symlink"
-    m1 = generate_function(fs.basepath, exclude=[])
+    m1 = generate_function(fs.basepath)
     # need to manually modify _type of symlink
     m1[fs.basepath]["_children"][dmerk_tests]["_children"][symlink]["_type"] = "symlink"
     print("Merkle Digest Before:")
@@ -39,7 +39,7 @@ def test_symlink(generate_function, fs, request):
     symlink.unlink()
     symlink.symlink_to(file.name)
     print(f"Created symlink to file: {file}")
-    m2 = generate_function(fs.basepath, exclude=[])
+    m2 = generate_function(fs.basepath)
     print("Merkle Digest After:")
     utils.dump(m2, sys.stdout)
     print()
@@ -70,7 +70,7 @@ def test_specialfiles(generate_function, path_and_error, request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With path '{path}' and error '{error}'")
     with pytest.raises(error):
-        generate_function(path, exclude=[])
+        generate_function(path)
 
 
 @pytest.mark.parametrize("generate_function", generates)
@@ -100,7 +100,7 @@ def test_file_permission(generate_function, fs, request, mode, error, error_mess
         f"Updated permissions of file '{file}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})"
     )
     with error as e:
-        m1 = generate_function(fs.basepath, exclude=[])
+        m1 = generate_function(fs.basepath)
         print("Merkle Digest:")
         utils.dump(m1, sys.stdout)
         print()
@@ -141,7 +141,7 @@ def test_directory_permission(generate_function, fs, request, mode, error):
         f"Updated permissions of directory '{directory}' to '{oct(mode)}' ({stat.filemode(mode)[1:]})"
     )
     with error as e:
-        m1 = generate_function(fs.basepath, exclude=[])
+        m1 = generate_function(fs.basepath)
         print("Merkle Digest:")
         utils.dump(m1, sys.stdout)
         print()

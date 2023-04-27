@@ -98,7 +98,7 @@ def load_merkle(filename):
         return load(file)["_merkle"]
 
 
-def generate_or_load(path, exclude, no_save):
+def generate_or_load(path, no_save=False):
     """
     Return merkle tree from path
     If path is a directory, generate "directory merkle tree" at path and return it
@@ -107,7 +107,7 @@ def generate_or_load(path, exclude, no_save):
     if isinstance(path, str):
         path = pathlib.Path(path)
     if path.is_dir():
-        merkle = generate.generate(path, exclude=exclude)
+        merkle = generate.generate(path)
         if not no_save:
             save_merkle(path, merkle)
         return merkle
