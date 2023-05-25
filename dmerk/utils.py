@@ -31,8 +31,8 @@ def str_to_path(obj):
     Convert's all strings that begin with "PosixPath" or "WindowsPath" to pathlib.Path instances
     TODO: since we are using eval here, maybe we should probably use hmac to sign the output file, and verify signature while loading
     """
-    PosixPath = pathlib.PosixPath
-    WindowsPath = pathlib.WindowsPath
+    PosixPath = pathlib.PosixPath  # noqa: F841
+    WindowsPath = pathlib.WindowsPath  # noqa: F841
     if isinstance(obj, str):
         if obj.startswith("PosixPath") or obj.startswith("WindowsPath"):
             return eval(obj)

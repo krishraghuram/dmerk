@@ -9,8 +9,8 @@ import nox
 
 @nox.session()
 def lint(session):
-    session.install("pyflakes")
-    session.run("pyflakes", "dmerk")
+    session.install("flake8")
+    session.run("flake8", "--select=F", "dmerk")
 
 
 @nox.session()
