@@ -37,6 +37,8 @@ def _get_unmatched_files(matching_paths, unmatched_merkle):
             # Ensure that no parent directory of unmatched file k is present in matching_paths
             if len(set(k.parents) & set(matching_paths)) == 0:
                 unmatched_files.append(k)
+        elif v["_type"] == "directory":
+            unmatched_files.extend(_get_unmatched_files(matching_paths, v["_children"]))
     return unmatched_files
 
 
