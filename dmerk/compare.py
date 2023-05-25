@@ -40,7 +40,7 @@ def _get_unmatched_files(matching_paths, unmatched_merkle):
                 unmatched_files.append(k)
         elif v["_type"] == "directory":
             unmatched_files.extend(_get_unmatched_files(matching_paths, v["_children"]))
-    return unmatched_files
+    return list(set(unmatched_files))
 
 
 def compare(
