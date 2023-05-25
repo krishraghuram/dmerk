@@ -64,7 +64,6 @@ def compare(
         (digest_to_paths_1[digest], digest_to_paths_2[digest])
         for digest in matching_digests
     ]
-    matches = list(sorted(matches, key=lambda i: i[0]))
     unmatched_merkle_1 = _get_unmatched_merkle(
         unmatched_parent_merkle_1 | merkle_1, digest_to_paths_1, exclusive_digests_1
     )
