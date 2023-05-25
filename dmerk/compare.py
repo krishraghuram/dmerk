@@ -1,4 +1,5 @@
 import collections
+import itertools
 
 
 def _get_digest_to_paths_map(merkle):
@@ -89,9 +90,9 @@ def compare(
         # Compute unmatched files only at recursion base case (the lowermost level in the merkle tree traversal)
         # This is because at higher levels, we might have unmatched files, but those could get matched when we go down to lower levels
         unmatched_files_1 = _get_unmatched_files(
-            [match[0] for match in matches], unmatched_merkle_1
+            list(itertools.chain(*[match[0] for match in matches])), unmatched_merkle_1
         )
         unmatched_files_2 = _get_unmatched_files(
-            [match[1] for match in matches], unmatched_merkle_2
+            list(itertools.chain(*[match[1] for match in matches])), unmatched_merkle_2
         )
     return matches, unmatched_files_1, unmatched_files_2
