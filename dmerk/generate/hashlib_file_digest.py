@@ -1,5 +1,6 @@
 # backport/polyfill of python 3.11's hashlib.file_digest
 # copied from https://github.com/python/cpython/blob/3.11/Lib/hashlib.py
+# type: ignore
 import hashlib
 
 new = hashlib.new

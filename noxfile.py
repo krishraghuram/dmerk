@@ -26,6 +26,16 @@ def format(session):
         )
 
 
+@nox.session()
+def mypy(session):
+    session.install("mypy")
+    # TODO: enable mypy for tests as well
+    # session.run("mypy", "--strict", "--allow-redefinition", "dmerk")
+    session.run(
+        "mypy", "--strict", "--allow-redefinition", "--exclude", "test", "dmerk"
+    )
+
+
 @nox.session(
     python=[
         "/usr/bin/python3.10",

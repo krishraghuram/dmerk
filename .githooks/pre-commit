@@ -1,4 +1,5 @@
 #!/bin/bash
 
 nox --session lint
+nox --session mypy
 nox --session format

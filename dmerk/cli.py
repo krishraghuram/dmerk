@@ -1,31 +1,36 @@
 import pathlib
 import argparse
 import textwrap
-import json
 import sys
 
 import dmerk.generate as generate
 import dmerk.compare as compare
-import dmerk.utils as utils
+from dmerk.merkle import Merkle
 
 
-def _generate(args):
+def _generate(args: argparse.Namespace) -> None:
     path = pathlib.Path(args.path).resolve()
     merkle = generate.generate(path)
     filename = args.filename
     if not args.no_save:
-        utils.save_merkle(path, merkle, filename)
+        filename = merkle.save(filename=filename)
     if args.no_save or args.print:
-        utils.dump(merkle, sys.stdout)
+        print(merkle)
 
 
-def _compare(args):
-    matches, unmatched_files_1, unmatched_files_2 = compare.compare(
-        utils.generate_or_load(args.path1, args.no_save),
-        utils.generate_or_load(args.path2, args.no_save),
-    )
-    out = {"matches": matches, "unmatched_files": unmatched_files_1 + unmatched_files_2}
-    print(json.dumps(utils.path_to_str(out), indent=4))
+def _compare(args: argparse.Namespace) -> None:
+    pass
+    # submerkle_1 = utils.traverse(
+    #     utils.generate_or_load(args.path1, args.no_save), subpath=args.subpath1
+    # )
+    # submerkle_2 = utils.traverse(
+    #     utils.generate_or_load(args.path1, args.no_save), subpath=args.subpath2
+    # )
+    # matches, unmatched_files_1, unmatched_files_2 = compare.compare(
+    #     submerkle_1, submerkle_2
+    # )
+    # out = {"matches": matches, "unmatched_files": unmatched_files_1 + unmatched_files_2}
+    # print(json.dumps(utils.path_to_str(out), indent=4))
 
 
 # TODO
@@ -33,7 +38,7 @@ def _compare(args):
 #     raise NotImplementedError()
 
 
-def _main(args):
+def _main(args: list[str]) -> None:
     parser = argparse.ArgumentParser(
         prog="dmerk",
         description="Program to generate, compare and analyse directory merkle trees",
@@ -105,8 +110,8 @@ def _main(args):
     )
     parser_compare.add_argument("-p1", "--path1", required=True)
     parser_compare.add_argument("-p2", "--path2", required=True)
-    parser_compare.add_argument("-sp1", "--subpath1")
-    parser_compare.add_argument("-sp2", "--subpath2")
+    parser_compare.add_argument("-sp1", "--subpath1", default=".")
+    parser_compare.add_argument("-sp2", "--subpath2", default=".")
     parser_compare.set_defaults(func=_compare)
 
     # TODO
@@ -121,7 +126,7 @@ def _main(args):
 
 
 # This runs when invoking cli from installed package (via the pyproject.toml script)
-def main():
+def main() -> None:
     _main(sys.argv[1:])
 
 
