@@ -28,9 +28,9 @@ def _compare(args):
     print(json.dumps(utils.path_to_str(out), indent=4))
 
 
-def _analyse(path):
-    # TODO
-    raise NotImplementedError()
+# TODO
+# def _analyse(path):
+#     raise NotImplementedError()
 
 
 def _main(args):
@@ -41,7 +41,12 @@ def _main(args):
     parser.add_argument(
         "--no-save",
         action="store_true",
-        help="If specified, the generated merkle tree will not be saved to file. This is almost never a good idea, as generating merkle tree is expensive operation, and is worth saving into a file.",
+        help=textwrap.dedent(
+            """
+            If specified, the generated merkle tree will not be saved to file.
+            This is almost never a good idea, as generating merkle tree is expensive operation, and is worth saving into a file.
+            """
+        ),
     )
     subparsers = parser.add_subparsers(required=True)
 
@@ -58,7 +63,7 @@ def _main(args):
     parser_generate.add_argument(
         "-f",
         "--filename",
-        help="default filename will include current datetime and the directory path. this option allows saving to a different filename.",
+        help="provide a custom filename",
     )
     # # TODO:
     # parser_generate.add_argument("-c", "--compress", help="compress the output file")
@@ -76,27 +81,46 @@ def _main(args):
         description=textwrap.dedent(
             """
             Compare two directory merkle trees and return the diffs and matches.
-            path1 and path2 are the paths to the directories,
-            but they can also be paths to json files that were created using generate.
-        """
+
+            path1 and path2 are required, and they are the paths to the directories to compare,
+            but they can also be paths to .dmerk files that were created using generate.
+            Example: `dmerk -p1=/home/raghuram/Documents -p2=/media/raghuram/BACKUP_DRIVE/Documents`
+            Example: `dmerk -p1=Documents_e6eaccb4.dmerk -p2=Documents_b2a7cef7.dmerk`
+            
+            If provided, subpath1 and subpath2 allows you to compare 2 submerkles within the specified merkles.
+            This is useful only when specifying paths to .dmerk files
+            Example:
+            The following command will load two .dmerk files,
+            but compare the "Receipts/Rent" subdirectories within the Documents directory.
+            ```
+            dmerk \
+            -p1=Documents_e6eaccb4.dmerk \
+            -p2=Documents_b2a7cef7.dmerk \
+            -sp1=Receipts/Rent \
+            -sp2=Receipts/Rent
+            ```
+            """
         ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
-    parser_compare.add_argument("path1")
-    parser_compare.add_argument("path2")
+    parser_compare.add_argument("-p1", "--path1", required=True)
+    parser_compare.add_argument("-p2", "--path2", required=True)
+    parser_compare.add_argument("-sp1", "--subpath1")
+    parser_compare.add_argument("-sp2", "--subpath2")
     parser_compare.set_defaults(func=_compare)
 
-    parser_analyse = subparsers.add_parser(
-        "analyse", description="Analyse a merkle tree to find copies/duplicates within"
-    )
-    parser_analyse.add_argument("path")
-    parser_analyse.set_defaults(func=_analyse)
+    # TODO
+    # parser_analyse = subparsers.add_parser(
+    #     "analyse", description="Analyse a merkle tree to find copies/duplicates within"
+    # )
+    # parser_analyse.add_argument("path")
+    # parser_analyse.set_defaults(func=_analyse)
 
     args = parser.parse_args(args)
     args.func(args)
 
 
-# This runs when invoking cli from installed package (via the setuptools console script)
+# This runs when invoking cli from installed package (via the pyproject.toml script)
 def main():
     _main(sys.argv[1:])
 

@@ -167,3 +167,4 @@ TEST_DATA
 *.sublime-project
 *.sublime-workspace
 dmerk/test/generate/test_performance_profile.prof
+/.vscode
