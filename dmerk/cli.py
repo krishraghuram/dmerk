@@ -19,7 +19,7 @@ def _generate(args: argparse.Namespace) -> None:
 
 
 def _compare(args: argparse.Namespace) -> None:
-    pass
+    pass  # pragma: no cover
     # submerkle_1 = utils.traverse(
     #     utils.generate_or_load(args.path1, args.no_save), subpath=args.subpath1
     # )
@@ -33,7 +33,7 @@ def _compare(args: argparse.Namespace) -> None:
     # print(json.dumps(utils.path_to_str(out), indent=4))
 
 
-# TODO
+# # TODO: implement analyse
 # def _analyse(path):
 #     raise NotImplementedError()
 
@@ -70,7 +70,7 @@ def _main(args: list[str]) -> None:
         "--filename",
         help="provide a custom filename",
     )
-    # # TODO:
+    # # TODO: compress generate output
     # parser_generate.add_argument("-c", "--compress", help="compress the output file")
     # # Use brotli(11) for compression
     # # Ref: https://www.lucidchart.com/techblog/2019/12/06/json-compression-alternative-binary-formats-and-compression-methods/
@@ -114,7 +114,7 @@ def _main(args: list[str]) -> None:
     parser_compare.add_argument("-sp2", "--subpath2", default=".")
     parser_compare.set_defaults(func=_compare)
 
-    # TODO
+    # # TODO: implement analyse
     # parser_analyse = subparsers.add_parser(
     #     "analyse", description="Analyse a merkle tree to find copies/duplicates within"
     # )
@@ -126,10 +126,10 @@ def _main(args: list[str]) -> None:
 
 
 # This runs when invoking cli from installed package (via the pyproject.toml script)
-def main() -> None:
+def main() -> None:  # pragma: no cover
     _main(sys.argv[1:])
 
 
 # This runs when dev-testing, when invoked as `python -m dmerk.cli`
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     _main(sys.argv[1:])

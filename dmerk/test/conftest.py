@@ -1,10 +1,12 @@
 import collections
 import os
-import pathlib
+from pathlib import Path
 import shutil
 import typing
 
 import pytest
+
+from ..merkle import Merkle
 
 
 def pytest_configure(config):
@@ -12,7 +14,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "profile: mark test as a profiling test")
 
 
-def _fs(data: dict, base_path: pathlib.Path) -> None:
+def _fs(data: dict, base_path: Path) -> None:
     for k, v in data.items():
         # Python 3.9 Compat
         # https://bugs.python.org/issue44529
@@ -44,7 +46,7 @@ def fs(request):
     data = request.param
     if len(data) > 1:
         raise ValueError("Too many items")
-    base_path = pathlib.Path("TEST_DATA/NORMAL")
+    base_path = Path("TEST_DATA/NORMAL")
     if base_path.exists():
         shutil.rmtree(base_path)
         base_path.mkdir()
@@ -65,32 +67,40 @@ def update_metadata(path, mode=None):
     path.touch()  # atime and ctime should have been modified by above commands, we just need to update mtime with touch
 
 
-def assert_merkle(m1, m2, modified_file=None, renamed_file=None):
-    keyset = m1.keys() | m2.keys()
-    for k in keyset:
-        try:
-            v1 = m1[k]
-            v2 = m2[k]
-        except KeyError:
-            if renamed_file:
-                (old_file, new_file) = renamed_file
-                if old_file.resolve() == k.resolve():
-                    v1 = m1[k]
-                    v2 = m2[new_file]
-                elif new_file.resolve() == k.resolve():
-                    v1 = m1[old_file]
-                    v2 = m2[k]
+def assert_merkle(
+    m1: Merkle,
+    m2: Merkle,
+    modified_file: Path | None = None,
+    renamed_file: tuple[Path, Path] | None = None,
+):
+    # TODO: ("path", "type", "size", "digest", "children")
+    if not modified_file and not renamed_file:
+        assert m1 == m2
+    elif modified_file is not None:
+        assert m1.path == m2.path
+        assert m1.type == m2.type
+        assert m1.size != m2.size
+        assert m1.digest != m2.digest
+        assert getattr(m1, "children", {}).keys() == getattr(m2, "children", {}).keys()
+        for path in getattr(m1, "children", {}).keys():
+            if modified_file.resolve().is_relative_to(path.resolve()):
+                assert_merkle(
+                    m1.children[path], m2.children[path], modified_file=modified_file
+                )
             else:
-                raise
-        if modified_file and modified_file.resolve().is_relative_to(k.resolve()):
-            assert v1["_digest"] != v2["_digest"]
-        else:
-            assert v1["_digest"] == v2["_digest"]
-        assert v1["_type"] == v2["_type"]
-        if v1["_type"] == v2["_type"] == "directory":
-            assert_merkle(
-                v1["_children"],
-                v2["_children"],
-                modified_file=modified_file,
-                renamed_file=renamed_file,
-            )
+                assert_merkle(m1.children[path], m2.children[path])
+    elif renamed_file is not None:
+        (old_file, new_file) = renamed_file
+        assert m1.path == m2.path
+        assert m1.type == m2.type
+        assert m1.size == m2.size
+        assert m1.digest == m2.digest
+        for path in (
+            getattr(m1, "children", {}).keys() | getattr(m2, "children", {}).keys()
+        ):
+            if path.resolve() in (old_file.resolve(), new_file.resolve()):
+                assert_merkle(m1.children[old_file], m2.children[new_file])
+            else:
+                assert_merkle(
+                    m1.children[path], m2.children[path], renamed_file=renamed_file
+                )

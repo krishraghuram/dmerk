@@ -1,5 +1,6 @@
 import re
 import pathlib
+import subprocess
 
 import nox
 
@@ -37,23 +38,30 @@ def mypy(session):
 
 
 @nox.session(
+    # TODO: Re-enable other python versions
     python=[
-        "/usr/bin/python3.10",
-        "/home/raghuram/Workspace/bin/Python-3.9.16/python",
+        # "/usr/bin/python3.10",
+        # # TODO: Do we need to support 3.9?
+        # # 3.10 is default on ubuntu 22.
+        # # Also, https://devguide.python.org/versions/#versions
+        # "/home/raghuram/Workspace/bin/Python-3.9.16/python",
         "/home/raghuram/Workspace/bin/Python-3.11.2/python",
-        "/home/raghuram/Workspace/bin/pypy3.9-v7.3.11-linux64/bin/pypy",
+        # "/home/raghuram/Workspace/bin/pypy3.9-v7.3.11-linux64/bin/pypy",
     ]
 )
 def test(session):
     session.install("coverage", "pytest")
     session.install(".")
     session.run("coverage", "run", "-m", "pytest", "-x", "-m", "not slow")
-    session.run("coverage", "html", "--skip-empty", "--omit=dmerk/test/*")
-    print(
-        "Coverage HTML Report: "
-        + "file://"
-        + str(pathlib.Path("htmlcov/index.html").absolute())
+    session.run(
+        "coverage",
+        "html",
+        "--skip-empty",
+        "--omit=dmerk/test/*,**/hashlib_file_digest.py",
     )
+    coverage_file_url = f"file://{str(pathlib.Path('htmlcov/index.html').absolute())}"
+    print(f"Coverage HTML Report: {coverage_file_url}")
+    subprocess.run(["open", coverage_file_url])
 
 
 @nox.session()

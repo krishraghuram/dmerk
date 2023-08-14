@@ -31,23 +31,26 @@ class Merkle:
         self.type = type
         self.size = size
         self.digest = digest
-        self.children = children
+        if children is not None:
+            self.children = children
 
     def __eq__(self, other):
+        """
+        Return True if self is equal to other, else False
+
+        Note that two Merkles are equal even if their 'path' attribute is different
+        This is because we only care about the data in the filesystem being same,
+        and not the path at which it is present
+        """
         if not isinstance(other, Merkle):
             return False
         else:
             return all(
                 [
-                    (getattr(self, slotname) == getattr(other, slotname))
-                    if (hasattr(self, slotname) and hasattr(other, slotname))
-                    else False
-                    for slotname in Merkle.__slots__
+                    (getattr(self, slotname, None) == getattr(other, slotname, None))
+                    for slotname in set(Merkle.__slots__) - {"path"}
                 ]
             )
-
-    def __hash__(self):
-        return hash(tuple([getattr(self, slotname) for slotname in Merkle.__slots__]))
 
     def __repr__(self):
         kwargs = {
@@ -61,28 +64,33 @@ class Merkle:
     def __str__(self):
         return json.dumps(self, default=Merkle.json_encode, ensure_ascii=False)
 
-    def traverse(self, subpath: Path) -> "Merkle":
-        if not subpath.absolute():
-            subpath = self.path / subpath
-        if self.children is not None:
+    def _traverse(self, subpath: Path) -> "Merkle":
+        if subpath == self.path:
+            return self
+        elif hasattr(self, "children"):
             for p, m in self.children.items():
                 if subpath == p:
                     return m
                 elif subpath.is_relative_to(p):
-                    return m.traverse(subpath=subpath)
+                    return m._traverse(subpath=subpath)
         raise ValueError(
             f"No sub-merkle found for path '{subpath}' in merkle rooted at {self.path}"
         )
 
-    @staticmethod
-    def _get_filename(path: Path) -> str:
-        filename_path = Path(f"{path.name}.dmerk")
-        while filename_path.exists():
-            random_hex_string = "".join(random.choices(string.hexdigits.lower(), k=8))
-            filename_path = Path(f"{path.name}_{random_hex_string}.dmerk")
-        return filename_path.name
+    def traverse(self, subpath: Path) -> "Merkle":
+        if not subpath.is_absolute():
+            subpath = self.path / subpath
+        return self._traverse(subpath)
 
-    def save(self, filename: str | None = None) -> None:
+    @staticmethod
+    def _get_filename(path: Path) -> Path:
+        filename = Path(f"{path.name}.dmerk")
+        while filename.exists():
+            random_hex_string = "".join(random.choices(string.hexdigits.lower(), k=8))
+            filename = Path(f"{path.name}_{random_hex_string}.dmerk")
+        return filename
+
+    def save(self, filename: str | Path | None = None) -> str | Path:
         if filename is None:
             filename = Merkle._get_filename(self.path)
         with open(filename, mode="w", encoding="utf-8") as file:
@@ -91,7 +99,7 @@ class Merkle:
         return filename
 
     @staticmethod
-    def load(filename: str) -> "Merkle":
+    def load(filename: str | Path) -> "Merkle":
         with open(filename, mode="r", encoding="utf-8") as file:
             return json.load(file, object_hook=Merkle.json_decode)
 
@@ -106,7 +114,7 @@ class Merkle:
             output["__merkle__"] = True  # To make deserialization work :)
             # Need the below hack because of https://github.com/python/cpython/issues/63020
             output["path"] = repr(output["path"].absolute())
-            if output["children"] is not None:
+            if "children" in output:
                 output["children"] = {
                     repr(k.absolute()): v for k, v in output["children"].items()
                 }
@@ -121,7 +129,7 @@ class Merkle:
             PosixPath = pathlib.PosixPath  # noqa: F841
             WindowsPath = pathlib.WindowsPath  # noqa: F841
             obj["path"] = eval(obj["path"])
-            if obj["children"] is not None:
+            if "children" in obj:
                 globs = globals()
                 locs = locals()
                 obj["children"] = {
