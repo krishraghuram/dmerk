@@ -5,7 +5,9 @@ import subprocess
 import nox
 
 # Usage: nox --session <session-name>
-# Example: nox --session lint
+# Examples:
+#   nox --session lint
+#   nox --session test
 
 
 @nox.session()
@@ -40,13 +42,9 @@ def mypy(session):
 @nox.session(
     # TODO: Re-enable other python versions
     python=[
-        # "/usr/bin/python3.10",
-        # # TODO: Do we need to support 3.9?
-        # # 3.10 is default on ubuntu 22.
-        # # Also, https://devguide.python.org/versions/#versions
-        # "/home/raghuram/Workspace/bin/Python-3.9.16/python",
+        "/usr/bin/python3.10",
         "/home/raghuram/Workspace/bin/Python-3.11.2/python",
-        # "/home/raghuram/Workspace/bin/pypy3.9-v7.3.11-linux64/bin/pypy",
+        "/home/raghuram/Workspace/bin/pypy3.10-v7.3.12-linux64/bin/pypy",
     ]
 )
 def test(session):
