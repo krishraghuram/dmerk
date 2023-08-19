@@ -1,15 +1,16 @@
-import pathlib
 import argparse
 import textwrap
 import sys
+import json
+from pathlib import Path, PurePath
 
 import dmerk.generate as generate
 import dmerk.compare as compare
-from dmerk.merkle import Merkle
+from .utils import load_or_generate
 
 
 def _generate(args: argparse.Namespace) -> None:
-    path = pathlib.Path(args.path).resolve()
+    path = Path(args.path).resolve()
     merkle = generate.generate(path)
     filename = args.filename
     if not args.no_save:
@@ -19,18 +20,20 @@ def _generate(args: argparse.Namespace) -> None:
 
 
 def _compare(args: argparse.Namespace) -> None:
-    pass  # pragma: no cover
-    # submerkle_1 = utils.traverse(
-    #     utils.generate_or_load(args.path1, args.no_save), subpath=args.subpath1
-    # )
-    # submerkle_2 = utils.traverse(
-    #     utils.generate_or_load(args.path1, args.no_save), subpath=args.subpath2
-    # )
-    # matches, unmatched_files_1, unmatched_files_2 = compare.compare(
-    #     submerkle_1, submerkle_2
-    # )
-    # out = {"matches": matches, "unmatched_files": unmatched_files_1 + unmatched_files_2}
-    # print(json.dumps(utils.path_to_str(out), indent=4))
+    path1 = Path(args.path1)
+    path2 = Path(args.path2)
+    subpath1 = Path(args.subpath1)
+    subpath2 = Path(args.subpath2)
+
+    merkle1 = load_or_generate(path1, args.no_save)
+    merkle2 = load_or_generate(path2, args.no_save)
+
+    print(
+        json.dumps(
+            compare.compare(merkle1.traverse(subpath1), merkle2.traverse(subpath2)),
+            indent=2,
+        )
+    )
 
 
 # # TODO: implement analyse

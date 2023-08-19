@@ -1,4 +1,5 @@
 import textwrap
+import json
 from pathlib import Path
 
 import pytest
@@ -81,33 +82,105 @@ def test_generate_save(capsys, fs):
     Path("NORMAL.dmerk").unlink()
 
 
-# @pytest.mark.parametrize("args", ("-h", "--help"))
-# def test_compare_help(capsys, args):
-#     with pytest.raises(SystemExit):
-#         cli._main(["compare", args])
-#     captured = capsys.readouterr()
-#     assert "usage: dmerk compare [-h] path1 path2" in captured.out
-#     assert (
-#         textwrap.dedent(
-#             """
-#         Compare two directory merkle trees and return the diffs and matches.
-#         path1 and path2 are the paths to the directories,
-#         but they can also be paths to json files that were created using generate.
-#     """
-#         )
-#         in captured.out
-#     )
+@pytest.mark.parametrize("args", ("-h", "--help"))
+def test_compare_help(capsys, args):
+    with pytest.raises(SystemExit):
+        cli._main(["compare", args])
+    captured = capsys.readouterr()
+    assert (
+        "dmerk compare [-h] -p1 PATH1 -p2 PATH2 [-sp1 SUBPATH1] [-sp2 SUBPATH2]"
+        in captured.out
+    )
+    assert (
+        "Compare two directory merkle trees and return the diffs and matches."
+        in captured.out
+    )
+    assert (
+        textwrap.dedent(
+            """
+            path1 and path2 are required, and they are the paths to the directories to compare,
+            but they can also be paths to .dmerk files that were created using generate.
+            Example: `dmerk -p1=/home/raghuram/Documents -p2=/media/raghuram/BACKUP_DRIVE/Documents`
+            Example: `dmerk -p1=Documents_e6eaccb4.dmerk -p2=Documents_b2a7cef7.dmerk`
+            """
+        )
+        in captured.out
+    )
 
 
-# def test_compare_paths_required(capsys):
-#     with pytest.raises(SystemExit):
-#         cli._main(["compare"])
-#     captured = capsys.readouterr()
-#     assert "usage: dmerk compare [-h] path1 path2" in captured.err
-#     assert (
-#         "dmerk compare: error: the following arguments are required: path1, path2"
-#         in captured.err
-#     )
+def test_compare_paths_required(capsys):
+    with pytest.raises(SystemExit):
+        cli._main(["compare"])
+    captured = capsys.readouterr()
+    assert (
+        "dmerk compare [-h] -p1 PATH1 -p2 PATH2 [-sp1 SUBPATH1] [-sp2 SUBPATH2]"
+        in captured.err
+    )
+    assert (
+        "dmerk compare: error: the following arguments are required: -p1/--path1, -p2/--path2"
+        in captured.err
+    )
+
+
+@pytest.mark.parametrize(
+    "fs",
+    [
+        {
+            "dmerk_tests": {
+                "dir1": {"fileA": "Hello World A", "fileB": "Hello World B"},
+                "dir2": {"fileA": "Hello World A", "fileC": "Hello World C"},
+                "dir3": {"fileA": "Hello World A", "fileB": "Hello World B"},
+            }
+        },
+    ],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "path1,path2,output",
+    [
+        (
+            "dmerk_tests/dir1",
+            "dmerk_tests/dir2",
+            {
+                "matches": [
+                    [
+                        ["TEST_DATA/NORMAL/dmerk_tests/dir1/fileA"],
+                        ["TEST_DATA/NORMAL/dmerk_tests/dir2/fileA"],
+                    ]
+                ],
+                "unmatched_1": [["TEST_DATA/NORMAL/dmerk_tests/dir1/fileB"]],
+                "unmatched_2": [["TEST_DATA/NORMAL/dmerk_tests/dir2/fileC"]],
+            },
+        ),
+        (
+            "dmerk_tests/dir1",
+            "dmerk_tests/dir3",
+            {
+                "matches": [
+                    [
+                        ["TEST_DATA/NORMAL/dmerk_tests/dir1"],
+                        ["TEST_DATA/NORMAL/dmerk_tests/dir3"],
+                    ]
+                ],
+                "unmatched_1": [],
+                "unmatched_2": [],
+            },
+        ),
+    ],
+)
+def test_compare(capsys, fs, path1, path2, output):
+    cli._main(
+        [
+            "--no-save",
+            "compare",
+            "-p1",
+            str(fs.basepath / path1),
+            "-p2",
+            str(fs.basepath / path2),
+        ]
+    )
+    captured = capsys.readouterr()
+    assert json.loads(captured.out) == output
 
 
 # @pytest.mark.parametrize("args", ("-h", "--help"))
