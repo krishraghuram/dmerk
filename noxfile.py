@@ -53,18 +53,25 @@ def mypy(session):
 
 @nox.session(python=PYTHON_VERSIONS)
 def test(session):
-    session.install("coverage", "pytest")
-    session.install(".")
-    session.run("coverage", "run", "-m", "pytest", "-x", "-m", "not slow")
-    session.run(
-        "coverage",
-        "html",
-        "--skip-empty",
-        "--omit=dmerk/test/*,**/hashlib_file_digest.py",
-    )
-    coverage_file_url = f"file://{str(pathlib.Path('htmlcov/index.html').absolute())}"
-    print(f"Coverage HTML Report: {coverage_file_url}")
-    subprocess.run(["open", coverage_file_url])
+    try:
+        session.install("coverage", "pytest")
+        session.install(".")
+        session.run("coverage", "run", "-m", "pytest", "-x", "-m", "not slow")
+        session.run(
+            "coverage",
+            "html",
+            "--fail-under=95",
+            "--skip-empty",
+            "--omit=dmerk/test/*,**/hashlib_file_digest.py",
+        )
+    except Exception:
+        raise
+    finally:
+        coverage_file_url = (
+            f"file://{str(pathlib.Path('htmlcov/index.html').absolute())}"
+        )
+        print(f"Coverage HTML Report: {coverage_file_url}")
+        subprocess.run(["open", coverage_file_url])
 
 
 @nox.session(python=PYTHON_VERSIONS)

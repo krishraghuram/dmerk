@@ -30,8 +30,8 @@ TEST_PATH = pathlib.Path("/media/raghuram/dmerk_test_disk/TEST_DATA/PERFORMANCE"
 #     },
 # }
 @pytest.mark.slow
-@pytest.mark.test_performance
-def test_performance_time(request):
+@pytest.mark.perf
+def test_perf(request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     start = time.time()
     default_generate(TEST_PATH)
@@ -47,9 +47,9 @@ def test_performance_time(request):
 
 @pytest.mark.slow
 @pytest.mark.profile
-def test_performance_profile(request):
+def test_profile(request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
-    filename = "dmerk/test/generate/test_performance_profile.prof"
+    filename = "dmerk/test/generate/test_profile.prof"
     stats = cProfile.runctx(
         "default_generate(TEST_PATH)", globals(), locals(), filename
     )

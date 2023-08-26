@@ -12,6 +12,7 @@ from ..merkle import Merkle
 def pytest_configure(config):
     config.addinivalue_line("markers", "slow: mark test as slow to run")
     config.addinivalue_line("markers", "profile: mark test as a profiling test")
+    config.addinivalue_line("markers", "perf: mark test as a perf test")
 
 
 def _fs(data: dict, base_path: Path) -> None:
