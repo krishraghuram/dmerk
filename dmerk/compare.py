@@ -8,7 +8,7 @@ def compare(merkle_1: Merkle, merkle_2: Merkle) -> dict[str, list[Any]]:
     """
     Return the matches and diff between two merkles
     """
-    out = {
+    out: dict[str, list[Any]] = {
         "matches": [],
         "unmatched_1": [],
         "unmatched_2": [],

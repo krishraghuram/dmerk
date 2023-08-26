@@ -1,13 +1,25 @@
+"""
+Usage: nox --session <session-name>
+Examples:
+  nox --session lint
+  nox --session format
+  nox --session mypy
+  nox --session test
+  nox --session test_performance
+  nox --session profile
+"""
 import re
 import pathlib
 import subprocess
 
 import nox
 
-# Usage: nox --session <session-name>
-# Examples:
-#   nox --session lint
-#   nox --session test
+
+PYTHON_VERSIONS = [
+    "/usr/bin/python3.10",
+    "/home/raghuram/Workspace/bin/pypy3.10-v7.3.12-linux64/bin/pypy",
+    "/home/raghuram/Workspace/bin/Python-3.11.2/python",
+]
 
 
 @nox.session()
@@ -39,14 +51,7 @@ def mypy(session):
     )
 
 
-@nox.session(
-    # TODO: Re-enable other python versions
-    python=[
-        # "/usr/bin/python3.10",
-        # "/home/raghuram/Workspace/bin/pypy3.10-v7.3.12-linux64/bin/pypy",
-        "/home/raghuram/Workspace/bin/Python-3.11.2/python",
-    ]
-)
+@nox.session(python=PYTHON_VERSIONS)
 def test(session):
     session.install("coverage", "pytest")
     session.install(".")
@@ -60,6 +65,13 @@ def test(session):
     coverage_file_url = f"file://{str(pathlib.Path('htmlcov/index.html').absolute())}"
     print(f"Coverage HTML Report: {coverage_file_url}")
     subprocess.run(["open", coverage_file_url])
+
+
+@nox.session(python=PYTHON_VERSIONS)
+def test_performance(session):
+    session.install("pytest")
+    session.install(".")
+    session.run("pytest", "-sm", "test_performance")
 
 
 @nox.session()

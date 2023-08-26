@@ -2,7 +2,7 @@ import argparse
 import textwrap
 import sys
 import json
-from pathlib import Path, PurePath
+from pathlib import Path
 
 import dmerk.generate as generate
 import dmerk.compare as compare

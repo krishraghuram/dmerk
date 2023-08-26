@@ -197,7 +197,7 @@ def test_merkle_traverse(merkle: Merkle, subpath, return_value, exception):
     if return_value is not None:
         assert return_value == merkle.traverse(subpath)
     elif exception is not None:
-        with pytest.raises(exception) as e:
+        with pytest.raises(exception):
             merkle.traverse(subpath)
 
 

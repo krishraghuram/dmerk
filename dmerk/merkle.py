@@ -1,10 +1,10 @@
 import enum
-import typing
 import random
 import string
 import json
 import pathlib
 from pathlib import Path
+from typing import Any
 
 
 class Merkle:
@@ -15,7 +15,7 @@ class Merkle:
         DIRECTORY = "directory"
         SYMLINK = "symlink"
 
-        def __repr__(self):
+        def __repr__(self) -> str:
             return str(self)
 
     def __init__(
@@ -34,7 +34,7 @@ class Merkle:
         if children is not None:
             self.children = children
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         """
         Return True if self is equal to other, else False
 
@@ -52,7 +52,7 @@ class Merkle:
                 ]
             )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         kwargs = {
             slotname: getattr(self, slotname)
             for slotname in self.__slots__
@@ -61,7 +61,7 @@ class Merkle:
         argstring = ", ".join([f"{k}={repr(v)}" for k, v in kwargs.items()])
         return f"{type(self).__name__}({argstring})"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return json.dumps(self, default=Merkle.json_encode, ensure_ascii=False)
 
     def _traverse(self, subpath: Path) -> "Merkle":
@@ -101,10 +101,14 @@ class Merkle:
     @staticmethod
     def load(filename: str | Path) -> "Merkle":
         with open(filename, mode="r", encoding="utf-8") as file:
-            return json.load(file, object_hook=Merkle.json_decode)
+            out = json.load(file, object_hook=Merkle.json_decode)
+            if isinstance(out, Merkle):
+                return out
+            else:
+                raise ValueError(f"File '{filename}' does not represent a merkle!!!")
 
     @staticmethod
-    def json_encode(obj: typing.Any) -> dict[str, typing.Any]:
+    def json_encode(obj: Any) -> dict[str, Any]:
         if isinstance(obj, Merkle):
             output = {
                 slotname: getattr(obj, slotname)
@@ -124,7 +128,7 @@ class Merkle:
         raise TypeError(f"Object of type {type(obj)} are not JSON serializable")
 
     @staticmethod
-    def json_decode(obj: dict[str, typing.Any]) -> typing.Any:
+    def json_decode(obj: dict[str, Any]) -> Any:
         if "__merkle__" in obj:
             PosixPath = pathlib.PosixPath  # noqa: F841
             WindowsPath = pathlib.WindowsPath  # noqa: F841
