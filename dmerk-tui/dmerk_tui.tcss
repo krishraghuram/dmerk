@@ -1,0 +1,28 @@
+Screen {
+    width: 100%;
+}
+Screen FavoritesSidebar {
+    width: 20%;
+    margin: 0 2;
+}
+Screen FavoritesSidebar SidebarButton {
+    width: 100%;
+    margin: 1 0;
+    height: 5;
+}
+Screen FavoritesSidebar SidebarButton.-empty {
+    text-style: bold;
+}
+Screen FileManager {
+    width: 80%;
+    margin: 0 2;
+    overflow: auto;
+    height: 1fr;
+    align: center top;
+}
+Screen FileManager DataTable {
+    width: 100%;
+}
+
+
+
