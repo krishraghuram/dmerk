@@ -57,7 +57,7 @@ class FileManager(Widget):
     time_format = reactive(next(TIME_FORMAT_CYCLER))
     sort_by = reactive(Columns.MODIFIED.value.key)
     sort_reverse = reactive(Columns.MODIFIED.value.sort_reverse)
-    prev_cursor_coordinate = None
+    prev_cell_key = None
 
     def compose(self) -> ComposeResult:
         files_table = DataTable(header_height=3)
@@ -71,6 +71,7 @@ class FileManager(Widget):
             return None
 
     async def _refresh_table(self) -> None:
+        self.prev_cell_key = None
         files_table = self.query_one(DataTable)
         files_table.clear(columns=True)
         for column in Columns:
@@ -132,18 +133,18 @@ class FileManager(Widget):
             super().__init__()
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected):
-        files_table = self.query_one(DataTable)
         if Columns.NAME.name in message.cell_key:
             new_path: Path = self.path / message.cell_key[0].value
+            new_path = new_path.resolve()
             if new_path.is_dir():
-                if self.prev_cursor_coordinate == message.coordinate:
+                if self.prev_cell_key == message.cell_key:
                     self.path = new_path
-                    self.post_message(FileManager.PathChange(new_path.resolve()))
+                    self.post_message(FileManager.PathChange(new_path))
                 else:
-                    self.post_message(FileManager.PathSelected(new_path.resolve()))
+                    self.post_message(FileManager.PathSelected(new_path))
         elif Columns.MODIFIED.name in message.cell_key:
             self.time_format = next(TIME_FORMAT_CYCLER)
-        self.prev_cursor_coordinate = message.coordinate
+        self.prev_cell_key = message.cell_key
 
     def path_selected(self, path: Path):
         self.path = path
