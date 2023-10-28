@@ -59,7 +59,7 @@ class SidebarButton(Button):
         else:
             raise ValueError(f"state cannot be {self.state}")
 
-    def press(self) -> Self:
+    def press(self, human_press=True) -> Self:
         """Respond to a button press.
 
         Returns:
@@ -70,5 +70,10 @@ class SidebarButton(Button):
         old_state = self.state
         self.update_state()
         # ...and let other components know that we've just been clicked:
-        self.post_message(SidebarButton.StateChange(self, old_state, self.state))
+        if human_press:
+            self.post_message(SidebarButton.StateChange(self, old_state, self.state))
         return self
+
+    def action_press(self, human_press=True) -> None:
+        """Activate a press of the button."""
+        self.press(human_press)

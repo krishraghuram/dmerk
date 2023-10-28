@@ -1,4 +1,4 @@
-from widgets import FileManager, FavoritesSidebar
+from widgets import FileManager, FavoritesSidebar, SidebarButton
 
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, Header, DataTable
@@ -23,6 +23,9 @@ class DmerkApp(App):
 
     def on_mount(self, event: Mount):
         self.query_one(DataTable).focus()
+        for button in self.query_one(FavoritesSidebar).query(SidebarButton):
+            if str(button.label) == "Home":
+                button.action_press()
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
@@ -30,6 +33,9 @@ class DmerkApp(App):
 
     def on_file_manager_path_selected(self, message: FileManager.PathSelected):
         self.query_one(FavoritesSidebar).path_selected(message.path)
+
+    def on_file_manager_path_change(self, message: FileManager.PathChange):
+        self.query_one(FavoritesSidebar).path_change(message.path)
 
     def on_favorites_sidebar_path_selected(
         self, message: FavoritesSidebar.PathSelected
