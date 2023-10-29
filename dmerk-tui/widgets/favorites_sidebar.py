@@ -19,7 +19,6 @@ class FavoritesSidebar(Widget):
             SidebarButton(None, ""),
             SidebarButton(None, ""),
             SidebarButton(None, ""),
-            SidebarButton(None, ""),
         )
 
     class PathSelected(Message):

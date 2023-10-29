@@ -1,8 +1,12 @@
-Screen {
-    width: 100%;
+Screen #files {
+    height: 4fr;
 }
+Screen #generate {
+    height: 1fr;
+}
+
 Screen FavoritesSidebar {
-    width: 20%;
+    width: 1fr;
     margin: 0 2;
 }
 Screen FavoritesSidebar SidebarButton {
@@ -11,10 +15,8 @@ Screen FavoritesSidebar SidebarButton {
     height: 5;
 }
 Screen FileManager {
-    width: 80%;
-    margin: 0 2;
+    width: 4fr;
     overflow: auto;
-    height: 1fr;
     align: center top;
 }
 Screen FileManager DataTable {
@@ -24,4 +26,21 @@ Screen FileManager DataTable:focus {
     /* Essentially $surface-lighten-0.5 on dark theme*/
     /* Doesn't work on light theme tho :( */
     background: #262626; 
+}
+
+Screen Log {
+    width: 4fr;
+}
+Screen Log:focus {
+    /* Essentially $surface-lighten-0.5 on dark theme*/
+    /* Doesn't work on light theme tho :( */
+    background: #262626; 
+}
+Screen Button#generate {
+    width: 1fr;
+    height: 100%;
+    border: round $primary-lighten-3;
+}
+Screen Button#generate:hover {
+    border: round $primary;
 }

@@ -1,8 +1,8 @@
 from widgets import FileManager, FavoritesSidebar, SidebarButton
 
 from textual.app import App, ComposeResult
-from textual.widgets import Footer, Header, DataTable
-from textual.containers import Horizontal
+from textual.widgets import Footer, Header, DataTable, Log, Button
+from textual.containers import Horizontal, Vertical
 from textual.events import Mount
 
 
@@ -18,7 +18,14 @@ class DmerkApp(App):
     def compose(self) -> ComposeResult:
         """Called to add widgets to the app."""
         yield Header()
-        yield Horizontal(FavoritesSidebar(), FileManager())
+        yield Vertical(
+            Horizontal(FavoritesSidebar(), FileManager(), id="files"),
+            Horizontal(
+                Log(),
+                Button("GENERATE", variant="primary", id="generate"),
+                id="generate",
+            ),
+        )
         yield Footer()
 
     def on_mount(self, event: Mount):
