@@ -20,6 +20,8 @@ Screen FileManager {
 Screen FileManager DataTable {
     width: 100%;
 }
-
-
-
+Screen FileManager DataTable:focus {
+    /* Essentially $surface-lighten-0.5 on dark theme*/
+    /* Doesn't work on light theme tho :( */
+    background: #262626; 
+}
