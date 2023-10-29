@@ -14,12 +14,12 @@ class FavoritesSidebar(Widget):
         yield Vertical(
             SidebarButton(Path("/"), "Computer"),
             SidebarButton(Path.home(), "Home"),
-            SidebarButton(None, "", classes="-empty"),
-            SidebarButton(None, "", classes="-empty"),
-            SidebarButton(None, "", classes="-empty"),
-            SidebarButton(None, "", classes="-empty"),
-            SidebarButton(None, "", classes="-empty"),
-            SidebarButton(None, "", classes="-empty"),
+            SidebarButton(None, ""),
+            SidebarButton(None, ""),
+            SidebarButton(None, ""),
+            SidebarButton(None, ""),
+            SidebarButton(None, ""),
+            SidebarButton(None, ""),
         )
 
     class PathSelected(Message):
@@ -52,7 +52,6 @@ class FavoritesSidebar(Widget):
             if button.state == SidebarButton.State.EDIT:
                 button.path = path
                 button.label = FavoritesSidebar._get_label_from_path(path)
-                button.remove_class("-empty")
                 button.reset_state()
 
     def path_change(self, path: Path):

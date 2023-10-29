@@ -50,10 +50,9 @@ class SidebarButton(Button):
             self.state = SidebarButton.State.EDIT
             self.remove_classes()
             self.add_class("-primary")
-            # Additionally, remove label, path and add the -empty class
+            # Additionally, remove label, path
             self.label = ""
             self.path = None
-            self.add_class("-empty")
         elif self.state == SidebarButton.State.EDIT:
             self.reset_state()
         else:
