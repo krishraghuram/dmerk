@@ -135,6 +135,11 @@ class FileManager(Widget):
             self.path = path
             super().__init__()
 
+    def on_data_table_cell_highlighted(
+        self, message: DataTable.CellHighlighted
+    ) -> None:
+        self.prev_cell_key = None
+
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if Columns.NAME.name in message.cell_key:
             if message.cell_key[0].value is not None:
