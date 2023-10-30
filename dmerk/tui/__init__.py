@@ -9,7 +9,7 @@ from .widgets import FileManager, FavoritesSidebar, SidebarButton
 class DmerkApp(App[None]):
     """An TUI for dmerk"""
 
-    CSS_PATH = "dmerk_tui.tcss"
+    CSS_PATH = "styles.tcss"
 
     BINDINGS = [
         ("d", "toggle_dark", "Toggle dark mode"),
