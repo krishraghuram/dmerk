@@ -50,6 +50,8 @@ class DmerkApp(App[None]):
         self.query_one(FileManager).path_selected(message.path)
 
 
+app = DmerkApp()
+
+
 if __name__ == "__main__":
-    app = DmerkApp()
     app.run()
