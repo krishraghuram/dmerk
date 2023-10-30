@@ -43,6 +43,7 @@ def format(session):
 
 @nox.session()
 def mypy(session):
+    session.install(".")
     session.install("mypy")
     # TODO: enable mypy for tests as well
     # session.run("mypy", "--strict", "--allow-redefinition", "dmerk")
