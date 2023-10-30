@@ -1,12 +1,12 @@
-from widgets import FileManager, FavoritesSidebar, SidebarButton
-
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, Header, DataTable, Log, Button
 from textual.containers import Horizontal, Vertical
 from textual.events import Mount
 
+from .widgets import FileManager, FavoritesSidebar, SidebarButton
 
-class DmerkApp(App):
+
+class DmerkApp(App[None]):
     """An TUI for dmerk"""
 
     CSS_PATH = "dmerk_tui.tcss"
@@ -28,7 +28,7 @@ class DmerkApp(App):
         )
         yield Footer()
 
-    def on_mount(self, event: Mount):
+    def on_mount(self, event: Mount) -> None:
         self.query_one(DataTable).focus()
         for button in self.query_one(FavoritesSidebar).query(SidebarButton):
             if str(button.label) == "Home":
@@ -38,15 +38,15 @@ class DmerkApp(App):
         """An action to toggle dark mode."""
         self.dark = not self.dark
 
-    def on_file_manager_path_selected(self, message: FileManager.PathSelected):
+    def on_file_manager_path_selected(self, message: FileManager.PathSelected) -> None:
         self.query_one(FavoritesSidebar).path_selected(message.path)
 
-    def on_file_manager_path_change(self, message: FileManager.PathChange):
+    def on_file_manager_path_change(self, message: FileManager.PathChange) -> None:
         self.query_one(FavoritesSidebar).path_change(message.path)
 
     def on_favorites_sidebar_path_selected(
         self, message: FavoritesSidebar.PathSelected
-    ):
+    ) -> None:
         self.query_one(FileManager).path_selected(message.path)
 
 

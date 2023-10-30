@@ -1,9 +1,9 @@
+from enum import Enum
+from pathlib import Path
+from typing import Any
+
 from textual.widgets import Button
 from textual.message import Message
-from typing_extensions import Self
-
-
-from enum import Enum
 
 
 class SidebarButton(Button):
@@ -28,20 +28,20 @@ class SidebarButton(Button):
             self.new_state = new_state
             super().__init__()
 
-    def __init__(self, path, *args, **kwargs):
+    def __init__(self, path: Path | None, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.path = path
+        self.path: Path | None = path
         self.state = SidebarButton.State.DEFAULT
 
-    def remove_classes(self):
+    def remove_classes(self) -> None:
         self.remove_class("-active")
         self.remove_class("-primary")
 
-    def reset_state(self):
+    def reset_state(self) -> None:
         self.state = SidebarButton.State.DEFAULT
         self.remove_classes()
 
-    def update_state(self):
+    def update_state(self) -> None:
         if self.state == SidebarButton.State.DEFAULT:
             self.state = SidebarButton.State.SELECTED
             self.remove_classes()
@@ -58,7 +58,7 @@ class SidebarButton(Button):
         else:
             raise ValueError(f"state cannot be {self.state}")
 
-    def press(self, human_press=True) -> Self:
+    def press(self, human_press: bool = True) -> "SidebarButton":
         """Respond to a button press.
 
         Returns:
@@ -73,6 +73,6 @@ class SidebarButton(Button):
             self.post_message(SidebarButton.StateChange(self, old_state, self.state))
         return self
 
-    def action_press(self, human_press=True) -> None:
+    def action_press(self, human_press: bool = True) -> None:
         """Activate a press of the button."""
         self.press(human_press)

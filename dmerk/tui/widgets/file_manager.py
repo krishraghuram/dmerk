@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import itertools
-import typing
+from typing import Callable, Any
 from enum import Enum
 
 from pathlib import Path
@@ -16,7 +16,7 @@ from textual.events import Resize
 from humanize import naturaltime
 
 
-def file_prefix(path: Path):
+def file_prefix(path: Path) -> str:
     if path.is_symlink():
         return "🔗 "
     elif path.is_dir():
@@ -27,7 +27,7 @@ def file_prefix(path: Path):
         return "⭐ "
 
 
-TIME_FORMATS = {
+TIME_FORMATS: dict[str, Callable[[float], str]] = {
     "HUMAN_FRIENDLY": lambda timestamp: naturaltime(datetime.fromtimestamp(timestamp)),
     "ISO8601": lambda timestamp: datetime.fromtimestamp(timestamp).isoformat(),
 }
@@ -38,7 +38,7 @@ TIME_FORMAT_CYCLER = itertools.cycle(list(TIME_FORMATS.keys()))
 class Column:
     label: str
     key: str
-    sort_key: typing.Callable[[Path], typing.Any]
+    sort_key: Callable[[Path], Any]
     sort_reverse: bool
 
 
@@ -60,10 +60,10 @@ class FileManager(Widget):
     prev_cell_key = None
 
     def compose(self) -> ComposeResult:
-        files_table = DataTable(header_height=3)
+        files_table: DataTable[None] = DataTable(header_height=3)
         yield files_table
 
-    def __get_column_width(self):
+    def __get_column_width(self) -> int | None:
         if self.size.width != 0:
             # the math is to prevent horizontal scrollbar from appearing
             return int((self.size.width - 2) / 2) - 2
@@ -97,7 +97,7 @@ class FileManager(Widget):
                 height=3,
             )
 
-    async def on_resize(self, event: Resize):
+    async def on_resize(self, event: Resize) -> None:
         await self._refresh_table()
 
     async def watch_path(self) -> None:
@@ -115,10 +115,13 @@ class FileManager(Widget):
     async def watch_sort_reverse(self) -> None:
         await self._refresh_table()
 
-    async def on_data_table_header_selected(self, message: DataTable.HeaderSelected):
-        if self.sort_by != message.column_key:
-            self.sort_by = message.column_key
-            self.sort_reverse = Columns[self.sort_by].value.sort_reverse
+    async def on_data_table_header_selected(
+        self, message: DataTable.HeaderSelected
+    ) -> None:
+        if self.sort_by != message.column_key.value:
+            if message.column_key.value is not None:
+                self.sort_by = message.column_key.value
+                self.sort_reverse = Columns[self.sort_by].value.sort_reverse
         else:
             self.sort_reverse = not self.sort_reverse
 
@@ -132,19 +135,20 @@ class FileManager(Widget):
             self.path = path
             super().__init__()
 
-    def on_data_table_cell_selected(self, message: DataTable.CellSelected):
+    def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if Columns.NAME.name in message.cell_key:
-            new_path: Path = self.path / message.cell_key[0].value
-            new_path = new_path.resolve()
-            if new_path.is_dir():
-                if self.prev_cell_key == message.cell_key:
-                    self.path = new_path
-                    self.post_message(FileManager.PathChange(new_path))
-                else:
-                    self.post_message(FileManager.PathSelected(new_path))
+            if message.cell_key[0].value is not None:
+                new_path: Path = self.path / message.cell_key[0].value
+                new_path = new_path.resolve()
+                if new_path.is_dir():
+                    if self.prev_cell_key == message.cell_key:
+                        self.path = new_path
+                        self.post_message(FileManager.PathChange(new_path))
+                    else:
+                        self.post_message(FileManager.PathSelected(new_path))
         elif Columns.MODIFIED.name in message.cell_key:
             self.time_format = next(TIME_FORMAT_CYCLER)
         self.prev_cell_key = message.cell_key
 
-    def path_selected(self, path: Path):
+    def path_selected(self, path: Path) -> None:
         self.path = path
