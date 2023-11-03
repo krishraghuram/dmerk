@@ -1,9 +1,15 @@
+from pathlib import Path
+
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, Header, DataTable, Log, Button
 from textual.containers import Horizontal, Vertical
 from textual.events import Mount
+from textual import work
+
 
 from .widgets import FileManager, FavoritesSidebar, SidebarButton
+from ..cli import _main
+from .. import constants
 
 
 class DmerkApp(App[None]):
@@ -27,6 +33,26 @@ class DmerkApp(App[None]):
             ),
         )
         yield Footer()
+
+    @work(thread=True)
+    async def _main(self, path: Path) -> None:
+        args = [
+            "generate",
+            "-f",
+            constants.APP_STATE_PATH,
+            str(path),
+        ]
+        _main(args)
+
+    def on_button_pressed(self, message: Button.Pressed) -> None:
+        highlighted_path = self.query_one(FileManager).highlighted_path
+        if highlighted_path is not None:
+            if highlighted_path.is_dir():
+                self._main(highlighted_path)
+            else:
+                print("Please choose a directory")
+        else:
+            print("Please choose a path")
 
     def on_mount(self, event: Mount) -> None:
         self.query_one(DataTable).focus()

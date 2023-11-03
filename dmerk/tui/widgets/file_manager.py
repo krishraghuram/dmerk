@@ -142,8 +142,8 @@ class FileManager(Widget):
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if Columns.NAME.name in message.cell_key:
-            if message.cell_key[0].value is not None:
-                new_path: Path = self.path / message.cell_key[0].value
+            if message.cell_key.row_key.value is not None:
+                new_path: Path = self.path / message.cell_key.row_key.value
                 new_path = new_path.resolve()
                 if new_path.is_dir():
                     if self.prev_cell_key == message.cell_key:
@@ -157,3 +157,16 @@ class FileManager(Widget):
 
     def path_selected(self, path: Path) -> None:
         self.path = path
+
+    @property
+    def highlighted_path(self) -> Path | None:
+        files_table = self.query_one(DataTable)
+        cell_key = files_table.coordinate_to_cell_key(files_table.cursor_coordinate)
+        if Columns.NAME.name in cell_key:
+            if cell_key.row_key.value is not None:
+                highlighted_path = self.path / cell_key.row_key.value
+                return highlighted_path.resolve()
+            else:
+                return None
+        else:
+            return None

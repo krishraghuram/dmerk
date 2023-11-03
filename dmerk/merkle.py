@@ -83,16 +83,23 @@ class Merkle:
         return self._traverse(subpath)
 
     @staticmethod
-    def _get_filename(path: Path) -> Path:
-        filename = Path(f"{path.name}.dmerk")
+    def _get_filename(path: Path, prefix: Path | None = None) -> Path:
+        if prefix is None:
+            prefix = Path.cwd()
+        filename = prefix / Path(f"{path.name}.dmerk")
         while filename.exists():
             random_hex_string = "".join(random.choices(string.hexdigits.lower(), k=8))
-            filename = Path(f"{path.name}_{random_hex_string}.dmerk")
+            filename = prefix / Path(f"{path.name}_{random_hex_string}.dmerk")
         return filename
 
     def save(self, filename: str | Path | None = None) -> str | Path:
         if filename is None:
             filename = Merkle._get_filename(self.path)
+        else:
+            if isinstance(filename, str):
+                filename = Path(filename)
+            if filename.is_dir():
+                filename = Merkle._get_filename(self.path, prefix=filename)
         with open(filename, mode="w", encoding="utf-8") as file:
             json.dump(self, file, default=Merkle.json_encode, ensure_ascii=False)
         print(f"Saved merkle for path: '{self.path}' to file: '{filename}'")

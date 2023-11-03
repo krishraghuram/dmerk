@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dmerk"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
   { name="Raghuram Krishnaswami", email="krish.raghuram@gmail.com" },
 ]
@@ -17,8 +17,18 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
 ]
 dependencies = [
-  "textual >= 0.38.0",
-  "humanize == 4.8.0"
+  "textual",
+  "humanize",
+  "platformdirs",
+]
+
+[project.optional-dependencies]
+dev = [
+    "textual-dev",
+    "nox",
+    "flake8",
+    "black",
+    "mypy",
 ]
 
 [project.urls]
