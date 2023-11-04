@@ -15,6 +15,7 @@ TEST_PATH = pathlib.Path("/media/raghuram/dmerk_test_disk/TEST_DATA/PERFORMANCE"
 # # echo 3 > /proc/sys/vm/drop_caches
 # # Ref: https://unix.stackexchange.com/a/87909/420985
 # # Ref: https://en.wikipedia.org/wiki/Page_cache
+# # Ref: https://www.tecmint.com/clear-ram-memory-cache-buffer-and-swap-space-on-linux/
 # data = {
 #     "/home/raghuram/Workspace/bin/Python-3.11.2/python": {
 #         "FirstRun": 88.4159324169159,
@@ -49,7 +50,7 @@ def test_perf(request):
 @pytest.mark.profile
 def test_profile(request):
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
-    filename = "dmerk/test/generate/test_profile.prof"
+    filename = "dmerk/test/test_generate/test_profile.prof"
     stats = cProfile.runctx(
         "default_generate(TEST_PATH)", globals(), locals(), filename
     )
