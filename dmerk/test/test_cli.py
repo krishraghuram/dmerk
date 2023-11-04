@@ -76,7 +76,7 @@ def test_generate_save(capsys, fs):
     captured = capsys.readouterr()
     assert (
         captured.out.strip()
-        == "Saved merkle for path: '/home/raghuram/Workspace/dmerk/TEST_DATA/NORMAL' to file: 'NORMAL.dmerk'"
+        == "Saved merkle for path: '/home/raghuram/Workspace/dmerk/TEST_DATA/NORMAL' to file: '/home/raghuram/Workspace/dmerk/NORMAL.dmerk'"
     )
     assert Path("NORMAL.dmerk").exists()
     Path("NORMAL.dmerk").unlink()

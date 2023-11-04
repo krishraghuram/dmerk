@@ -29,6 +29,7 @@ dev = [
     "flake8",
     "black",
     "mypy",
+    "pytest",
 ]
 
 [project.urls]
