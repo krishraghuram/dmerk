@@ -41,7 +41,7 @@ class FavoritesSidebar(Widget):
     def _get_label_from_path(path: Path) -> str:
         if path == Path.home():
             return "Home"
-        elif path == "/":
+        elif path == Path("/"):
             return "Computer"
         else:
             return path.name

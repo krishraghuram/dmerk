@@ -28,10 +28,10 @@ Screen FileManager DataTable:focus {
     background: #262626; 
 }
 
-Screen Log {
+Screen RichLog {
     width: 4fr;
 }
-Screen Log:focus {
+Screen RichLog:focus {
     /* Essentially $surface-lighten-0.5 on dark theme*/
     /* Doesn't work on light theme tho :( */
     background: #262626; 

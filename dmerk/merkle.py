@@ -3,6 +3,7 @@ import random
 import string
 import json
 import pathlib
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -102,7 +103,7 @@ class Merkle:
                 filename = Merkle._get_filename(self.path, prefix=filename)
         with open(filename, mode="w", encoding="utf-8") as file:
             json.dump(self, file, default=Merkle.json_encode, ensure_ascii=False)
-        print(f"Saved merkle for path: '{self.path}' to file: '{filename}'")
+        logging.info(f"Saved merkle for path: '{self.path}' to file: '{filename}'")
         return filename
 
     @staticmethod
