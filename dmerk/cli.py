@@ -2,11 +2,13 @@ import argparse
 import textwrap
 import sys
 import json
+import logging
 from pathlib import Path
 
 import dmerk.generate as generate
 import dmerk.compare as compare
 from .utils import load_or_generate
+from dmerk.tui import run as run_tui
 
 
 def _generate(args: argparse.Namespace) -> None:
@@ -36,12 +38,18 @@ def _compare(args: argparse.Namespace) -> None:
     )
 
 
+def _tui(args: argparse.Namespace) -> None:
+    run_tui()
+
+
 # # TODO: implement analyse
 # def _analyse(path):
 #     raise NotImplementedError()
 
 
 def _main(args: list[str]) -> None:
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
     parser = argparse.ArgumentParser(
         prog="dmerk",
         description="Program to generate, compare and analyse directory merkle trees",
@@ -124,8 +132,13 @@ def _main(args: list[str]) -> None:
     # parser_analyse.add_argument("path")
     # parser_analyse.set_defaults(func=_analyse)
 
-    args = parser.parse_args(args)
-    args.func(args)
+    parser_tui = subparsers.add_parser(
+        "tui", description="Launch the TUI (terminal user interface)"
+    )
+    parser_tui.set_defaults(func=_tui)
+
+    parsed_args = parser.parse_args(args)
+    parsed_args.func(parsed_args)
 
 
 # This runs when invoking cli from installed package (via the pyproject.toml script)

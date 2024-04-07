@@ -1,5 +1,6 @@
 import textwrap
 import json
+import logging
 from pathlib import Path
 
 import pytest
@@ -13,7 +14,7 @@ def test_help(capsys, args):
     with pytest.raises(SystemExit):
         cli._main([args])
     captured = capsys.readouterr()
-    assert "usage: dmerk [-h] [--no-save] {generate,compare}" in captured.out
+    assert "usage: dmerk [-h] [--no-save] {generate,compare,tui}" in captured.out
     assert (
         "Program to generate, compare and analyse directory merkle trees"
         in captured.out
@@ -24,9 +25,9 @@ def test_subcommand_required(capsys):
     with pytest.raises(SystemExit):
         cli._main([])
     captured = capsys.readouterr()
-    assert "usage: dmerk [-h] [--no-save] {generate,compare}" in captured.err
+    assert "usage: dmerk [-h] [--no-save] {generate,compare,tui}" in captured.err
     assert (
-        "dmerk: error: the following arguments are required: {generate,compare}"
+        "dmerk: error: the following arguments are required: {generate,compare,tui}"
         in captured.err
     )
 
@@ -71,15 +72,15 @@ def test_generate(capsys, fs):
     ],
     indirect=True,
 )
-def test_generate_save(capsys, fs):
-    cli._main(["generate", str(fs.basepath.resolve())])
-    captured = capsys.readouterr()
-    assert (
-        captured.out.strip()
-        == "Saved merkle for path: '/home/raghuram/Workspace/dmerk/TEST_DATA/NORMAL' to file: '/home/raghuram/Workspace/dmerk/NORMAL.dmerk'"
-    )
-    assert Path("NORMAL.dmerk").exists()
-    Path("NORMAL.dmerk").unlink()
+def test_generate_save(caplog, fs):
+    with caplog.at_level(logging.INFO):
+        cli._main(["generate", str(fs.basepath.resolve())])
+        assert (
+            "Saved merkle for path: '/home/raghuram/Workspace/dmerk/TEST_DATA/NORMAL' to file: '/home/raghuram/Workspace/dmerk/NORMAL.dmerk'"
+            in caplog.text
+        )
+        assert Path("NORMAL.dmerk").exists()
+        Path("NORMAL.dmerk").unlink()
 
 
 @pytest.mark.parametrize("args", ("-h", "--help"))

@@ -5,9 +5,9 @@ from textual.widgets import Footer, Header, DataTable, RichLog, Button
 from textual.containers import Horizontal, Vertical
 from textual.events import Mount, Ready
 from textual import work
-from .widgets import FileManager, FavoritesSidebar, SidebarButton
-from ..cli import _main
-from .. import constants
+from dmerk.tui.widgets import FileManager, FavoritesSidebar, SidebarButton
+import dmerk.generate as generate
+import dmerk.constants as constants
 
 
 # Taken from: https://github.com/Textualize/textual/discussions/2072#discussioncomment-5666856
@@ -33,7 +33,6 @@ class DmerkApp(App[None]):
     ]
 
     def on_ready(self, event: Ready) -> None:
-        logging.basicConfig(level=logging.INFO)
         root_logger = logging.getLogger()
         rich_log_handler = TextHandler(self.query_one(RichLog))
         rich_log_handler.setLevel(logging.INFO)
@@ -59,13 +58,10 @@ class DmerkApp(App[None]):
 
     @work(thread=True)
     async def _main(self, path: Path) -> None:
-        args = [
-            "generate",
-            "-f",
-            constants.APP_STATE_PATH,
-            str(path),
-        ]
-        _main(args)
+        path = path.resolve()
+        merkle = generate.generate(path)
+        filename = constants.APP_STATE_PATH
+        merkle.save(filename=filename)
 
     def on_button_pressed(self, message: Button.Pressed) -> None:
         highlighted_path = self.query_one(FileManager).highlighted_path
@@ -102,5 +98,5 @@ class DmerkApp(App[None]):
 app = DmerkApp()
 
 
-if __name__ == "__main__":
+def run() -> None:
     app.run()
