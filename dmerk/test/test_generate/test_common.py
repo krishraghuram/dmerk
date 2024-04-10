@@ -209,7 +209,14 @@ generates = [default_generate]
         ),
         # Test path names with unicode chars outside basic latin block
         (
-            {"dmerk_tests": {"📁1": {"ファイル一": "こんにちは世界 一", "ファイル二": "こんにちは世界 二"}}},
+            {
+                "dmerk_tests": {
+                    "📁1": {
+                        "ファイル一": "こんにちは世界 一",
+                        "ファイル二": "こんにちは世界 二",
+                    }
+                }
+            },
             Merkle(
                 path=PosixPath("TEST_DATA/NORMAL"),
                 type=Type.DIRECTORY,
