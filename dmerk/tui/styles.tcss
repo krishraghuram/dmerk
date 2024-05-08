@@ -1,3 +1,6 @@
+Screen #filepicker {
+    height: 100%;
+}
 Screen #files {
     height: 4fr;
 }
@@ -26,6 +29,19 @@ Screen FileManager DataTable:focus {
     /* Essentially $surface-lighten-0.5 on dark theme*/
     /* Doesn't work on light theme tho :( */
     background: #262626; 
+}
+
+Screen FilePicker {
+    margin: 0 2;
+    width: 4fr;
+    overflow: auto;
+    align: center top;
+}
+Screen Button {
+    width: 100%;
+}
+Screen CompareWidget DataTable {
+    width: 4fr;
 }
 
 Screen RichLog {

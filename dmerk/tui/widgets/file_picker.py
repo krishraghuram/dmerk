@@ -8,7 +8,7 @@ from textual.message import Message
 from textual.events import Resize
 
 import dmerk.constants as constants
-from dmerk.tui.widgets.compare import CompareWidget
+from dmerk.tui.widgets.compare_widget import CompareWidget
 
 def file_prefix(path: Path) -> str:
     if path.is_symlink():
@@ -74,16 +74,6 @@ class FilePicker(Widget):
     async def watch_path(self) -> None:
         await self._refresh_table()
 
-    # class PathSelected(Message):
-    #     def __init__(self, path: Path) -> None:
-    #         self.path = path
-    #         super().__init__()
-
-    # class PathChange(Message):
-    #     def __init__(self, path: Path) -> None:
-    #         self.path = path
-    #         super().__init__()
-
     def on_data_table_cell_highlighted(
         self, message: DataTable.CellHighlighted
     ) -> None:
@@ -98,20 +88,16 @@ class FilePicker(Widget):
                     if isinstance(self.parent, Widget):
                         parent = self.parent
                         self.remove()
-                        parent.mount(CompareWidget())
+                        parent.mount(CompareWidget(new_path))
                     else:
                         raise ValueError(f"{self.parent=} is not a Widget!!!")
-                    # self.post_message(FilePicker.PathChange(new_path))
                 else:
-                    pass # self.post_message(FilePicker.PathSelected(new_path))
+                    pass
             elif new_path.is_dir():
                 if self.prev_cell_key == message.cell_key:
                     self.path = new_path
-                    # self.post_message(FilePicker.PathChange(new_path))
                 else:
-                    pass # self.post_message(FilePicker.PathSelected(new_path))
-
-
+                    pass
         self.prev_cell_key = message.cell_key
 
     def path_selected(self, path: Path) -> None:

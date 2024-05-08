@@ -81,3 +81,52 @@ Tests can be run using,
 (venv) raghuram@raghuram-PC:~/Workspace/dmerk$ python -m pytest
 (venv) raghuram@raghuram-PC:~/Workspace/dmerk$ python -m pytest -s
 ```
+
+
+
+
+
+
+#### Development
+
+```
+cd Workspace/dmerk
+python3 -m venv venv
+source venv/bin/activate
+
+dmerk -h  # will fail
+textual run --dev dmerk.tui  # will fail
+
+pip install -e .[dev]
+
+dmerk -h  # will run
+textual run --dev dmerk.tui  # will run
+```
+
+
+
+
+
+
+
+
+
+#### Misc
+
+```
+dmerk --help
+dmerk-tui
+
+mypy --strict --allow-redefinition --exclude test dmerk
+
+textual run --dev dmerk.tui
+textual run --dev dmerk.tui.dmerk_tui
+
+
+textual console
+textual console -x SYSTEM -x EVENT -x DEBUG -x INFO
+textual run --dev dmerk.tui
+textual run --dev dmerk.tui.dmerk_tui
+textual run --dev dmerk.tui.dmerk_tui
+
+```

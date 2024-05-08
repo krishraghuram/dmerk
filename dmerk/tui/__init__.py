@@ -1,11 +1,19 @@
 import logging
 from pathlib import Path
 from textual.app import App, ComposeResult
-from textual.widgets import Footer, Header, DataTable, RichLog, Button
+from textual.widgets import (
+    Footer,
+    Header,
+    DataTable,
+    RichLog,
+    Button,
+    TabbedContent,
+    TabPane,
+)
 from textual.containers import Horizontal, Vertical
 from textual.events import Mount, Ready
 from textual import work
-from dmerk.tui.widgets import FileManager, FavoritesSidebar, SidebarButton
+from dmerk.tui.widgets import FileManager, FavoritesSidebar, SidebarButton, FilePicker
 import dmerk.generate as generate
 import dmerk.constants as constants
 
@@ -47,14 +55,24 @@ class DmerkApp(App[None]):
     def compose(self) -> ComposeResult:
         """Called to add widgets to the app."""
         yield Header()
-        yield Vertical(
-            Horizontal(FavoritesSidebar(), FileManager(), id="files"),
-            Horizontal(
-                RichLog(),
-                Button("GENERATE", variant="primary", id="generate"),
-                id="generate",
-            ),
-        )
+        with TabbedContent(initial="compare"):
+            with TabPane("Generate", id="generate"):  # First tab
+                yield Vertical(
+                    Horizontal(FavoritesSidebar(), FileManager(), id="files"),
+                    Horizontal(
+                        RichLog(),
+                        Button("GENERATE", variant="primary", id="generate"),
+                        id="generate",
+                    ),
+                )
+            with TabPane("Compare", id="compare"):
+                yield Vertical(
+                    Horizontal(
+                        FilePicker(id="filepicker-left"),
+                        # FilePicker(id="filepicker-right"),
+                    ),
+                )
+                yield Button("COMPARE", "error", id="compare")
         yield Footer()
 
     @work(thread=True)
@@ -75,7 +93,7 @@ class DmerkApp(App[None]):
             logging.warning("Please choose a path")
 
     def on_mount(self, event: Mount) -> None:
-        self.query_one(DataTable).focus()
+        self.query_one(FileManager).query_one(DataTable).focus()
         for button in self.query_one(FavoritesSidebar).query(SidebarButton):
             if str(button.label) == "Home":
                 button.action_press()
