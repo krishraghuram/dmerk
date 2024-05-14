@@ -1,6 +1,3 @@
-Screen #filepicker {
-    height: 100%;
-}
 Screen #files {
     height: 4fr;
 }
@@ -31,19 +28,6 @@ Screen FileManager DataTable:focus {
     background: #262626; 
 }
 
-Screen FilePicker {
-    margin: 0 2;
-    width: 4fr;
-    overflow: auto;
-    align: center top;
-}
-Screen Button {
-    width: 100%;
-}
-Screen CompareWidget DataTable {
-    width: 4fr;
-}
-
 Screen RichLog {
     width: 4fr;
 }
@@ -59,4 +43,31 @@ Screen Button#generate {
 }
 Screen Button#generate:hover {
     border: round $primary;
+}
+
+
+
+
+Screen FilePicker {
+    margin: 0 2;
+    width: 4fr;
+    overflow: auto;
+    align: center top;
+}
+Screen Button {
+    width: 100%;
+}
+Screen CompareWidget {
+    width: 50%;
+}
+Screen CompareWidget Label {
+    background: #262626;
+    width: 100%;
+}
+Screen CompareWidget DataTable {
+    width: 100%;
+}
+Screen CompareWidget Button {
+    width: 100%;
+    margin: 0 1;
 }

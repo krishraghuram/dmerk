@@ -2,13 +2,14 @@ from pathlib import Path
 
 from textual.app import ComposeResult
 from textual.widget import Widget
-from textual.widgets import DataTable
+from textual.widgets import DataTable, Label
 from textual.reactive import reactive
-from textual.message import Message
 from textual.events import Resize
+from rich.text import Text
 
 import dmerk.constants as constants
 from dmerk.tui.widgets.compare_widget import CompareWidget
+
 
 def file_prefix(path: Path) -> str:
     if path.is_symlink():
@@ -43,6 +44,7 @@ class FilePicker(Widget):
     prev_cell_key = None
 
     def compose(self) -> ComposeResult:
+        yield Label(Text("Pick a dmerk file", style="bold"))
         files_table: DataTable[None] = DataTable(header_height=3)
         yield files_table
 
@@ -87,8 +89,10 @@ class FilePicker(Widget):
                 if self.prev_cell_key == message.cell_key:
                     if isinstance(self.parent, Widget):
                         parent = self.parent
+                        parent.mount(
+                            CompareWidget(new_path, id=f"compare-{self.id}"), after=self
+                        )
                         self.remove()
-                        parent.mount(CompareWidget(new_path))
                     else:
                         raise ValueError(f"{self.parent=} is not a Widget!!!")
                 else:

@@ -40,6 +40,8 @@ class DmerkApp(App[None]):
         ("d", "toggle_dark", "Toggle dark mode"),
     ]
 
+    prev_tab = None
+
     def on_ready(self, event: Ready) -> None:
         root_logger = logging.getLogger()
         rich_log_handler = TextHandler(self.query_one(RichLog))
@@ -55,7 +57,7 @@ class DmerkApp(App[None]):
     def compose(self) -> ComposeResult:
         """Called to add widgets to the app."""
         yield Header()
-        with TabbedContent(initial="compare"):
+        with TabbedContent(initial="generate"):
             with TabPane("Generate", id="generate"):  # First tab
                 yield Vertical(
                     Horizontal(FavoritesSidebar(), FileManager(), id="files"),
@@ -68,12 +70,26 @@ class DmerkApp(App[None]):
             with TabPane("Compare", id="compare"):
                 yield Vertical(
                     Horizontal(
-                        FilePicker(id="filepicker-left"),
-                        # FilePicker(id="filepicker-right"),
+                        FilePicker(id="left"),
+                        FilePicker(id="right"),
                     ),
                 )
                 yield Button("COMPARE", "error", id="compare")
         yield Footer()
+
+    async def on_tabbed_content_tab_activated(
+        self, message: TabbedContent.TabActivated
+    ) -> None:
+        print(message)
+        if self.prev_tab == "compare" and message.pane.id != "compare":
+            await self.recompose()
+            if message.pane.id:
+                self.query_one(TabbedContent).active = message.pane.id
+            else:
+                raise ValueError(
+                    f"Recomposed the UI, but couldn't set the tab because {message.pane.id=}"
+                )
+        self.prev_tab = message.pane.id
 
     @work(thread=True)
     async def _main(self, path: Path) -> None:
