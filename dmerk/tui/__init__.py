@@ -41,6 +41,7 @@ class DmerkApp(App[None]):
                 "%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%dT%H:%M:%S"
             )
         )
+        root_logger.handlers.clear()
         root_logger.addHandler(rich_log_handler)
 
     def compose(self) -> ComposeResult:
