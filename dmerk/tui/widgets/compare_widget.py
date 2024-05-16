@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
 
 from textual.app import ComposeResult
 from textual.widget import Widget
@@ -33,21 +32,11 @@ def colorhash_styled_text(text: str, digest: str) -> Text:
 class Column:
     label: str
     key: str
-    sort_key: Callable[[Merkle], Any]
-    sort_reverse: bool
 
 
 class Columns(Enum):
-    @staticmethod
-    def sort_by_path_name(m: Merkle) -> str:
-        return m.path.name
-
-    @staticmethod
-    def sort_by_digest(m: Merkle) -> str:
-        return m.digest
-
-    NAME = Column("Name", "NAME", sort_by_path_name, False)
-    DIGEST = Column("Digest", "DIGEST", sort_by_digest, False)
+    NAME = Column("Name", "NAME")
+    DIGEST = Column("Digest", "DIGEST")
 
 
 class CompareWidget(Widget):
@@ -68,8 +57,6 @@ class CompareWidget(Widget):
 
     merkle_subpath: reactive[Path | None] = reactive(None)
     prev_cell_key = None
-    sort_by = reactive(Columns.NAME.value.key)
-    sort_reverse = reactive(Columns.NAME.value.sort_reverse)
 
     def __get_column_width(self, column_key: str) -> int | None:
         # The math here is to prevent horizontal scrollbar from appearing
@@ -122,13 +109,7 @@ class CompareWidget(Widget):
             )
         if self.submerkle != self.merkle:
             compare_table.add_row(*["\n..", "\n-"], key="..", height=3)
-        child_merkles = [m for m in self.submerkle.children.values()]
-        child_merkles = sorted(
-            child_merkles,
-            key=Columns[self.sort_by].value.sort_key,
-            reverse=self.sort_reverse,
-        )
-        for m in child_merkles:
+        for m in self.submerkle.children.values():
             row = [
                 Text("\n" + file_prefix(m.path))
                 + colorhash_styled_text(m.path.name, m.digest),
@@ -140,28 +121,10 @@ class CompareWidget(Widget):
         await self._refresh_label()
         await self._refresh_table()
 
-    async def watch_sort_by(self) -> None:
-        await self._refresh_label()
-        await self._refresh_table()
-
-    async def watch_sort_reverse(self) -> None:
-        await self._refresh_label()
-        await self._refresh_table()
-
     def compose(self) -> ComposeResult:
         yield Label(Text(f"{self.submerkle.path}", style="bold"))
         compare_table: DataTable[None] = DataTable(header_height=3)
         yield compare_table
-
-    async def on_data_table_header_selected(
-        self, message: DataTable.HeaderSelected
-    ) -> None:
-        if self.sort_by != message.column_key.value:
-            if message.column_key.value is not None:
-                self.sort_by = message.column_key.value
-                self.sort_reverse = Columns[self.sort_by].value.sort_reverse
-        else:
-            self.sort_reverse = not self.sort_reverse
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if "NAME" in message.cell_key:
