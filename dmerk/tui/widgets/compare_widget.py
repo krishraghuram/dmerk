@@ -165,8 +165,6 @@ class CompareWidget(Widget):
                 key=column.value.key,
                 width=self.__get_column_width(column_key=column.value.key),
             )
-        if self.submerkle != self.merkle:
-            compare_table.add_row(*["\n..", "\n-"], key="..", height=3)
         child_merkles = [m for m in self.submerkle.children.values()]
         child_merkles = sorted(child_merkles, key=lambda m: m.digest)
         for m in child_merkles:
@@ -177,6 +175,8 @@ class CompareWidget(Widget):
             if m.digest not in self.__get_matches():
                 row = self.__get_compare_table_row(m, match=False)
                 compare_table.add_row(*row, key=str(m.path), height=3)
+        if self.submerkle != self.merkle:
+            compare_table.add_row(*["\n..", "\n-"], key="..", height=3)
 
 
     def compose(self) -> ComposeResult:
