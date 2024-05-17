@@ -4,6 +4,7 @@ import sys
 import json
 import logging
 from pathlib import Path
+from dmerk import constants
 
 import dmerk.generate as generate
 import dmerk.compare as compare
@@ -14,7 +15,7 @@ from dmerk.tui import run as run_tui
 def _generate(args: argparse.Namespace) -> None:
     path = Path(args.path).resolve()
     merkle = generate.generate(path)
-    filename = args.filename
+    filename = args.filename if args.filename else constants.APP_STATE_PATH
     if not args.no_save:
         filename = merkle.save(filename=filename)
     if args.no_save or args.print:
