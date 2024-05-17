@@ -89,8 +89,10 @@ class FilePicker(Widget):
                 if self.prev_cell_key == message.cell_key:
                     if isinstance(self.parent, Widget):
                         parent = self.parent
+                        id_ = self.id.split('-')[-1] if self.id else ""
+                        id_ = "-".join(["compare",id_])
                         parent.mount(
-                            CompareWidget(new_path, id=f"compare-{self.id}"), after=self
+                            CompareWidget(new_path, id=id_), after=self
                         )
                         self.remove()
                     else:

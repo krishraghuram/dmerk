@@ -70,8 +70,8 @@ class DmerkApp(App[None]):
             with TabPane("Compare", id="compare"):
                 yield Vertical(
                     Horizontal(
-                        FilePicker(id="left"),
-                        FilePicker(id="right"),
+                        FilePicker(id="filepicker-left"),
+                        FilePicker(id="filepicker-right"),
                     ),
                 )
                 yield Button("COMPARE", "error", id="compare")
