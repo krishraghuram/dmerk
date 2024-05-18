@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 import logging
+import functools
 
 from textual.app import ComposeResult
 from textual.widget import Widget
@@ -28,6 +29,7 @@ def file_prefix(path: Path) -> str:
 
 def colorhash_styled_text(text: str, digest: str) -> Text:
     return Text(str(text), style=f"bold grey11 on {colorhash(digest)}", no_wrap=True)
+
 
 @dataclass
 class Column:
@@ -59,30 +61,36 @@ class CompareWidget(Widget):
     merkle_subpath: reactive[Path | None] = reactive(None)
     prev_cell_key = None
 
-    def __get_other_compare_widget(self) -> 'CompareWidget|None':
-        if self.id == "compare-left":
+    @staticmethod
+    @functools.lru_cache
+    def _get_other_compare_widget(
+        self_id: str, parent_widget: Widget
+    ) -> "CompareWidget|None":
+        if self_id == "compare-left":
             other_id = "compare-right"
-        elif self.id == "compare-right":
+        elif self_id == "compare-right":
             other_id = "compare-left"
         else:
-            raise ValueError(f"Unexpected id {self.id}")
-        if self.parent:
+            raise ValueError(f"Unexpected id {self_id}")
+        if parent_widget:
             try:
-                return self.parent.query_one(f"#{other_id}", CompareWidget)
-            except NoMatches as e:
+                return parent_widget.query_one(f"#{other_id}", CompareWidget)
+            except NoMatches:
                 logging.info(f"No Matches for {other_id}")
                 return None
         else:
-            raise ValueError(f"self.parent is None")
+            raise ValueError("self.parent is None")
 
-    def __get_column_width(self, column_key: str) -> int:
+    @staticmethod
+    @functools.lru_cache
+    def _get_column_width(total_width: int, column_key: str) -> int:
         # The math here is to prevent horizontal scrollbar from appearing
         # The vertical scrollbar may take width of 2
         # Besides that, we have 2 columns, and we have to split the rem width amongst them
         # Each column has a built-in padding of 1 on both sides (see cell_padding in DataTable docs)
         N_COLS = 2
-        TOTAL_AVAILABLE_WIDTH = self.size.width - 2 - 2 * N_COLS
-        if self.size.width != 0:
+        TOTAL_AVAILABLE_WIDTH = total_width - 2 - 2 * N_COLS
+        if total_width != 0:
             if column_key == Columns.DIGEST.value.key:
                 return 32
             elif column_key == Columns.NAME.value.key:
@@ -111,11 +119,13 @@ class CompareWidget(Widget):
                 if len(new_label) < maxlen:
                     return new_label
         return ""
-    
+
     async def _refresh(self) -> None:
         await self._refresh_label()
         await self._refresh_table()
-        other_compare_widget = self.__get_other_compare_widget()
+        other_compare_widget = CompareWidget._get_other_compare_widget(
+            self.id, self.parent
+        )
         if other_compare_widget:
             await other_compare_widget._refresh_label()
             await other_compare_widget._refresh_table()
@@ -123,31 +133,44 @@ class CompareWidget(Widget):
     async def _refresh_label(self) -> None:
         self.query_one(Label).update(Text(self.label, style="bold"))
 
-    def __get_compare_table_row(self, m: Merkle, match: bool):
-        ncw = self.__get_column_width(column_key="NAME") # name column width
-        dcw = self.__get_column_width(column_key="DIGEST") # digest column width
+    def __get_compare_table_row(self, m: Merkle, match: bool) -> list[Text]:
+        ncw = CompareWidget._get_column_width(
+            self.size.width, column_key="NAME"
+        )  # name column width
+        dcw = CompareWidget._get_column_width(
+            self.size.width, column_key="DIGEST"
+        )  # digest column width
         if not match:
             ncw = dcw = 0
         row = [
             colorhash_styled_text(
                 (
-                    " "*(ncw)+"\n"
-                    +file_prefix(m.path)+m.path.name+" "*(ncw-len(m.path.name)-3)+"\n"
-                    +" "*(ncw)
+                    " " * (ncw)
+                    + "\n"
+                    + file_prefix(m.path)
+                    + m.path.name
+                    + " " * (ncw - len(m.path.name) - 3)
+                    + "\n"
+                    + " " * (ncw)
                 ),
-                m.digest),
+                m.digest,
+            ),
             colorhash_styled_text(
                 (
-                    " "*(dcw)+"\n"
-                    +m.digest+" "*(dcw-len(m.digest))+"\n"
-                    +" "*(dcw)
+                    " " * (dcw)
+                    + "\n"
+                    + m.digest
+                    + " " * (dcw - len(m.digest))
+                    + "\n"
+                    + " " * (dcw)
                 ),
-                m.digest),
+                m.digest,
+            ),
         ]
         return row
-    
-    def __get_matches(self):
-        other = self.__get_other_compare_widget()
+
+    def __get_matches(self) -> set[str]:
+        other = CompareWidget._get_other_compare_widget(self.id, self.parent)
         if other:
             digests_1 = set([m.digest for m in self.submerkle.children.values()])
             digests_2 = set([m.digest for m in other.submerkle.children.values()])
@@ -163,21 +186,23 @@ class CompareWidget(Widget):
             compare_table.add_column(
                 "\n" + column.value.label,
                 key=column.value.key,
-                width=self.__get_column_width(column_key=column.value.key),
+                width=CompareWidget._get_column_width(
+                    self.size.width, column_key=column.value.key
+                ),
             )
+        matches = self.__get_matches()
         child_merkles = [m for m in self.submerkle.children.values()]
         child_merkles = sorted(child_merkles, key=lambda m: m.digest)
         for m in child_merkles:
-            if m.digest in self.__get_matches():
+            if m.digest in matches:
                 row = self.__get_compare_table_row(m, match=True)
                 compare_table.add_row(*row, key=str(m.path), height=3)
         for m in child_merkles:
-            if m.digest not in self.__get_matches():
+            if m.digest not in matches:
                 row = self.__get_compare_table_row(m, match=False)
                 compare_table.add_row(*row, key=str(m.path), height=3)
         if self.submerkle != self.merkle:
             compare_table.add_row(*["\n..", "\n-"], key="..", height=3)
-
 
     def compose(self) -> ComposeResult:
         yield Label(Text(f"{self.submerkle.path}", style="bold"))
@@ -196,7 +221,7 @@ class CompareWidget(Widget):
                             self.merkle_subpath = p
                 else:
                     self.prev_cell_key = message.cell_key
-    
+
     async def watch_merkle_subpath(self) -> None:
         await self._refresh()
 

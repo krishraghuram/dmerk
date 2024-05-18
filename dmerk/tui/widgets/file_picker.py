@@ -89,11 +89,9 @@ class FilePicker(Widget):
                 if self.prev_cell_key == message.cell_key:
                     if isinstance(self.parent, Widget):
                         parent = self.parent
-                        id_ = self.id.split('-')[-1] if self.id else ""
-                        id_ = "-".join(["compare",id_])
-                        parent.mount(
-                            CompareWidget(new_path, id=id_), after=self
-                        )
+                        id_ = self.id.split("-")[-1] if self.id else ""
+                        id_ = "-".join(["compare", id_])
+                        parent.mount(CompareWidget(new_path, id=id_), after=self)
                         self.remove()
                     else:
                         raise ValueError(f"{self.parent=} is not a Widget!!!")
