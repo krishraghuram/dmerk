@@ -4,9 +4,12 @@ from pathlib import Path
 import logging
 import functools
 
+from textual import work
+from textual.worker import Worker, WorkerState
 from textual.app import ComposeResult
+from textual.containers import Center, Middle
 from textual.widget import Widget
-from textual.widgets import DataTable, Label
+from textual.widgets import DataTable, Label, ProgressBar
 from textual.reactive import reactive
 from textual.events import Resize
 from textual.css.query import NoMatches
@@ -46,6 +49,7 @@ class CompareWidget(Widget):
 
     merkle_subpath: reactive[Path | None] = reactive(None)
     prev_cell_key = None
+    merkle_loaded: reactive[bool] = reactive(False, recompose=True)
 
     def __init__(
         self,
@@ -58,14 +62,34 @@ class CompareWidget(Widget):
     ):
         super().__init__(name=name, id=id, classes=classes, disabled=disabled)
         if path.is_file() and path.suffix == ".dmerk":
-            self.merkle = Merkle.load(path)
+            self._main(path)
         else:
             raise ValueError(f"path {path} must be a dmerk file")
 
+    @work(thread=True)
+    async def _main(self, path: Path) -> None:
+        import time
+
+        time.sleep(2)
+        self.merkle = Merkle.load(path)
+
+    async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
+        if event.state == WorkerState.SUCCESS:
+            self.merkle_loaded = True
+            await self.recompose()
+            await self._refresh()
+        elif event.state in [WorkerState.ERROR, WorkerState.CANCELLED]:
+            raise Exception("Worker failed/cancelled")
+
     def compose(self) -> ComposeResult:
-        yield Label(Text(f"{self.submerkle.path}", style="bold"))
-        compare_table: DataTable[None] = DataTable(header_height=3)
-        yield compare_table
+        if self.merkle_loaded:
+            yield Label(Text(f"{self.submerkle.path}", style="bold"))
+            compare_table: DataTable[None] = DataTable(header_height=3)
+            yield compare_table
+        else:
+            with Center():
+                with Middle():
+                    yield ProgressBar()
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if "NAME" in message.cell_key:
@@ -87,14 +111,15 @@ class CompareWidget(Widget):
         await self._refresh()
 
     async def _refresh(self) -> None:
-        await self._refresh_label()
-        await self._refresh_table()
-        other_compare_widget = CompareWidget._get_other_compare_widget(
-            self.id, self.parent
-        )
-        if other_compare_widget:
-            await other_compare_widget._refresh_label()
-            await other_compare_widget._refresh_table()
+        if self.merkle_loaded:
+            await self._refresh_label()
+            await self._refresh_table()
+            other_compare_widget = CompareWidget._get_other_compare_widget(
+                self.id, self.parent
+            )
+            if other_compare_widget:
+                await other_compare_widget._refresh_label()
+                await other_compare_widget._refresh_table()
 
     async def _refresh_label(self) -> None:
         self.query_one(Label).update(Text(self.label, style="bold"))
@@ -123,6 +148,7 @@ class CompareWidget(Widget):
                 compare_table.add_row(*row, key=str(m.path), height=3)
         if self.submerkle != self.merkle:
             compare_table.add_row(*["\n..", "\n-"], key="..", height=3)
+        print("End of _refresh_table")
 
     @staticmethod
     @functools.lru_cache
