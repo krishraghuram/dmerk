@@ -110,8 +110,9 @@ class CompareWidget(Widget):
                 self.id, self.parent
             )
             if other_compare_widget:
-                await other_compare_widget._refresh_label()
-                await other_compare_widget._refresh_table()
+                if not other_compare_widget.loading:
+                    await other_compare_widget._refresh_label()
+                    await other_compare_widget._refresh_table()
 
     async def _refresh_label(self) -> None:
         self.query_one(Label).update(Text(self.label, style="bold"))
@@ -239,9 +240,12 @@ class CompareWidget(Widget):
     def _get_matches(self) -> set[str]:
         other = CompareWidget._get_other_compare_widget(self.id, self.parent)
         if other:
-            digests_1 = set([m.digest for m in self.submerkle.children.values()])
-            digests_2 = set([m.digest for m in other.submerkle.children.values()])
-            matches = digests_1 & digests_2
-            return matches
+            if self.loading or other.loading:
+                return set()
+            else:
+                digests_1 = set([m.digest for m in self.submerkle.children.values()])
+                digests_2 = set([m.digest for m in other.submerkle.children.values()])
+                matches = digests_1 & digests_2
+                return matches
         else:
             return set()
