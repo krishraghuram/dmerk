@@ -43,6 +43,10 @@ class Columns(Enum):
 
 
 class CompareWidget(Widget):
+
+    merkle_subpath: reactive[Path | None] = reactive(None)
+    prev_cell_key = None
+
     def __init__(
         self,
         path: Path,
@@ -58,8 +62,67 @@ class CompareWidget(Widget):
         else:
             raise ValueError(f"path {path} must be a dmerk file")
 
-    merkle_subpath: reactive[Path | None] = reactive(None)
-    prev_cell_key = None
+    def compose(self) -> ComposeResult:
+        yield Label(Text(f"{self.submerkle.path}", style="bold"))
+        compare_table: DataTable[None] = DataTable(header_height=3)
+        yield compare_table
+
+    def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
+        if "NAME" in message.cell_key:
+            if message.cell_key.row_key.value is not None:
+                if self.prev_cell_key == message.cell_key:
+                    p = Path(message.cell_key.row_key.value)
+                    if p.is_dir():
+                        if self.merkle_subpath:
+                            self.merkle_subpath = (self.merkle_subpath / p).resolve()
+                        else:
+                            self.merkle_subpath = p
+                else:
+                    self.prev_cell_key = message.cell_key
+
+    async def watch_merkle_subpath(self) -> None:
+        await self._refresh()
+
+    async def on_resize(self, event: Resize) -> None:
+        await self._refresh()
+
+    async def _refresh(self) -> None:
+        await self._refresh_label()
+        await self._refresh_table()
+        other_compare_widget = CompareWidget._get_other_compare_widget(
+            self.id, self.parent
+        )
+        if other_compare_widget:
+            await other_compare_widget._refresh_label()
+            await other_compare_widget._refresh_table()
+
+    async def _refresh_label(self) -> None:
+        self.query_one(Label).update(Text(self.label, style="bold"))
+
+    async def _refresh_table(self) -> None:
+        compare_table = self.query_one(DataTable)
+        compare_table.clear(columns=True)
+        for column in Columns:
+            compare_table.add_column(
+                "\n" + column.value.label,
+                key=column.value.key,
+                width=CompareWidget._get_column_width(
+                    self.size.width, column_key=column.value.key
+                ),
+            )
+        matches = self._get_matches()
+        child_merkles = [m for m in self.submerkle.children.values()]
+        child_merkles = sorted(child_merkles, key=lambda m: m.digest)
+        for m in child_merkles:
+            if m.digest in matches:
+                row = self._get_compare_table_row(m, match=True)
+                compare_table.add_row(*row, key=str(m.path), height=3)
+        for m in child_merkles:
+            if m.digest not in matches:
+                row = self._get_compare_table_row(m, match=False)
+                compare_table.add_row(*row, key=str(m.path), height=3)
+        if self.submerkle != self.merkle:
+            compare_table.add_row(*["\n..", "\n-"], key="..", height=3)
 
     @staticmethod
     @functools.lru_cache
@@ -120,20 +183,7 @@ class CompareWidget(Widget):
                     return new_label
         return ""
 
-    async def _refresh(self) -> None:
-        await self._refresh_label()
-        await self._refresh_table()
-        other_compare_widget = CompareWidget._get_other_compare_widget(
-            self.id, self.parent
-        )
-        if other_compare_widget:
-            await other_compare_widget._refresh_label()
-            await other_compare_widget._refresh_table()
-
-    async def _refresh_label(self) -> None:
-        self.query_one(Label).update(Text(self.label, style="bold"))
-
-    def __get_compare_table_row(self, m: Merkle, match: bool) -> list[Text]:
+    def _get_compare_table_row(self, m: Merkle, match: bool) -> list[Text]:
         ncw = CompareWidget._get_column_width(
             self.size.width, column_key="NAME"
         )  # name column width
@@ -169,7 +219,7 @@ class CompareWidget(Widget):
         ]
         return row
 
-    def __get_matches(self) -> set[str]:
+    def _get_matches(self) -> set[str]:
         other = CompareWidget._get_other_compare_widget(self.id, self.parent)
         if other:
             digests_1 = set([m.digest for m in self.submerkle.children.values()])
@@ -178,52 +228,3 @@ class CompareWidget(Widget):
             return matches
         else:
             return set()
-
-    async def _refresh_table(self) -> None:
-        compare_table = self.query_one(DataTable)
-        compare_table.clear(columns=True)
-        for column in Columns:
-            compare_table.add_column(
-                "\n" + column.value.label,
-                key=column.value.key,
-                width=CompareWidget._get_column_width(
-                    self.size.width, column_key=column.value.key
-                ),
-            )
-        matches = self.__get_matches()
-        child_merkles = [m for m in self.submerkle.children.values()]
-        child_merkles = sorted(child_merkles, key=lambda m: m.digest)
-        for m in child_merkles:
-            if m.digest in matches:
-                row = self.__get_compare_table_row(m, match=True)
-                compare_table.add_row(*row, key=str(m.path), height=3)
-        for m in child_merkles:
-            if m.digest not in matches:
-                row = self.__get_compare_table_row(m, match=False)
-                compare_table.add_row(*row, key=str(m.path), height=3)
-        if self.submerkle != self.merkle:
-            compare_table.add_row(*["\n..", "\n-"], key="..", height=3)
-
-    def compose(self) -> ComposeResult:
-        yield Label(Text(f"{self.submerkle.path}", style="bold"))
-        compare_table: DataTable[None] = DataTable(header_height=3)
-        yield compare_table
-
-    def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
-        if "NAME" in message.cell_key:
-            if message.cell_key.row_key.value is not None:
-                if self.prev_cell_key == message.cell_key:
-                    p = Path(message.cell_key.row_key.value)
-                    if p.is_dir():
-                        if self.merkle_subpath:
-                            self.merkle_subpath = (self.merkle_subpath / p).resolve()
-                        else:
-                            self.merkle_subpath = p
-                else:
-                    self.prev_cell_key = message.cell_key
-
-    async def watch_merkle_subpath(self) -> None:
-        await self._refresh()
-
-    async def on_resize(self, event: Resize) -> None:
-        await self._refresh()
