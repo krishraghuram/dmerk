@@ -10,6 +10,7 @@ from textual.widgets import (
     TabbedContent,
     TabPane,
 )
+from textual.logging import TextualHandler
 from textual.containers import Horizontal, Vertical
 from textual.events import Mount, Ready
 from textual import work
@@ -44,6 +45,7 @@ class DmerkApp(App[None]):
 
     def on_ready(self, event: Ready) -> None:
         root_logger = logging.getLogger()
+        root_logger.setLevel(logging.INFO)
         rich_log_handler = TextHandler(self.query_one(RichLog))
         rich_log_handler.setLevel(logging.INFO)
         rich_log_handler.setFormatter(
@@ -53,6 +55,7 @@ class DmerkApp(App[None]):
         )
         root_logger.handlers.clear()
         root_logger.addHandler(rich_log_handler)
+        root_logger.addHandler(TextualHandler())
 
     def compose(self) -> ComposeResult:
         """Called to add widgets to the app."""
