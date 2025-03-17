@@ -10,13 +10,15 @@ from textual.widgets import (
     TabbedContent,
     TabPane,
 )
-from textual.logging import TextualHandler
 from textual.containers import Horizontal, Vertical
 from textual.events import Mount, Ready
 from textual import work
 from dmerk.tui.widgets import FileManager, FavoritesSidebar, SidebarButton, FilePicker
 import dmerk.generate as generate
 import dmerk.constants as constants
+import sys
+
+from textual._context import active_app
 
 
 # Taken from: https://github.com/Textualize/textual/discussions/2072#discussioncomment-5666856
@@ -32,6 +34,36 @@ class TextHandler(logging.Handler):
         self.text.write(msg)
 
 
+# Monkey Patching from textual source
+# https://github.com/Textualize/textual/blob/8bfa533fe90a1c4d248b4fdeb127d82c1781f003/src/textual/logging.py#L15
+class TextualHandler(logging.Handler):
+    """A Logging handler for Textual apps."""
+
+    def __init__(self, stderr: bool = True, stdout: bool = False) -> None:
+        """Initialize a Textual logging handler.
+
+        Args:
+            stderr: Log to stderr when there is no active app.
+            stdout: Log to stdout when there is not active app.
+        """
+        super().__init__()
+        self._stderr = stderr
+        self._stdout = stdout
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Invoked by logging."""
+        message = self.format(record)
+        try:
+            app = active_app.get()
+        except LookupError:
+            if self._stderr:
+                print(message, file=sys.stderr)
+            elif self._stdout:
+                print(message, file=sys.stdout)
+        else:
+            app.log.debug(message)
+
+
 class DmerkApp(App[None]):
     """An TUI for dmerk"""
 
@@ -45,7 +77,7 @@ class DmerkApp(App[None]):
 
     def on_ready(self, event: Ready) -> None:
         root_logger = logging.getLogger()
-        root_logger.setLevel(logging.INFO)
+        root_logger.setLevel(logging.DEBUG)
         rich_log_handler = TextHandler(self.query_one(RichLog))
         rich_log_handler.setLevel(logging.INFO)
         rich_log_handler.setFormatter(
@@ -83,7 +115,7 @@ class DmerkApp(App[None]):
     async def on_tabbed_content_tab_activated(
         self, message: TabbedContent.TabActivated
     ) -> None:
-        print(message)
+        logging.debug(message)
         if self.prev_tab == "compare" and message.pane.id != "compare":
             await self.recompose()
             if message.pane.id:
