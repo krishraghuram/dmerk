@@ -8,6 +8,7 @@ from textual import work
 from textual.worker import Worker, WorkerState
 from textual.app import ComposeResult
 from textual.widget import Widget
+from textual.dom import DOMNode
 from textual.widgets import DataTable, Label
 from textual.reactive import reactive
 from textual.events import Resize
@@ -143,9 +144,8 @@ class CompareWidget(Widget):
             compare_table.add_row(*["\n..", "\n-"], key="..", height=3)
 
     @staticmethod
-    @functools.lru_cache
     def _get_other_compare_widget(
-        self_id: str, parent_widget: Widget
+        self_id: str | None, parent_widget: DOMNode | None
     ) -> "CompareWidget|None":
         if self_id == "compare-left":
             other_id = "compare-right"

@@ -151,7 +151,7 @@ class DmerkApp(App[None]):
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
-        self.dark = not self.dark
+        self.dark = not self.dark  # type: ignore
 
     def on_file_manager_path_selected(self, message: FileManager.PathSelected) -> None:
         self.query_one(FavoritesSidebar).path_selected(message.path)
