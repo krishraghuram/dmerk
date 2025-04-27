@@ -1,6 +1,0 @@
-build==0.10.0
-pip==22.0.2
-pipdeptree==2.5.0
-pytest-benchmark==4.0.0
-setuptools==59.6.0
-twine==4.0.2
