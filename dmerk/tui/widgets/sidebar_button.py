@@ -2,11 +2,46 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from textual import events
 from textual.widgets import Button
 from textual.message import Message
 
 
 class SidebarButton(Button):
+
+    # Textual buttons have been changed
+    # They cannot be pressed when already "active"
+    # https://github.com/Textualize/textual/releases/tag/v0.66.0
+    # https://github.com/Textualize/textual/pull/4621
+    # So we are using custom style classes
+    DEFAULT_CSS = """
+    SidebarButton {
+        &.-selected {
+            background: $surface;
+            border-bottom: tall $surface-lighten-1;
+            border-top: tall $surface-darken-1;
+            tint: $background 30%;
+        }
+        &.-edit {
+            color: $button-color-foreground;
+            background: $primary;
+            border-top: tall $primary-lighten-3;
+            border-bottom: tall $primary-darken-3;
+
+            &:hover {
+                background: $primary-darken-2;
+                border-top: tall $primary;
+            }
+
+            &.-active {
+                background: $primary;
+                border-bottom: tall $primary-lighten-3;
+                border-top: tall $primary-darken-3;
+            }
+        }
+    }
+    """
+
     class State(Enum):
         # Default state, button is not selected
         DEFAULT = 0
@@ -30,12 +65,13 @@ class SidebarButton(Button):
 
     def __init__(self, path: Path | None, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
+        self.active_effect_duration = 0
         self.path: Path | None = path
         self.state = SidebarButton.State.DEFAULT
 
     def remove_classes(self) -> None:
-        self.remove_class("-active")
-        self.remove_class("-primary")
+        self.remove_class("-selected")
+        self.remove_class("-edit")
 
     def reset_state(self) -> None:
         self.state = SidebarButton.State.DEFAULT
@@ -45,11 +81,11 @@ class SidebarButton(Button):
         if self.state == SidebarButton.State.DEFAULT:
             self.state = SidebarButton.State.SELECTED
             self.remove_classes()
-            self.add_class("-active")
+            self.add_class("-selected")
         elif self.state == SidebarButton.State.SELECTED:
             self.state = SidebarButton.State.EDIT
             self.remove_classes()
-            self.add_class("-primary")
+            self.add_class("-edit")
             # Additionally, remove label, path
             self.label = ""
             self.path = None
