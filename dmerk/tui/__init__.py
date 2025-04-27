@@ -73,8 +73,6 @@ class DmerkApp(App[None]):
         ("d", "toggle_dark", "Toggle dark mode"),
     ]
 
-    prev_tab = None
-
     def on_ready(self, event: Ready) -> None:
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.DEBUG)
@@ -112,20 +110,6 @@ class DmerkApp(App[None]):
                 yield Button("COMPARE", "error", id="compare")
         yield Footer()
 
-    async def on_tabbed_content_tab_activated(
-        self, message: TabbedContent.TabActivated
-    ) -> None:
-        logging.debug(message)
-        if self.prev_tab == "compare" and message.pane.id != "compare":
-            await self.recompose()
-            if message.pane.id:
-                self.query_one(TabbedContent).active = message.pane.id
-            else:
-                raise ValueError(
-                    f"Recomposed the UI, but couldn't set the tab because {message.pane.id=}"
-                )
-        self.prev_tab = message.pane.id
-
     @work(thread=True)
     async def _main(self, path: Path) -> None:
         path = path.resolve()
@@ -143,25 +127,22 @@ class DmerkApp(App[None]):
         else:
             logging.warning("Please choose a path")
 
-    def on_mount(self, event: Mount) -> None:
-        self.query_one(FileManager).query_one(DataTable).focus()
-        for button in self.query_one(FavoritesSidebar).query(SidebarButton):
-            if str(button.label) == "Home":
-                button.action_press()
-
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
         self.dark = not self.dark  # type: ignore
 
     def on_file_manager_path_selected(self, message: FileManager.PathSelected) -> None:
+        logging.debug(message)
         self.query_one(FavoritesSidebar).path_selected(message.path)
 
     def on_file_manager_path_change(self, message: FileManager.PathChange) -> None:
+        logging.debug(message)
         self.query_one(FavoritesSidebar).path_change(message.path)
 
     def on_favorites_sidebar_path_selected(
         self, message: FavoritesSidebar.PathSelected
     ) -> None:
+        logging.debug(message)
         self.query_one(FileManager).path_selected(message.path)
 
 
