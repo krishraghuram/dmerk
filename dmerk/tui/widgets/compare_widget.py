@@ -30,6 +30,7 @@ def file_prefix(path: Path) -> str:
         return "⭐ "
 
 
+# Bug: https://trello.com/c/iizCU2oj
 def colorhash_styled_text(text: str, digest: str) -> Text:
     return Text(str(text), style=f"bold grey11 on {colorhash(digest)}", no_wrap=True)
 
