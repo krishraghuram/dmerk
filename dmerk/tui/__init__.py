@@ -108,8 +108,8 @@ class DmerkApp(App[None]):
                         FilePicker(id="filepicker-left"),
                         FilePicker(id="filepicker-right"),
                     ),
+                    Button("RESET", "primary", id="reset-compare"),
                 )
-                yield Button("RESET", "primary", id="reset-compare")
         yield Footer()
 
     @work(thread=True)

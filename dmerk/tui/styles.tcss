@@ -54,7 +54,7 @@ Screen FilePicker {
     overflow: auto;
     align: center top;
 }
-Screen Button {
+Screen Button#reset-compare {
     width: 100%;
 }
 Screen CompareWidget {
@@ -65,9 +65,6 @@ Screen CompareWidget Label {
     width: 100%;
 }
 Screen CompareWidget DataTable {
+    margin: 0 0 1 0;
     width: 100%;
-}
-Screen CompareWidget Button {
-    width: 100%;
-    margin: 0 1;
 }
