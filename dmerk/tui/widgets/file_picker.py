@@ -81,6 +81,12 @@ class FilePicker(Widget):
     ) -> None:
         self.prev_cell_key = None
 
+    def _mount_compare_widget(self, path):
+        id_ = self.id.split("-")[-1] if self.id else ""
+        id_ = "-".join(["compare", id_])
+        self.parent.mount(CompareWidget(path, id=id_), after=self)
+        self.remove()
+
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if message.cell_key.row_key.value is not None:
             new_path: Path = self.path / message.cell_key.row_key.value
@@ -88,11 +94,7 @@ class FilePicker(Widget):
             if new_path.is_file():
                 if self.prev_cell_key == message.cell_key:
                     if isinstance(self.parent, Widget):
-                        parent = self.parent
-                        id_ = self.id.split("-")[-1] if self.id else ""
-                        id_ = "-".join(["compare", id_])
-                        parent.mount(CompareWidget(new_path, id=id_), after=self)
-                        self.remove()
+                        self._mount_compare_widget(new_path)
                     else:
                         raise ValueError(f"{self.parent=} is not a Widget!!!")
                 else:

@@ -66,6 +66,15 @@ class CompareWidget(Widget):
         else:
             raise ValueError(f"path {path} must be a dmerk file")
 
+    def reset_to_filepicker(self):
+        from dmerk.tui.widgets.file_picker import FilePicker
+
+        id_ = self.id.split("-")[-1] if self.id else ""
+        id_ = "-".join(["filepicker", id_])
+        logging.debug(id_)
+        self.parent.mount(FilePicker(id=id_), after=self)
+        self.remove()
+
     @work(thread=True)
     async def _main(self, path: Path) -> None:
         self.merkle = Merkle.load(path)

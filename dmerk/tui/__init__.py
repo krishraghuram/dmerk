@@ -20,6 +20,8 @@ import sys
 
 from textual._context import active_app
 
+from dmerk.tui.widgets.compare_widget import CompareWidget
+
 
 # Taken from: https://github.com/Textualize/textual/discussions/2072#discussioncomment-5666856
 class TextHandler(logging.Handler):
@@ -107,7 +109,7 @@ class DmerkApp(App[None]):
                         FilePicker(id="filepicker-right"),
                     ),
                 )
-                yield Button("COMPARE", "error", id="compare")
+                yield Button("RESET", "primary", id="reset-compare")
         yield Footer()
 
     @work(thread=True)
@@ -118,14 +120,18 @@ class DmerkApp(App[None]):
         merkle.save(filename=filename)
 
     def on_button_pressed(self, message: Button.Pressed) -> None:
-        highlighted_path = self.query_one(FileManager).highlighted_path
-        if highlighted_path is not None:
-            if highlighted_path.is_dir():
-                self._main(highlighted_path)
+        if message.button.id == "generate":
+            highlighted_path = self.query_one(FileManager).highlighted_path
+            if highlighted_path is not None:
+                if highlighted_path.is_dir():
+                    self._main(highlighted_path)
+                else:
+                    logging.warning("Please choose a directory")
             else:
-                logging.warning("Please choose a directory")
-        else:
-            logging.warning("Please choose a path")
+                logging.warning("Please choose a path")
+        elif message.button.id == "reset-compare":
+            for compare_widget in self.query(CompareWidget):
+                compare_widget.reset_to_filepicker()
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
