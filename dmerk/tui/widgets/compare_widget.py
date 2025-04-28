@@ -166,7 +166,7 @@ class CompareWidget(Widget):
             try:
                 return parent_widget.query_one(f"#{other_id}", CompareWidget)
             except NoMatches:
-                logging.info(f"No Matches for {other_id}")
+                logging.debug(f"No Matches for {other_id}")
                 return None
         else:
             raise ValueError("self.parent is None")
