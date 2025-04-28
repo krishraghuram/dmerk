@@ -104,8 +104,7 @@ class CompareWidget(Widget):
                             self.merkle_subpath = (self.merkle_subpath / p).resolve()
                         else:
                             self.merkle_subpath = p
-                else:
-                    self.prev_cell_key = message.cell_key
+        self.prev_cell_key = message.cell_key
 
     async def watch_merkle_subpath(self) -> None:
         await self._refresh()
