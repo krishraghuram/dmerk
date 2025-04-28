@@ -94,6 +94,46 @@ class CompareWidget(Widget):
             compare_table: DataTable[None] = DataTable(header_height=3)
             yield compare_table
 
+    # BUG: We are syncing scroll positions and cursor by x,y coordinates,
+    # so this only works when we are actually viewing matching merkles in compare,
+    # that too, when viewing matching levels of matching merkles...
+    # We need to define a custom method in CompareWidget that receives the other widget's
+    #   CellHighlighted event,
+    #   Cursor Position,
+    #   Scroll Position
+    #   The actual selected item's merkle or atleast the merkle's digest...
+    # Then we can compare by the digest and scroll to the matching item...
+    # But even with that, we will still have a visual problem,
+    #   because when merkles dont match, they might have different no. of items,
+    #   so one side will scroll to end, and other will still have some items left,
+    #   and would allow you to scroll further, causing the left and right side to go out of sync...
+    def on_data_table_cell_highlighted(
+        self, message: DataTable.CellHighlighted
+    ) -> None:
+        logging.info(f"Syncing Scroll Position: {self.id}")
+        other = CompareWidget._get_other_compare_widget(self.id, self.parent)
+        if other:
+            compare_table = self.query_one(DataTable)
+            other_compare_table = other.query_one(DataTable)
+            with other_compare_table.prevent(DataTable.CellHighlighted):
+                # Need to call scroll_to and move_cursor separately, because,
+                # Just calling move_cursor with scroll=True will move
+                #   an out-of-screen row "just enough" to be visible
+                # And not necessarily match the horizontal position of the
+                #   currently highlighted row and column
+                # Also, the order seems to matter here,
+                #   we need to call move_cursor and then scroll_to,
+                #   else scrolling is slightly off
+                other_compare_table.move_cursor(
+                    row=compare_table.cursor_row,
+                    column=compare_table.cursor_column,
+                    animate=False,
+                    scroll=False,
+                )
+                other_compare_table.scroll_to(
+                    compare_table.scroll_x, compare_table.scroll_y, animate=False
+                )
+
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if "NAME" in message.cell_key:
             if message.cell_key.row_key.value is not None:
