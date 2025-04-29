@@ -15,7 +15,6 @@ _DIGEST_ALGORITHM = "md5"  # takes 10-20 percent less time to run than sha256
 
 
 def generate(directory: Path, continue_on_error: bool) -> Merkle:
-    print(f"{continue_on_error=}")
     if directory.exists():
         return _generate(directory, continue_on_error)
     else:
@@ -23,37 +22,42 @@ def generate(directory: Path, continue_on_error: bool) -> Merkle:
 
 
 def _generate(directory: Path, continue_on_error: bool) -> Merkle:
-    children: list[Path] = []
-    for child in directory.iterdir():
-        if not (child.is_symlink() or child.is_dir() or child.is_file()):
-            if continue_on_error:
-                # TODO: should we include special files in merkle output, so as to not lose information?
-                # We could just incl the file path, type and have size as 0, and digest as empty string ""
-                logging.error(f"{child} is neither a file nor a directory")
-            else:
-                raise ValueError(f"{child} is neither a file nor a directory")
-        children.append(child)
     contents: dict[Path, Merkle] = {}
-    for child in children:
-        # is_symlink needs to be first because is_dir and is_file are True for symlinks
-        if child.is_symlink():
-            contents[child] = Merkle(
-                path=child,
-                type=Merkle.Type.SYMLINK,
-                # Python 3.9 Compat
-                size=child.lstat().st_size,
-                digest=_symlink_digest(child),
-            )
-        elif child.is_dir():
-            contents[child] = _generate(child, continue_on_error)
-        elif child.is_file():
-            contents[child] = Merkle(
-                path=child,
-                type=Merkle.Type.FILE,
-                # Python 3.9 Compat
-                size=child.stat().st_size,
-                digest=_file_digest(child),
-            )
+    for child in directory.iterdir():
+        try:
+            # is_symlink needs to be first because is_dir and is_file are True for symlinks
+            if child.is_symlink():
+                contents[child] = Merkle(
+                    path=child,
+                    type=Merkle.Type.SYMLINK,
+                    # Python 3.9 Compat
+                    size=child.lstat().st_size,
+                    digest=_symlink_digest(child),
+                )
+            elif child.is_dir():
+                contents[child] = _generate(child, continue_on_error)
+            elif child.is_file():
+                contents[child] = Merkle(
+                    path=child,
+                    type=Merkle.Type.FILE,
+                    # Python 3.9 Compat
+                    size=child.stat().st_size,
+                    digest=_file_digest(child),
+                )
+            else:
+                if continue_on_error:
+                    # TODO: should we include special files in merkle output, so as to not lose information?
+                    # We could just incl the file path, type and have size as 0, and digest as empty string ""
+                    logging.error(f"{child} is neither a file nor a directory")
+                    continue
+                else:
+                    raise ValueError(f"{child} is neither a file nor a directory")
+        except (PermissionError, OSError) as e:
+            if continue_on_error:
+                logging.error(f"Error accessing {child}: {e}")
+                continue
+            else:
+                raise
     return Merkle(
         path=directory,
         type=Merkle.Type.DIRECTORY,
