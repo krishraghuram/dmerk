@@ -5,11 +5,12 @@ import json
 import pathlib
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 
 class Merkle:
-    __slots__ = ("path", "type", "size", "digest", "children")
+    __slots__ = ("path", "type", "size", "digest", "_children_data", "_children")
+    SLOTS = ("path", "type", "size", "digest", "children")
 
     class Type(enum.Enum):
         FILE = "file"
@@ -27,13 +28,60 @@ class Merkle:
         digest: str,
         # typing.Self only available from 3.11
         children: dict[Path, "Merkle"] | None = None,
+        _children_data: dict | None = None,
     ) -> None:
         self.path = path
         self.type = type
         self.size = size
         self.digest = digest
-        if children is not None:
-            self.children = children
+        self._children = children
+        if not self._children:
+            self._children_data = _children_data
+
+    @property
+    def children(self) -> Dict[Path, "Merkle"]:
+        """Lazily deserialize children only when accessed."""
+        if self._children is None:
+            if self._children_data is not None:
+                PosixPath = pathlib.PosixPath  # noqa: F841
+                WindowsPath = pathlib.WindowsPath  # noqa: F841
+                globs = globals()
+                locs = locals()
+                self._children = {
+                    eval(k, globs, locs): Merkle.from_dict(v)
+                    for k, v in self._children_data.items()
+                }
+                self._children_data = None  # free memory
+            else:
+                self._children = {}
+        return self._children
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Merkle":
+        """Create a Merkle instance from a dictionary without processing children."""
+        if "__merkle__" not in data:
+            logging.error("Not a valid Merkle dictionary")
+            raise ValueError("Not a valid Merkle dictionary")
+        PosixPath = pathlib.PosixPath  # noqa: F841
+        WindowsPath = pathlib.WindowsPath  # noqa: F841
+        Type = cls.Type  # noqa: F841
+        path = eval(data["path"])
+        type_data = data["type"]
+        if isinstance(type_data, dict) and "__merkle_type__" in type_data:
+            type_val = eval(type_data["__merkle_type__"])
+        else:
+            logging.error("Not a valid Merkle.Type dictionary")
+            raise ValueError("Not a valid Merkle.Type dictionary")
+
+        children_data = data.get("children")
+
+        return Merkle(
+            path=path,
+            type=type_val,
+            size=data["size"],
+            digest=data["digest"],
+            _children_data=children_data,
+        )
 
     def __eq__(self, other: Any) -> bool:
         """
@@ -49,14 +97,14 @@ class Merkle:
             return all(
                 [
                     (getattr(self, slotname, None) == getattr(other, slotname, None))
-                    for slotname in set(Merkle.__slots__) - {"path"}
+                    for slotname in set(Merkle.SLOTS) - {"path"}
                 ]
             )
 
     def __repr__(self) -> str:
         kwargs = {
             slotname: getattr(self, slotname)
-            for slotname in self.__slots__
+            for slotname in Merkle.SLOTS
             if hasattr(self, slotname)
         }
         argstring = ", ".join([f"{k}={repr(v)}" for k, v in kwargs.items()])
@@ -109,18 +157,16 @@ class Merkle:
     @staticmethod
     def load(filename: str | Path) -> "Merkle":
         with open(filename, mode="r", encoding="utf-8") as file:
-            out = json.load(file, object_hook=Merkle.json_decode)
-            if isinstance(out, Merkle):
-                return out
-            else:
-                raise ValueError(f"File '{filename}' does not represent a merkle!!!")
+            file_content = file.read()
+            merkle_dict = json.loads(file_content)
+            return Merkle.from_dict(merkle_dict)
 
     @staticmethod
     def json_encode(obj: Any) -> dict[str, Any]:
         if isinstance(obj, Merkle):
             output = {
                 slotname: getattr(obj, slotname)
-                for slotname in obj.__slots__
+                for slotname in Merkle.SLOTS
                 if hasattr(obj, slotname)
             }
             output["__merkle__"] = True  # To make deserialization work :)
@@ -134,23 +180,3 @@ class Merkle:
         elif isinstance(obj, Merkle.Type):
             return {"__merkle_type__": str(obj)}
         raise TypeError(f"Object of type {type(obj)} are not JSON serializable")
-
-    @staticmethod
-    def json_decode(obj: dict[str, Any]) -> Any:
-        if "__merkle__" in obj:
-            PosixPath = pathlib.PosixPath  # noqa: F841
-            WindowsPath = pathlib.WindowsPath  # noqa: F841
-            obj["path"] = eval(obj["path"])
-            if "children" in obj:
-                globs = globals()
-                locs = locals()
-                obj["children"] = {
-                    eval(k, globs, locs): v for k, v in obj["children"].items()
-                }
-            obj.pop("__merkle__")
-            return Merkle(**obj)
-        elif "__merkle_type__" in obj:
-            Type = Merkle.Type  # noqa: F841
-            return eval(obj["__merkle_type__"])
-        else:
-            return obj
