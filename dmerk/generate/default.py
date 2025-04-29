@@ -1,4 +1,5 @@
 import hashlib
+import logging
 from pathlib import Path
 
 from ..merkle import Merkle
@@ -13,18 +14,24 @@ except AttributeError:
 _DIGEST_ALGORITHM = "md5"  # takes 10-20 percent less time to run than sha256
 
 
-def generate(directory: Path) -> Merkle:
+def generate(directory: Path, continue_on_error: bool) -> Merkle:
+    print(f"{continue_on_error=}")
     if directory.exists():
-        return _generate(directory)
+        return _generate(directory, continue_on_error)
     else:
         raise NotADirectoryError(f"Directory '{directory}' does not exist")
 
 
-def _generate(directory: Path) -> Merkle:
+def _generate(directory: Path, continue_on_error: bool) -> Merkle:
     children: list[Path] = []
     for child in directory.iterdir():
         if not (child.is_symlink() or child.is_dir() or child.is_file()):
-            raise ValueError(f"{child} is neither a file nor a directory")
+            if continue_on_error:
+                # TODO: should we include special files in merkle output, so as to not lose information?
+                # We could just incl the file path, type and have size as 0, and digest as empty string ""
+                logging.error(f"{child} is neither a file nor a directory")
+            else:
+                raise ValueError(f"{child} is neither a file nor a directory")
         children.append(child)
     contents: dict[Path, Merkle] = {}
     for child in children:
@@ -38,7 +45,7 @@ def _generate(directory: Path) -> Merkle:
                 digest=_symlink_digest(child),
             )
         elif child.is_dir():
-            contents[child] = _generate(child)
+            contents[child] = _generate(child, continue_on_error)
         elif child.is_file():
             contents[child] = Merkle(
                 path=child,

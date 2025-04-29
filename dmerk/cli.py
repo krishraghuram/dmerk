@@ -14,7 +14,7 @@ from dmerk.tui import run as run_tui
 
 def _generate(args: argparse.Namespace) -> None:
     path = Path(args.path).resolve()
-    merkle = generate.generate(path)
+    merkle = generate.generate(path, continue_on_error=args.continue_on_error)
     filename = args.filename if args.filename else constants.APP_STATE_PATH
     if not args.no_save:
         filename = merkle.save(filename=filename)
@@ -81,6 +81,11 @@ def _main(args: list[str]) -> None:
         "-f",
         "--filename",
         help="provide a custom filename",
+    )
+    parser_generate.add_argument(
+        "--continue-on-error",
+        action="store_true",
+        help="continue upon encountering errors (such as broken symlinks etc.)",
     )
     # # TODO: compress generate output
     # parser_generate.add_argument("-c", "--compress", help="compress the output file")
