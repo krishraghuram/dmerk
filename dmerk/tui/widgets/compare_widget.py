@@ -11,7 +11,7 @@ from textual.widget import Widget
 from textual.dom import DOMNode
 from textual.widgets import DataTable, Label
 from textual.reactive import reactive
-from textual.events import Resize
+from textual.events import Resize, DescendantBlur
 from textual.css.query import NoMatches
 from rich.text import Text
 
@@ -114,6 +114,9 @@ class CompareWidget(Widget):
                         else:
                             self.merkle_subpath = pure_path
         self.prev_cell_key = message.cell_key
+
+    def on_descendant_blur(self, message: DescendantBlur):
+        self.prev_cell_key = None
 
     async def watch_merkle_subpath(self) -> None:
         await self._refresh()
