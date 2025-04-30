@@ -202,7 +202,7 @@ def test_merkle_traverse(merkle: Merkle, subpath, return_value, exception):
 
 
 def test_merkle_get_filename(monkeypatch):
-    path = Path("/home/raghuram/Documents")
+    path = Path("/home/raghuram/Documents").name
     filename_1 = Merkle._get_filename(path)
     assert filename_1 == Path.cwd() / Path(f"{path.name}.dmerk")
     monkeypatch.setattr(Path, "exists", lambda p: p.name == filename_1.name)

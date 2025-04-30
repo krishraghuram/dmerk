@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from pathlib import Path
+from pathlib import Path, PurePath
 import logging
 import functools
 
@@ -19,12 +19,12 @@ from dmerk.merkle import Merkle
 from dmerk.utils import colorhash
 
 
-def file_prefix(path: Path) -> str:
-    if path.is_symlink():
+def file_prefix(path: Merkle.Type) -> str:
+    if path == Merkle.Type.SYMLINK:
         return "🔗 "
-    elif path.is_dir():
+    elif path == Merkle.Type.DIRECTORY:
         return "📁 "
-    elif path.is_file():
+    elif path == Merkle.Type.FILE:
         return "📄 "
     else:
         return "⭐ "
@@ -48,7 +48,7 @@ class Columns(Enum):
 
 class CompareWidget(Widget):
 
-    merkle_subpath: reactive[Path | None] = reactive(None)
+    merkle_subpath: reactive[PurePath | None] = reactive(None)
     prev_cell_key = None
 
     def __init__(
@@ -97,14 +97,22 @@ class CompareWidget(Widget):
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if "NAME" in message.cell_key:
-            if message.cell_key.row_key.value is not None:
-                if self.prev_cell_key == message.cell_key:
-                    p = Path(message.cell_key.row_key.value)
-                    if p.is_dir():
+            if self.prev_cell_key == message.cell_key:
+                path = message.cell_key.row_key.value
+                if path == "..":
+                    if self.merkle_subpath:
+                        self.merkle_subpath = self.merkle_subpath.parent
+                    else:
+                        raise ValueError(
+                            "Illegal state, cannot go above the root merkle"
+                        )
+                elif path is not None:
+                    pure_path = PurePath(path)
+                    if self.submerkle.children[pure_path].type == Merkle.Type.DIRECTORY:
                         if self.merkle_subpath:
-                            self.merkle_subpath = (self.merkle_subpath / p).resolve()
+                            self.merkle_subpath = self.merkle_subpath / pure_path
                         else:
-                            self.merkle_subpath = p
+                            self.merkle_subpath = pure_path
         self.prev_cell_key = message.cell_key
 
     async def watch_merkle_subpath(self) -> None:
@@ -206,7 +214,7 @@ class CompareWidget(Widget):
     @property
     def submerkle(self) -> Merkle:
         if self.merkle_subpath and self.merkle_subpath != self.merkle.path:
-            return self.merkle.traverse(self.merkle_subpath.resolve())
+            return self.merkle.traverse(self.merkle_subpath)
         else:
             return self.merkle
 
@@ -237,7 +245,7 @@ class CompareWidget(Widget):
                 (
                     " " * (ncw)
                     + "\n"
-                    + file_prefix(m.path)
+                    + file_prefix(m.type)
                     + m.path.name
                     + " " * (ncw - len(m.path.name) - 3)
                     + "\n"
