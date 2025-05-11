@@ -51,6 +51,14 @@ class CompareWidget(Widget):
 
     merkle_subpath: reactive[PurePath | None] = reactive(None)
     prev_cell_key = None
+    filter_by = reactive("")
+
+    def filter(self, m: Merkle) -> bool:
+        # TODO: Implement fuzzy match
+        if self.filter_by:
+            return self.filter_by.casefold() in m.path.name.casefold()
+        else:
+            return True
 
     def __init__(
         self,
@@ -119,6 +127,9 @@ class CompareWidget(Widget):
     def on_descendant_blur(self, message: DescendantBlur):
         self.prev_cell_key = None
 
+    async def watch_filter_by(self) -> None:
+        await self._refresh()
+
     async def watch_merkle_subpath(self) -> None:
         await self._refresh()
 
@@ -151,8 +162,9 @@ class CompareWidget(Widget):
                     self.size.width, column_key=column.value.key
                 ),
             )
-        matches = self._get_matches_counter()
+        matches = self._get_matches()
         child_merkles = [m for m in self.submerkle.children.values()]
+        child_merkles = list(filter(self.filter, child_merkles))
         child_merkles = sorted(child_merkles, key=lambda m: m.digest)
         for m in child_merkles:
             if m.digest in matches:

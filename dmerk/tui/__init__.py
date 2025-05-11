@@ -9,6 +9,7 @@ from textual.widgets import (
     Button,
     TabbedContent,
     TabPane,
+    Input,
 )
 from textual.containers import Horizontal, Vertical
 from textual.events import Mount, Ready
@@ -108,6 +109,7 @@ class DmerkApp(App[None]):
                         FilePicker(id="filepicker-left"),
                         FilePicker(id="filepicker-right"),
                     ),
+                    Input(id="compare-input"),
                     Button("RESET", "primary", id="reset-compare"),
                 )
         yield Footer()
@@ -132,6 +134,12 @@ class DmerkApp(App[None]):
         elif message.button.id == "reset-compare":
             for compare_widget in self.query(CompareWidget):
                 compare_widget.reset_to_filepicker()
+
+    def on_input_changed(self, message: Input.Changed):
+        for file_picker in self.query(FilePicker):
+            file_picker.filter_by = message.value
+        for compare_widget in self.query(CompareWidget):
+            compare_widget.filter_by = message.value
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""

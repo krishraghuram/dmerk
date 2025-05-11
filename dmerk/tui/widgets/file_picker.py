@@ -23,6 +23,16 @@ def file_prefix(path: Path) -> str:
 
 
 class FilePicker(Widget):
+
+    filter_by = reactive("")
+
+    def filter(self, p: Path) -> bool:
+        # TODO: Implement fuzzy match
+        if self.filter_by:
+            return self.filter_by.casefold() in p.name.casefold()
+        else:
+            return True
+
     def __init__(
         self,
         path: Path | None = None,
@@ -62,6 +72,7 @@ class FilePicker(Widget):
         files_table.add_column("\nName", key="NAME", width=self.__get_column_width())
         files_table.add_row(*["\n.."], key="..", height=3)
         files_list = [p for p in self.path.iterdir() if p.exists()]
+        files_list = list(filter(self.filter, files_list))
         files_list = sorted(files_list, key=lambda p: p.name)
         for file in files_list:
             files_table.add_row(
@@ -74,6 +85,9 @@ class FilePicker(Widget):
         await self._refresh_table()
 
     async def watch_path(self) -> None:
+        await self._refresh_table()
+
+    async def watch_filter_by(self) -> None:
         await self._refresh_table()
 
     def on_data_table_cell_highlighted(
