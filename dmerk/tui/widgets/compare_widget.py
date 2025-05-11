@@ -3,6 +3,7 @@ from enum import Enum
 from pathlib import Path, PurePath
 import logging
 import functools
+from collections import Counter
 
 from textual import work
 from textual.worker import Worker, WorkerState
@@ -150,13 +151,17 @@ class CompareWidget(Widget):
                     self.size.width, column_key=column.value.key
                 ),
             )
-        matches = self._get_matches()
+        matches = self._get_matches_counter()
         child_merkles = [m for m in self.submerkle.children.values()]
         child_merkles = sorted(child_merkles, key=lambda m: m.digest)
         for m in child_merkles:
             if m.digest in matches:
-                row = self._get_compare_table_row(m, match=True)
-                compare_table.add_row(*row, key=str(m.path), height=3)
+                row = self._get_compare_table_row(
+                    m, match=True, height=3 * matches[m.digest]
+                )
+                compare_table.add_row(
+                    *row, key=str(m.path), height=3 * matches[m.digest]
+                )
         for m in child_merkles:
             if m.digest not in matches:
                 row = self._get_compare_table_row(m, match=False)
@@ -234,7 +239,9 @@ class CompareWidget(Widget):
                     return new_label
         return ""
 
-    def _get_compare_table_row(self, m: Merkle, match: bool) -> list[Text]:
+    def _get_compare_table_row(
+        self, m: Merkle, match: bool, height: int = 3
+    ) -> list[Text]:
         ncw = CompareWidget._get_column_width(
             self.size.width, column_key="NAME"
         )  # name column width
@@ -246,39 +253,38 @@ class CompareWidget(Widget):
         row = [
             colorhash_styled_text(
                 (
-                    " " * (ncw)
-                    + "\n"
+                    (" " * (ncw) + "\n") * int((height - 1) / 2)
                     + file_prefix(m.type)
                     + m.path.name
                     + " " * (ncw - len(m.path.name) - 3)
-                    + "\n"
-                    + " " * (ncw)
+                    + ("\n" + " " * (ncw)) * (height - 1 - int((height - 1) / 2))
                 ),
                 m.digest,
             ),
             colorhash_styled_text(
                 (
-                    " " * (dcw)
-                    + "\n"
+                    (" " * (dcw) + "\n") * int((height - 1) / 2)
                     + m.digest
                     + " " * (dcw - len(m.digest))
-                    + "\n"
-                    + " " * (dcw)
+                    + ("\n" + " " * (dcw)) * (height - 1 - int((height - 1) / 2))
                 ),
                 m.digest,
             ),
         ]
         return row
 
-    def _get_matches(self) -> set[str]:
+    def _get_matches_counter(self) -> dict[str, int]:
         other = CompareWidget._get_other_compare_widget(self.id, self.parent)
         if other:
             if self.loading or other.loading:
-                return set()
+                return dict()
             else:
-                digests_1 = set([m.digest for m in self.submerkle.children.values()])
-                digests_2 = set([m.digest for m in other.submerkle.children.values()])
-                matches = digests_1 & digests_2
-                return matches
+                digests_1 = [m.digest for m in self.submerkle.children.values()]
+                digests_2 = [m.digest for m in other.submerkle.children.values()]
+                matches = set(digests_1) & set(digests_2)
+                counter_digests_1 = Counter(digests_1)
+                counter_digests_2 = Counter(digests_2)
+                matches_counter = {i: counter_digests_2[i] for i in matches}
+                return matches_counter
         else:
-            return set()
+            return dict()

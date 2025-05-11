@@ -153,6 +153,7 @@ class DmerkApp(App[None]):
 
 
 app = DmerkApp()
+app.scroll_sensitivity_y = 1.0
 
 
 def run() -> None:
