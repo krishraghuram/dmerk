@@ -156,12 +156,12 @@ class CompareWidget(Widget):
         child_merkles = sorted(child_merkles, key=lambda m: m.digest)
         for m in child_merkles:
             if m.digest in matches:
-                row = self._get_compare_table_row(
-                    m, match=True, height=3 * matches[m.digest]
-                )
-                compare_table.add_row(
-                    *row, key=str(m.path), height=3 * matches[m.digest]
-                )
+                total_height = matches[m.digest][0]
+                count = matches[m.digest][1]
+                height = int(total_height / count)
+                matches[m.digest] = ((total_height - height), count - 1)
+                row = self._get_compare_table_row(m, match=True, height=height)
+                compare_table.add_row(*row, key=str(m.path), height=height)
         for m in child_merkles:
             if m.digest not in matches:
                 row = self._get_compare_table_row(m, match=False)
@@ -273,7 +273,7 @@ class CompareWidget(Widget):
         ]
         return row
 
-    def _get_matches_counter(self) -> dict[str, int]:
+    def _get_matches(self) -> dict[str, tuple[int, int]]:
         other = CompareWidget._get_other_compare_widget(self.id, self.parent)
         if other:
             if self.loading or other.loading:
@@ -281,10 +281,13 @@ class CompareWidget(Widget):
             else:
                 digests_1 = [m.digest for m in self.submerkle.children.values()]
                 digests_2 = [m.digest for m in other.submerkle.children.values()]
-                matches = set(digests_1) & set(digests_2)
-                counter_digests_1 = Counter(digests_1)
-                counter_digests_2 = Counter(digests_2)
-                matches_counter = {i: counter_digests_2[i] for i in matches}
-                return matches_counter
+                intersection = set(digests_1) & set(digests_2)
+                counter_1 = Counter(digests_1)
+                counter_2 = Counter(digests_2)
+                matches = {
+                    i: (3 * max(counter_1[i], counter_2[i]), counter_1[i])
+                    for i in intersection
+                }
+                return matches
         else:
             return dict()
