@@ -11,9 +11,11 @@ from textual.app import ComposeResult
 from textual.widget import Widget
 from textual.dom import DOMNode
 from textual.widgets import DataTable, Label
+from textual.widgets.data_table import RowKey
 from textual.reactive import reactive
 from textual.events import Resize, DescendantBlur
 from textual.css.query import NoMatches
+from textual.coordinate import Coordinate
 from rich.text import Text
 
 from dmerk.merkle import Merkle
@@ -139,7 +141,7 @@ class CompareWidget(Widget):
     async def _refresh(self) -> None:
         if not self.loading:
             await self._refresh_label()
-            await self._refresh_table()
+            await self._refresh_table(force=True)
             other_compare_widget = CompareWidget._get_other_compare_widget(
                 self.id, self.parent
             )
@@ -151,8 +153,25 @@ class CompareWidget(Widget):
     async def _refresh_label(self) -> None:
         self.query_one(Label).update(Text(self.label, style="bold"))
 
-    async def _refresh_table(self) -> None:
+    async def _refresh_table(self, force: bool = False) -> None:
+        matches = self._get_matches()
         compare_table = self.query_one(DataTable)
+        # Check if we can do "partial refresh"
+        if not force and len(matches) == 0:
+            # Not a force refresh, and there are also no matches
+            # Cells which were previously matches, will have solid background color
+            # We need to update so that the solid bg color is removed now, since there are no matches
+            # This requires removing the space char `" "` from the start and end of each line of each cell
+            for r in range(len(compare_table.rows)):
+                for c in range(len(compare_table.columns)):
+                    cell_value: Text = compare_table.get_cell_at(Coordinate(r, c))
+                    if isinstance(cell_value, Text):
+                        cell_value.plain = "\n".join(
+                            [l.strip() for l in cell_value.plain.split("\n")]
+                        )
+                        compare_table.update_cell_at(Coordinate(r, c), cell_value)
+            return  # prevent full refresh
+        # Full Refresh Code Below
         compare_table.clear(columns=True)
         for column in Columns:
             compare_table.add_column(
@@ -162,24 +181,62 @@ class CompareWidget(Widget):
                     self.size.width, column_key=column.value.key
                 ),
             )
-        matches = self._get_matches()
         child_merkles = [m for m in self.submerkle.children.values()]
-        child_merkles = list(filter(self.filter, child_merkles))
-        child_merkles = sorted(child_merkles, key=lambda m: m.digest)
-        for m in child_merkles:
-            if m.digest in matches:
-                total_height = matches[m.digest][0]
-                count = matches[m.digest][1]
-                height = int(total_height / count)
-                matches[m.digest] = ((total_height - height), count - 1)
-                row = self._get_compare_table_row(m, match=True, height=height)
-                compare_table.add_row(*row, key=str(m.path), height=height)
-        for m in child_merkles:
-            if m.digest not in matches:
-                row = self._get_compare_table_row(m, match=False)
-                compare_table.add_row(*row, key=str(m.path), height=3)
+        filtered_child_merkles = list(filter(self.filter, child_merkles))
+        matching_child_merkles = sorted(
+            filter(lambda m: m.digest in matches, filtered_child_merkles),
+            key=lambda m: m.digest,
+        )
+        unmatched_child_merkles = sorted(
+            filter(lambda m: m.digest not in matches, filtered_child_merkles),
+            key=lambda m: m.digest,
+        )
+        for m in matching_child_merkles:
+            total_height = matches[m.digest][0]
+            count = matches[m.digest][1]
+            height = int(total_height / count)
+            matches[m.digest] = ((total_height - height), count - 1)
+            row = self._get_compare_table_row(m, match=True, height=height)
+            compare_table.add_row(*row, key=str(m.path), height=height)
+        for m in unmatched_child_merkles:
+            row = self._get_compare_table_row(m, match=False)
+            compare_table.add_row(*row, key=str(m.path), height=3)
         if self.submerkle != self.merkle:
             compare_table.add_row(*["\n..", "\n-"], key="..", height=3)
+
+    def _get_merkle_from_row_key(self, row_key: RowKey) -> Merkle:
+        child_merkles = [m for m in self.submerkle.children.values()]
+        filtered_child_merkles = list(filter(self.filter, child_merkles))
+        for m in filtered_child_merkles:
+            if str(m.path) == row_key:
+                return m
+        else:
+            raise ValueError(f"No merkle found for row key '{row_key}'")
+
+    def _get_row_key_from_scroll_y(self, scroll_y: float) -> RowKey | None:
+        """
+        Return the row key of the row at scroll_y
+        """
+        y_offsets = self.query_one(DataTable)._y_offsets
+        scroll_y = int(scroll_y)
+
+        # Return the first visible (even partially visible) row after scroll_y
+        try:
+            row_key, _ = y_offsets[scroll_y]
+            logging.debug(f"{row_key.value=}")
+            return row_key
+        except IndexError as e:
+            return None
+
+        # # Return the first fully visible row after scroll_y
+        # for idx in range(len(y_offsets) - scroll_y):
+        #     row_key, offset = y_offsets[scroll_y + idx]
+        #     if offset == 0:
+        #         logging.debug(f"{row_key.value=}, {idx=}")
+        #         return row_key
+        #         break
+        # else:
+        #     logging.debug("No matching entry")
 
     # BUG: When clicking on a merkle subdirectory, the other CompareWidget gets reset to 0, and this makes navigation a pain
     async def _add_watches(self) -> None:
@@ -187,9 +244,17 @@ class CompareWidget(Widget):
             logging.debug(
                 f"watch_scroll_y in {self.id}: {old_scroll_y}, {new_scroll_y}"
             )
+            # We only want to sync scroll when we are scrolling across matches
+            # Once we reach unmatched merkles, we no longer want to sync scroll
             other = CompareWidget._get_other_compare_widget(self.id, self.parent)
-            if other:
-                other.query_one(DataTable).scroll_to(None, new_scroll_y, animate=False)
+            row_key = self._get_row_key_from_scroll_y(old_scroll_y)
+            matches = self._get_matches()
+            if other and row_key:
+                m = self._get_merkle_from_row_key(row_key)
+                if m.digest in matches:
+                    other.query_one(DataTable).scroll_to(
+                        None, new_scroll_y, animate=False
+                    )
 
         self.watch(self.query_one(DataTable), "scroll_y", watch_scroll_y, init=False)
 
