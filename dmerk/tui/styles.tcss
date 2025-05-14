@@ -45,9 +45,6 @@ Screen Button#generate:hover {
     border: round $primary;
 }
 
-
-
-
 Screen FilePicker {
     margin: 0 2;
     width: 4fr;
@@ -67,9 +64,13 @@ Screen Button#reset-compare {
 Screen CompareWidget {
     width: 50%;
 }
-Screen CompareWidget Label {
-    background: #262626;
+Screen CompareWidget Horizontal {
+    background: $panel-lighten-2;
     width: 100%;
+    height: auto;
+}
+Screen CompareWidget Horizontal Label:hover {
+    text-style: underline;
 }
 Screen CompareWidget DataTable {
     margin: 0 0 1 0;

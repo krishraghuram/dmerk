@@ -4,6 +4,7 @@ from pathlib import Path, PurePath
 import logging
 import functools
 from collections import Counter
+from typing import cast
 
 from textual import work
 from textual.worker import Worker, WorkerState
@@ -13,9 +14,10 @@ from textual.dom import DOMNode
 from textual.widgets import DataTable, Label
 from textual.widgets.data_table import RowKey
 from textual.reactive import reactive
-from textual.events import Resize, DescendantBlur
+from textual.events import Resize, DescendantBlur, Click
 from textual.css.query import NoMatches
 from textual.coordinate import Coordinate
+from textual.containers import Horizontal
 from rich.text import Text
 
 from dmerk.merkle import Merkle
@@ -102,7 +104,7 @@ class CompareWidget(Widget):
 
     def compose(self) -> ComposeResult:
         if not self.loading:
-            yield Label(Text(f"{self.submerkle.path}", style="bold"))
+            yield Horizontal(Label(Text(f"{self.merkle.path}", style="bold")))
             compare_table: DataTable[None] = DataTable(header_height=3)
             yield compare_table
 
@@ -150,8 +152,26 @@ class CompareWidget(Widget):
                     await other_compare_widget._refresh_label()
                     await other_compare_widget._refresh_table()
 
+    def on_click(self, message: Click):
+        if isinstance(message.widget, Label):
+            labels = []
+            for c in self.query_one(Horizontal).children:
+                if isinstance(c, Label) and isinstance(c.renderable, Text):
+                    labels.append(c)
+            idx = labels.index(message.widget)
+            merkle_subpath_parts = [
+                cast(Text, l.renderable).plain for l in labels[: idx + 1]
+            ]
+            self.merkle_subpath = PurePath("".join(merkle_subpath_parts))
+
     async def _refresh_label(self) -> None:
-        self.query_one(Label).update(Text(self.label, style="bold"))
+        label_parts = [str(self.merkle.path)]
+        label_parts = label_parts + [
+            f"/{p}" for p in self.submerkle.path.relative_to(self.merkle.path).parts
+        ]
+        labels = [Label(Text(l, style="bold")) for l in label_parts]
+        await self.query_one(Horizontal).remove_children()
+        await self.query_one(Horizontal).mount_all(labels)
 
     async def _refresh_table(self, force: bool = False) -> None:
         matches = self._get_matches()
@@ -165,11 +185,10 @@ class CompareWidget(Widget):
             for r in range(len(compare_table.rows)):
                 for c in range(len(compare_table.columns)):
                     cell_value: Text = compare_table.get_cell_at(Coordinate(r, c))
-                    if isinstance(cell_value, Text):
-                        cell_value.plain = "\n".join(
-                            [l.strip() for l in cell_value.plain.split("\n")]
-                        )
-                        compare_table.update_cell_at(Coordinate(r, c), cell_value)
+                    cell_value.plain = "\n".join(
+                        [l.strip() for l in cell_value.plain.split("\n")]
+                    )
+                    compare_table.update_cell_at(Coordinate(r, c), cell_value)
             return  # prevent full refresh
         # Full Refresh Code Below
         compare_table.clear(columns=True)
@@ -201,8 +220,6 @@ class CompareWidget(Widget):
         for m in unmatched_child_merkles:
             row = self._get_compare_table_row(m, match=False)
             compare_table.add_row(*row, key=str(m.path), height=3)
-        if self.submerkle != self.merkle:
-            compare_table.add_row(*["\n..", "\n-"], key="..", height=3)
 
     def _get_merkle_from_row_key(self, row_key: RowKey) -> Merkle:
         child_merkles = [m for m in self.submerkle.children.values()]
@@ -302,19 +319,6 @@ class CompareWidget(Widget):
             return self.merkle.traverse(self.merkle_subpath)
         else:
             return self.merkle
-
-    @property
-    def label(self) -> str:
-        maxlen = self.query_one(Label).size.width
-        new_label = f"{self.submerkle.path}"
-        if len(new_label) < maxlen:
-            return new_label
-        else:
-            for p in reversed(self.submerkle.path.parents[:-1]):
-                new_label = f".../{self.submerkle.path.relative_to(p)}"
-                if len(new_label) < maxlen:
-                    return new_label
-        return ""
 
     def _get_compare_table_row(
         self, m: Merkle, match: bool, height: int = 3
