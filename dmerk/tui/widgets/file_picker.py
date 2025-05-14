@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import cast
 
 from textual.app import ComposeResult
 from textual.widget import Widget
@@ -95,10 +96,10 @@ class FilePicker(Widget):
     ) -> None:
         self.prev_cell_key = None
 
-    def _mount_compare_widget(self, path):
+    def _mount_compare_widget(self, path: Path) -> None:
         id_ = self.id.split("-")[-1] if self.id else ""
         id_ = "-".join(["compare", id_])
-        self.parent.mount(CompareWidget(path, id=id_), after=self)
+        cast(Widget, self.parent).mount(CompareWidget(path, id=id_), after=self)
         self.remove()
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:

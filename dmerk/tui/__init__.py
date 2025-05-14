@@ -134,7 +134,7 @@ class DmerkApp(App[None]):
             for compare_widget in self.query(CompareWidget):
                 compare_widget.reset_to_filepicker()
 
-    def on_input_changed(self, message: Input.Changed):
+    def on_input_changed(self, message: Input.Changed) -> None:
         if message.value == "":
             message.input.add_class("empty")
         else:

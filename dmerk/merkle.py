@@ -22,16 +22,21 @@ class Merkle:
 
     def __init__(
         self,
-        path: Path,
+        path: PurePath | Path,
         type: Type,
         size: int,
         digest: str,
         # typing.Self only available from 3.11
         children: dict[Path, "Merkle"] | None = None,
-        _children_data: dict | None = None,
+        _children_data: dict[str, Any] | None = None,
     ) -> None:
         # Make paths absolute and pure
-        pure_path = PurePath(path.absolute() if not path.is_absolute() else path)
+        if isinstance(path, Path):
+            pure_path = PurePath(path.absolute() if not path.is_absolute() else path)
+        else:
+            if not path.is_absolute():
+                raise ValueError(f"Cannot handle non-absolute PurePath {path} !!!")
+            pure_path = path
         if children:
             pure_children = {
                 PurePath(k.absolute() if not k.is_absolute() else k): v
@@ -69,7 +74,7 @@ class Merkle:
         return self._children
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Merkle":
+    def from_dict(cls, data: dict[str, Any]) -> "Merkle":
         """Create a Merkle instance from a dictionary without processing children."""
         if "__merkle__" not in data:
             logging.error("Not a valid Merkle dictionary")

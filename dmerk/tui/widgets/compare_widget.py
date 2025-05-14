@@ -80,13 +80,12 @@ class CompareWidget(Widget):
         else:
             raise ValueError(f"path {path} must be a dmerk file")
 
-    def reset_to_filepicker(self):
+    def reset_to_filepicker(self) -> None:
         from dmerk.tui.widgets.file_picker import FilePicker
 
         id_ = self.id.split("-")[-1] if self.id else ""
         id_ = "-".join(["filepicker", id_])
-        logging.debug(id_)
-        self.parent.mount(FilePicker(id=id_), after=self)
+        cast(Widget, self.parent).mount(FilePicker(id=id_), after=self)
         self.remove()
 
     @work(thread=True)
@@ -128,7 +127,7 @@ class CompareWidget(Widget):
                             self.merkle_subpath = pure_path
         self.prev_cell_key = message.cell_key
 
-    def on_descendant_blur(self, message: DescendantBlur):
+    def on_descendant_blur(self, message: DescendantBlur) -> None:
         self.prev_cell_key = None
 
     async def watch_filter_by(self) -> None:
@@ -152,7 +151,7 @@ class CompareWidget(Widget):
                     await other_compare_widget._refresh_label()
                     await other_compare_widget._refresh_table()
 
-    def on_click(self, message: Click):
+    def on_click(self, message: Click) -> None:
         if isinstance(message.widget, Label):
             labels = []
             for c in self.query_one(Horizontal).children:
