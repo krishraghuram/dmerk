@@ -54,6 +54,13 @@ Screen FilePicker {
     overflow: auto;
     align: center top;
 }
+Screen Input {
+    width: 100%;
+    background:$surface-lighten-3; 
+}
+Screen Input.empty {
+    background:$surface; 
+}
 Screen Button#reset-compare {
     width: 100%;
 }

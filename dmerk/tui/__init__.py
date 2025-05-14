@@ -109,7 +109,7 @@ class DmerkApp(App[None]):
                         FilePicker(id="filepicker-left"),
                         FilePicker(id="filepicker-right"),
                     ),
-                    Input(id="compare-input"),
+                    Input(id="compare-input", classes="empty"),
                     Button("RESET", "primary", id="reset-compare"),
                 )
         yield Footer()
@@ -136,6 +136,10 @@ class DmerkApp(App[None]):
                 compare_widget.reset_to_filepicker()
 
     def on_input_changed(self, message: Input.Changed):
+        if message.value == "":
+            message.input.add_class("empty")
+        else:
+            message.input.remove_class("empty")
         for file_picker in self.query(FilePicker):
             file_picker.filter_by = message.value
         for compare_widget in self.query(CompareWidget):
