@@ -4,7 +4,6 @@ from textual.app import App, ComposeResult
 from textual.widgets import (
     Footer,
     Header,
-    DataTable,
     RichLog,
     Button,
     TabbedContent,
@@ -12,9 +11,9 @@ from textual.widgets import (
     Input,
 )
 from textual.containers import Horizontal, Vertical
-from textual.events import Mount, Ready
+from textual.events import Ready
 from textual import work
-from dmerk.tui.widgets import FileManager, FavoritesSidebar, SidebarButton, FilePicker
+from dmerk.tui.widgets import FileManager, FavoritesSidebar, FilePicker
 import dmerk.generate as generate
 import dmerk.constants as constants
 import sys

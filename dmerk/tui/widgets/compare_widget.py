@@ -230,30 +230,34 @@ class CompareWidget(Widget):
         else:
             raise ValueError(f"No merkle found for row key '{row_key}'")
 
-    def _get_row_key_from_scroll_y(self, scroll_y: float) -> RowKey | None:
+    def _get_row_key_from_scroll_y(
+        self, scroll_y: float, fully_visible: bool = False
+    ) -> RowKey | None:
         """
         Return the row key of the row at scroll_y
         """
         y_offsets = self.query_one(DataTable)._y_offsets
         scroll_y = int(scroll_y)
 
-        # Return the first visible (even partially visible) row after scroll_y
-        try:
-            row_key, _ = y_offsets[scroll_y]
-            logging.debug(f"{row_key.value=}")
-            return row_key
-        except IndexError as e:
-            return None
-
-        # # Return the first fully visible row after scroll_y
-        # for idx in range(len(y_offsets) - scroll_y):
-        #     row_key, offset = y_offsets[scroll_y + idx]
-        #     if offset == 0:
-        #         logging.debug(f"{row_key.value=}, {idx=}")
-        #         return row_key
-        #         break
-        # else:
-        #     logging.debug("No matching entry")
+        if fully_visible:
+            # Return the first fully visible row after scroll_y
+            for idx in range(len(y_offsets) - scroll_y):
+                row_key, offset = y_offsets[scroll_y + idx]
+                if offset == 0:
+                    logging.debug(f"{row_key.value=}, {idx=}")
+                    return row_key
+                    break
+            else:
+                logging.debug("No matching entry")
+                return None
+        else:
+            # Return the first visible (even partially visible) row after scroll_y
+            try:
+                row_key, _ = y_offsets[scroll_y]
+                logging.debug(f"{row_key.value=}")
+                return row_key
+            except IndexError:
+                return None
 
     # BUG: When clicking on a merkle subdirectory, the other CompareWidget gets reset to 0, and this makes navigation a pain
     async def _add_watches(self) -> None:

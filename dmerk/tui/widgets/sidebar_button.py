@@ -2,7 +2,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from textual import events
 from textual.widgets import Button
 from textual.message import Message
 
