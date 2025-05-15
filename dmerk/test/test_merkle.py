@@ -58,7 +58,7 @@ def test_merkle_init(kwargs):
 )
 def test_merkle_init_non_absolute_purepath_error(kwargs):
     with pytest.raises(ValueError) as excinfo:
-        m = Merkle(**kwargs)
+        Merkle(**kwargs)
     assert f"Cannot handle non-absolute PurePath {kwargs['path']} !!!" in str(
         excinfo.value
     )

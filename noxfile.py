@@ -56,7 +56,7 @@ def mypy(session):
 @nox.session(python=PYTHON_VERSIONS)
 def test(session):
     try:
-        session.install("coverage", "pytest")
+        session.install("coverage", "pytest", "pytest-asyncio")
         session.install(".")
         session.run("coverage", "run", "-m", "pytest", "-x", "-m", "not slow")
         # TODO: Re-enable coverage check for dmerk/tui/* after adding textual tests

@@ -8,7 +8,6 @@ import pytest
 from .. import cli
 from .. import generate
 from .. import constants
-from .. import tui
 
 
 @pytest.mark.parametrize("args", ("-h", "--help"))
