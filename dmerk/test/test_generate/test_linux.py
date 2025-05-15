@@ -53,10 +53,12 @@ def test_symlink(generate_function, fs, request):
         (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/CHAR_DEVICE", ValueError),
         (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/NAMEDPIPE", ValueError),
         (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/SOCKET", ValueError),
+        (pathlib.Path.cwd() / "TEST_DATA/SPECIAL/PERMISSION_ERROR", PermissionError),
         (pathlib.Path.cwd() / "TEST_NONEXISTENT_DIRECTORY", NotADirectoryError),
     ],
 )
-def test_specialfiles(generate_function, path_and_error, request):
+@pytest.mark.parametrize("continue_on_error", [False, True])
+def test_specialfiles(generate_function, path_and_error, continue_on_error, request):
     """
     Run create_test_directories.sh before running tests
 
@@ -68,8 +70,12 @@ def test_specialfiles(generate_function, path_and_error, request):
     (path, error) = path_and_error
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With path '{path}' and error '{error}'")
-    with pytest.raises(error):
-        generate_function(path)
+    # Even with continue_on_error, if the top-level dir does not exist, it will lead to NotADirectoryError
+    if not continue_on_error or error == NotADirectoryError:
+        with pytest.raises(error):
+            generate_function(path, continue_on_error=continue_on_error)
+    else:
+        generate_function(path, continue_on_error=continue_on_error)
 
 
 @pytest.mark.parametrize("generate_function", generates)

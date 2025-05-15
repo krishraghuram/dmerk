@@ -6,7 +6,7 @@ def test_generate_proxy(monkeypatch):
     generate = importlib.reload(importlib.import_module("dmerk.generate"))
     called = False
 
-    def mock_default_generate(directory):
+    def mock_default_generate(directory, continue_on_error=False):
         nonlocal called
         called = True
 

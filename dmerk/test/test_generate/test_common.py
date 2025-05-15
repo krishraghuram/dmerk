@@ -1,5 +1,5 @@
 import random
-from pathlib import PosixPath
+from pathlib import PosixPath, PurePath
 
 
 import pytest
@@ -299,7 +299,7 @@ def test_digest_changes_iff_file_content_changes(generate_function, fs, request)
     m2 = generate_function(fs.basepath)
     print("Merkle Digest After:")
     print(m2)
-    assert_merkle(m1, m2, modified_file=file)
+    assert_merkle(m1, m2, modified_file=PurePath(file.resolve()))
 
 
 @pytest.mark.parametrize("generate_function", generates)
@@ -350,4 +350,5 @@ def test_digest_same_if_file_renamed(generate_function, fs, request):
     m2 = generate_function(fs.basepath)
     print("Merkle Digest After:")
     print(m2)
+    file = PurePath(file.resolve())
     assert_merkle(m1, m2, renamed_file=(file, file.parent / "renamed_file"))

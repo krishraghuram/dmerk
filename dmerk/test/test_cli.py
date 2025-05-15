@@ -7,6 +7,8 @@ import pytest
 
 from .. import cli
 from .. import generate
+from .. import constants
+from .. import tui
 
 
 @pytest.mark.parametrize("args", ("-h", "--help"))
@@ -37,7 +39,10 @@ def test_generate_help(capsys, args):
     with pytest.raises(SystemExit):
         cli._main(["generate", args])
     captured = capsys.readouterr()
-    assert "usage: dmerk generate [-h] [-p] [-f FILENAME] path" in captured.out
+    assert (
+        "usage: dmerk generate [-h] [-p] [-f FILENAME] [--continue-on-error] path"
+        in captured.out
+    )
     assert "Generate a merkle tree for a given directory" in captured.out
 
 
@@ -45,7 +50,10 @@ def test_generate_path_required(capsys):
     with pytest.raises(SystemExit):
         cli._main(["generate"])
     captured = capsys.readouterr()
-    assert "usage: dmerk generate [-h] [-p] [-f FILENAME] path" in captured.err
+    assert (
+        "usage: dmerk generate [-h] [-p] [-f FILENAME] [--continue-on-error] path"
+        in captured.err
+    )
     assert (
         "dmerk generate: error: the following arguments are required: path"
         in captured.err
@@ -74,13 +82,13 @@ def test_generate(capsys, fs):
 )
 def test_generate_save(caplog, fs):
     with caplog.at_level(logging.INFO):
-        cli._main(["generate", str(fs.basepath.resolve())])
-        assert (
-            "Saved merkle for path: '/home/raghuram/Workspace/dmerk/TEST_DATA/NORMAL' to file: '/home/raghuram/Workspace/dmerk/NORMAL.dmerk'"
-            in caplog.text
-        )
-        assert Path("NORMAL.dmerk").exists()
-        Path("NORMAL.dmerk").unlink()
+        path = str(fs.basepath.resolve())
+        saved_file = Path(constants.APP_STATE_PATH) / Path("NORMAL.dmerk")
+        cli._main(["generate", path])
+        assert f"Generating merkle for path: '{path}'" in caplog.text
+        assert f"Saved merkle for path: '{path}' to file: '{saved_file}'" in caplog.text
+        assert saved_file.exists()
+        saved_file.unlink()
 
 
 @pytest.mark.parametrize("args", ("-h", "--help"))
@@ -145,12 +153,24 @@ def test_compare_paths_required(capsys):
             {
                 "matches": [
                     [
-                        ["TEST_DATA/NORMAL/dmerk_tests/dir1/fileA"],
-                        ["TEST_DATA/NORMAL/dmerk_tests/dir2/fileA"],
+                        [
+                            "/home/raghuram/Workspace/dmerk/TEST_DATA/NORMAL/dmerk_tests/dir1/fileA"
+                        ],
+                        [
+                            "/home/raghuram/Workspace/dmerk/TEST_DATA/NORMAL/dmerk_tests/dir2/fileA"
+                        ],
                     ]
                 ],
-                "unmatched_1": [["TEST_DATA/NORMAL/dmerk_tests/dir1/fileB"]],
-                "unmatched_2": [["TEST_DATA/NORMAL/dmerk_tests/dir2/fileC"]],
+                "unmatched_1": [
+                    [
+                        "/home/raghuram/Workspace/dmerk/TEST_DATA/NORMAL/dmerk_tests/dir1/fileB"
+                    ]
+                ],
+                "unmatched_2": [
+                    [
+                        "/home/raghuram/Workspace/dmerk/TEST_DATA/NORMAL/dmerk_tests/dir2/fileC"
+                    ]
+                ],
             },
         ),
         (
@@ -159,8 +179,12 @@ def test_compare_paths_required(capsys):
             {
                 "matches": [
                     [
-                        ["TEST_DATA/NORMAL/dmerk_tests/dir1"],
-                        ["TEST_DATA/NORMAL/dmerk_tests/dir3"],
+                        [
+                            "/home/raghuram/Workspace/dmerk/TEST_DATA/NORMAL/dmerk_tests/dir1"
+                        ],
+                        [
+                            "/home/raghuram/Workspace/dmerk/TEST_DATA/NORMAL/dmerk_tests/dir3"
+                        ],
                     ]
                 ],
                 "unmatched_1": [],
@@ -184,24 +208,18 @@ def test_compare(capsys, fs, path1, path2, output):
     assert json.loads(captured.out) == output
 
 
-# @pytest.mark.parametrize("args", ("-h", "--help"))
-# def test_analyse_help(capsys, args):
-#     with pytest.raises(SystemExit):
-#         cli._main(["analyse", args])
-#     captured = capsys.readouterr()
-#     assert "usage: dmerk analyse [-h] path" in captured.out
-#     assert "Analyse a merkle tree to find copies/duplicates within" in captured.out
+@pytest.mark.asyncio
+async def test_tui(monkeypatch):
+    called = False
 
+    def mock_run_tui():
+        nonlocal called
+        called = True
 
-# def test_analyse_path_required(capsys):
-#     with pytest.raises(SystemExit):
-#         cli._main(["analyse"])
-#     captured = capsys.readouterr()
-#     assert "usage: dmerk analyse [-h] path" in captured.err
-#     assert (
-#         "dmerk analyse: error: the following arguments are required: path"
-#         in captured.err
-#     )
+    monkeypatch.setattr(cli, "run_tui", mock_run_tui)
+    assert called is False
+    cli._main(["tui"])
+    assert called is True
 
 
 # Note:

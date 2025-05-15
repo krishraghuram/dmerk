@@ -8,6 +8,7 @@ Examples:
   nox --session test_performance
   nox --session profile
 """
+
 import re
 import pathlib
 import subprocess

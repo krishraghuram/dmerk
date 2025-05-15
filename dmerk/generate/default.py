@@ -14,7 +14,7 @@ except AttributeError:
 _DIGEST_ALGORITHM = "md5"  # takes 10-20 percent less time to run than sha256
 
 
-def generate(directory: Path, continue_on_error: bool) -> Merkle:
+def generate(directory: Path, continue_on_error: bool = False) -> Merkle:
     if directory.exists():
         return _generate(directory, continue_on_error)
     else:

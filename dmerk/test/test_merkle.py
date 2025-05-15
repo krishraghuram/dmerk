@@ -1,6 +1,6 @@
 import json
 import random
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import pytest
 
@@ -21,7 +21,12 @@ MERKLE_KWARGS = [
         "size": 1000,
         "digest": "sha_digest_1",
         "children": {
-            Path("file"): Merkle(Path("file"), Merkle.Type.FILE, 100, "sha_digest_1_a")
+            PurePosixPath("/home/raghuram/file"): Merkle(
+                PurePosixPath("/home/raghuram/file"),
+                Merkle.Type.FILE,
+                100,
+                "sha_digest_1_a",
+            )
         },
     },
 ]
@@ -39,6 +44,26 @@ def test_merkle_init(kwargs):
         assert m.children == m2.children == kwargs["children"]
 
 
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {
+            "path": PurePosixPath("raghuram"),
+            "type": Merkle.Type.DIRECTORY,
+            "size": 1000,
+            "digest": "sha_digest_1",
+            "children": None,
+        }
+    ],
+)
+def test_merkle_init_non_absolute_purepath_error(kwargs):
+    with pytest.raises(ValueError) as excinfo:
+        m = Merkle(**kwargs)
+    assert f"Cannot handle non-absolute PurePath {kwargs['path']} !!!" in str(
+        excinfo.value
+    )
+
+
 @pytest.mark.parametrize("kwargs", MERKLE_KWARGS)
 def test_merkle_eq(kwargs):
     m = Merkle(**kwargs)
@@ -48,20 +73,19 @@ def test_merkle_eq(kwargs):
     assert m != Merkle(**{**kwargs, "type": Merkle.Type.FILE})
     assert m != Merkle(**{**kwargs, "size": 2000})
     assert m != Merkle(**{**kwargs, "digest": "sha_digest_2"})
-    assert m != Merkle(**{**kwargs, "children": {}})
 
 
 @pytest.mark.parametrize("kwargs", MERKLE_KWARGS[1:2])
 def test_merkle_repr(kwargs):
     m = Merkle(**kwargs)
-    repr_m = "Merkle(path=PosixPath('/home/raghuram'), type=Type.DIRECTORY, size=1000, digest='sha_digest_1', children={PosixPath('file'): Merkle(path=PosixPath('file'), type=Type.FILE, size=100, digest='sha_digest_1_a')})"
+    repr_m = "Merkle(path=PurePosixPath('/home/raghuram'), type=Type.DIRECTORY, size=1000, digest='sha_digest_1', children={PurePosixPath('/home/raghuram/file'): Merkle(path=PurePosixPath('/home/raghuram/file'), type=Type.FILE, size=100, digest='sha_digest_1_a', children={})})"
     assert repr(m) == repr_m
 
 
 @pytest.mark.parametrize("kwargs", MERKLE_KWARGS[1:2])
 def test_merkle_str(kwargs):
     m = Merkle(**kwargs)
-    str_m = '{"path": "PosixPath(\'/home/raghuram\')", "type": {"__merkle_type__": "Type.DIRECTORY"}, "size": 1000, "digest": "sha_digest_1", "children": {"PosixPath(\'/home/raghuram/Workspace/dmerk/file\')": {"path": "PosixPath(\'/home/raghuram/Workspace/dmerk/file\')", "type": {"__merkle_type__": "Type.FILE"}, "size": 100, "digest": "sha_digest_1_a", "__merkle__": true}}, "__merkle__": true}'
+    str_m = '{"path": "PurePosixPath(\'/home/raghuram\')", "type": {"__merkle_type__": "Type.DIRECTORY"}, "size": 1000, "digest": "sha_digest_1", "children": {"PurePosixPath(\'/home/raghuram/file\')": {"path": "PurePosixPath(\'/home/raghuram/file\')", "type": {"__merkle_type__": "Type.FILE"}, "size": 100, "digest": "sha_digest_1_a", "children": {}, "__merkle__": true}}, "__merkle__": true}'
     assert str(m) == str_m
 
 
@@ -202,12 +226,12 @@ def test_merkle_traverse(merkle: Merkle, subpath, return_value, exception):
 
 
 def test_merkle_get_filename(monkeypatch):
-    path = Path("/home/raghuram/Documents").name
-    filename_1 = Merkle._get_filename(path)
+    path = Path("/home/raghuram/Documents")
+    filename_1 = Merkle._get_filename(path.name)
     assert filename_1 == Path.cwd() / Path(f"{path.name}.dmerk")
     monkeypatch.setattr(Path, "exists", lambda p: p.name == filename_1.name)
     monkeypatch.setattr(random, "choices", lambda *args, **kwargs: ["0"] * 8)
-    filename_2 = Merkle._get_filename(path)
+    filename_2 = Merkle._get_filename(path.name)
     assert filename_2 == Path.cwd() / Path(f"{path.name}_00000000.dmerk")
 
 
@@ -231,6 +255,11 @@ def test_merkle_save_load():
     )
     filename = m.save()
     m2 = Merkle.load(filename)
+    assert m2._children_data is not None
+    assert m2._children is None
+    assert m2.children == m.children  # trigger lazy-loading
+    assert m2._children_data is None
+    assert m2._children is not None
     Path(filename).unlink()
     assert m == m2
 

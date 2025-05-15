@@ -84,7 +84,7 @@ def assert_merkle(
         assert m1.digest != m2.digest
         assert getattr(m1, "children", {}).keys() == getattr(m2, "children", {}).keys()
         for path in getattr(m1, "children", {}).keys():
-            if modified_file.resolve().is_relative_to(path.resolve()):
+            if modified_file.is_relative_to(path):
                 assert_merkle(
                     m1.children[path], m2.children[path], modified_file=modified_file
                 )
@@ -99,7 +99,7 @@ def assert_merkle(
         for path in (
             getattr(m1, "children", {}).keys() | getattr(m2, "children", {}).keys()
         ):
-            if path.resolve() in (old_file.resolve(), new_file.resolve()):
+            if path in (old_file, new_file):
                 assert_merkle(m1.children[old_file], m2.children[new_file])
             else:
                 assert_merkle(

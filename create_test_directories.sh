@@ -32,4 +32,9 @@ cd ..
 mkdir NAMEDPIPE && cd NAMEDPIPE
 mkfifo namedpipe
 cd ..
+
+mkdir PERMISSION_ERROR && cd PERMISSION_ERROR
+echo "Hello World" > file
+chmod 000 file
+cd ..
 ################################################

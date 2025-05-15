@@ -107,6 +107,9 @@ class Merkle:
         """
         Return True if self is equal to other, else False
 
+        Note that we do a shallow comparison.
+        That is, we also do not compare children, because that would defeat the purpose of lazy loading.
+
         Note that two Merkles are equal even if their 'path' attribute is different
         This is because we only care about the data in the filesystem being same,
         and not the path at which it is present
@@ -117,7 +120,7 @@ class Merkle:
             return all(
                 [
                     (getattr(self, slotname, None) == getattr(other, slotname, None))
-                    for slotname in set(Merkle.SLOTS) - {"path"}
+                    for slotname in set(Merkle.SLOTS) - {"path", "children"}
                 ]
             )
 
