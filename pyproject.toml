@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dmerk"
-version = "0.1.1"
+version = "0.2.0"
 authors = [
   { name="Raghuram Krishnaswami", email="krish.raghuram@gmail.com" },
 ]
@@ -42,5 +42,8 @@ dev = [
 dmerk = "dmerk.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["dmerk", "dmerk.generate"]
+include = ["dmerk", "dmerk.generate", "dmerk.tui", "dmerk.tui.widgets"]
 namespaces = false
+
+[tool.setuptools.package-data]
+"dmerk.tui" = ["*.tcss"]
