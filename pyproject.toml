@@ -29,7 +29,9 @@ dev = [
     "flake8",
     "black",
     "mypy",
+    "coverage",
     "pytest",
+    "pytest-asyncio",
 ]
 
 [project.urls]

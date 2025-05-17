@@ -15,7 +15,7 @@ import subprocess
 
 import nox
 
-
+# TODO: hardcoded paths, not portable
 PYTHON_VERSIONS = [
     "/usr/bin/python3.10",
     "/home/raghuram/Workspace/bin/pypy3.10-v7.3.12-linux64/bin/pypy",
@@ -25,13 +25,13 @@ PYTHON_VERSIONS = [
 
 @nox.session()
 def lint(session):
-    session.install("flake8")
+    session.install(".[dev]")
     session.run("flake8", "--select=F", "dmerk")
 
 
 @nox.session()
 def format(session):
-    session.install("black")
+    session.install(".[dev]")
     out = session.run("black", "dmerk", silent=True)
     match = re.search(
         r"(\d*?)(?: files? reformatted, )?(\d*?) files? left unchanged.", out
@@ -44,8 +44,7 @@ def format(session):
 
 @nox.session()
 def mypy(session):
-    session.install(".")
-    session.install("mypy")
+    session.install(".[dev]")
     # TODO: enable mypy for tests as well
     # session.run("mypy", "--strict", "--allow-redefinition", "dmerk")
     session.run(
@@ -56,8 +55,7 @@ def mypy(session):
 @nox.session(python=PYTHON_VERSIONS)
 def test(session):
     try:
-        session.install("coverage", "pytest", "pytest-asyncio")
-        session.install(".")
+        session.install(".[dev]")
         session.run("coverage", "run", "-m", "pytest", "-x", "-m", "not slow")
         # TODO: Re-enable coverage check for dmerk/tui/* after adding textual tests
         # Textual Testing: https://textual.textualize.io/guide/testing/
@@ -80,13 +78,11 @@ def test(session):
 
 @nox.session(python=PYTHON_VERSIONS)
 def test_performance(session):
-    session.install("pytest")
-    session.install(".")
+    session.install(".[dev]")
     session.run("pytest", "-sm", "test_performance")
 
 
 @nox.session()
 def profile(session):
-    session.install("pytest")
-    session.install(".")
+    session.install(".[dev]")
     session.run("pytest", "-sm", "profile")
