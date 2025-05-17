@@ -108,7 +108,9 @@ class DmerkApp(App[None]):
                         FilePicker(id="filepicker-left"),
                         FilePicker(id="filepicker-right"),
                     ),
-                    Input(id="compare-input", classes="empty"),
+                    Input(
+                        id="compare-input", classes="empty", placeholder="Filter by..."
+                    ),
                     Button("RESET", "primary", id="reset-compare"),
                 )
         yield Footer()
