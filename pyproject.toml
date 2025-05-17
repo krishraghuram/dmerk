@@ -20,6 +20,7 @@ dependencies = [
   "textual",
   "humanize",
   "platformdirs",
+  "argcomplete",
 ]
 
 [project.optional-dependencies]
@@ -32,6 +33,8 @@ dev = [
     "coverage",
     "pytest",
     "pytest-asyncio",
+    "build",
+    "twine",
 ]
 
 [project.urls]

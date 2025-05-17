@@ -23,6 +23,18 @@ Think hash digest / checksum verification, but instead of comparing just a pair 
 pip install dmerk
 ```
 
+#### Shell Autocomplete
+
+dmerk uses [argcomplete](https://github.com/kislyuk/argcomplete) to support shell autocompletion. In order to enable this, you need to,
+
+```shell
+# zsh/bash shell(s)
+activate-global-python-argcomplete
+
+# fish shell
+register-python-argcomplete --shell fish dmerk | source
+```
+
 ## Usage / Quickstart
 
 ### TUI (Terminal User Interface)
@@ -146,4 +158,12 @@ nox --session lint
 nox --session format
 nox --session mypy
 nox --session test
+```
+
+### Build and Publish
+
+```
+python -m build
+python -m pip install --force-reinstall ../dmerk/dist/dmerk-0.1.0-py3-none-any.whl
+python -m twine upload dist/*
 ```

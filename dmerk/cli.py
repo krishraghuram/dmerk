@@ -1,3 +1,4 @@
+# PYTHON_ARGCOMPLETE_OK
 import argparse
 import importlib
 import textwrap
@@ -5,8 +6,10 @@ import sys
 import json
 import logging
 from pathlib import Path
-from dmerk import constants
 
+import argcomplete
+
+from dmerk import constants
 import dmerk.generate as generate
 import dmerk.compare as compare
 from .utils import load_or_generate
@@ -42,11 +45,6 @@ def _compare(args: argparse.Namespace) -> None:
 
 def _tui(args: argparse.Namespace) -> None:
     run_tui()
-
-
-# # TODO: implement analyse
-# def _analyse(path):
-#     raise NotImplementedError()
 
 
 def _main(args: list[str]) -> None:
@@ -138,18 +136,12 @@ def _main(args: list[str]) -> None:
     parser_compare.add_argument("-sp2", "--subpath2", default=".")
     parser_compare.set_defaults(func=_compare)
 
-    # # TODO: implement analyse
-    # parser_analyse = subparsers.add_parser(
-    #     "analyse", description="Analyse a merkle tree to find copies/duplicates within"
-    # )
-    # parser_analyse.add_argument("path")
-    # parser_analyse.set_defaults(func=_analyse)
-
     parser_tui = subparsers.add_parser(
         "tui", description="Launch the TUI (terminal user interface)"
     )
     parser_tui.set_defaults(func=_tui)
 
+    argcomplete.autocomplete(parser, always_complete_options=False)
     parsed_args = parser.parse_args(args)
     parsed_args.func(parsed_args)
 
