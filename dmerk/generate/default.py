@@ -14,14 +14,14 @@ except AttributeError:
 _DIGEST_ALGORITHM = "md5"  # takes 10-20 percent less time to run than sha256
 
 
-def generate(directory: Path, continue_on_error: bool = False) -> Merkle:
+def generate(directory: Path, fail_on_error: bool = False) -> Merkle:
     if directory.exists():
-        return _generate(directory, continue_on_error)
+        return _generate(directory, fail_on_error)
     else:
         raise NotADirectoryError(f"Directory '{directory}' does not exist")
 
 
-def _generate(directory: Path, continue_on_error: bool) -> Merkle:
+def _generate(directory: Path, fail_on_error: bool) -> Merkle:
     contents: dict[Path, Merkle] = {}
     for child in directory.iterdir():
         try:
@@ -35,7 +35,7 @@ def _generate(directory: Path, continue_on_error: bool) -> Merkle:
                     digest=_symlink_digest(child),
                 )
             elif child.is_dir():
-                contents[child] = _generate(child, continue_on_error)
+                contents[child] = _generate(child, fail_on_error)
             elif child.is_file():
                 contents[child] = Merkle(
                     path=child,
@@ -45,7 +45,7 @@ def _generate(directory: Path, continue_on_error: bool) -> Merkle:
                     digest=_file_digest(child),
                 )
             else:
-                if continue_on_error:
+                if not fail_on_error:
                     # TODO: should we include special files in merkle output, so as to not lose information?
                     # We could just incl the file path, type and have size as 0, and digest as empty string ""
                     logging.error(f"{child} is neither a file nor a directory")
@@ -53,7 +53,7 @@ def _generate(directory: Path, continue_on_error: bool) -> Merkle:
                 else:
                     raise ValueError(f"{child} is neither a file nor a directory")
         except (PermissionError, OSError) as e:
-            if continue_on_error:
+            if not fail_on_error:
                 logging.error(f"Error accessing {child}: {e}")
                 continue
             else:

@@ -15,18 +15,15 @@ def test_help(capsys, args):
     with pytest.raises(SystemExit):
         cli._main([args])
     captured = capsys.readouterr()
-    assert "usage: dmerk [-h] [--no-save] {generate,compare,tui}" in captured.out
-    assert (
-        "Program to generate, compare and analyse directory merkle trees"
-        in captured.out
-    )
+    assert "usage: dmerk [-h] [-v] [--no-save] {generate,compare,tui}" in captured.out
+    assert "Program to generate and compare merkle trees of directories" in captured.out
 
 
 def test_subcommand_required(capsys):
     with pytest.raises(SystemExit):
         cli._main([])
     captured = capsys.readouterr()
-    assert "usage: dmerk [-h] [--no-save] {generate,compare,tui}" in captured.err
+    assert "usage: dmerk [-h] [-v] [--no-save] {generate,compare,tui}" in captured.err
     assert (
         "dmerk: error: the following arguments are required: {generate,compare,tui}"
         in captured.err
@@ -39,7 +36,7 @@ def test_generate_help(capsys, args):
         cli._main(["generate", args])
     captured = capsys.readouterr()
     assert (
-        "usage: dmerk generate [-h] [-p] [-f FILENAME] [--continue-on-error] path"
+        "usage: dmerk generate [-h] [-p] [-f FILENAME] [--fail-on-error] path"
         in captured.out
     )
     assert "Generate a merkle tree for a given directory" in captured.out
@@ -50,7 +47,7 @@ def test_generate_path_required(capsys):
         cli._main(["generate"])
     captured = capsys.readouterr()
     assert (
-        "usage: dmerk generate [-h] [-p] [-f FILENAME] [--continue-on-error] path"
+        "usage: dmerk generate [-h] [-p] [-f FILENAME] [--fail-on-error] path"
         in captured.err
     )
     assert (

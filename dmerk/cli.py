@@ -1,4 +1,5 @@
 import argparse
+import importlib
 import textwrap
 import sys
 import json
@@ -14,7 +15,7 @@ from dmerk.tui import run as run_tui
 
 def _generate(args: argparse.Namespace) -> None:
     path = Path(args.path).resolve()
-    merkle = generate.generate(path, continue_on_error=args.continue_on_error)
+    merkle = generate.generate(path, fail_on_error=args.fail_on_error)
     filename = args.filename if args.filename else constants.APP_STATE_PATH
     if not args.no_save:
         filename = merkle.save(filename=filename)
@@ -53,7 +54,13 @@ def _main(args: list[str]) -> None:
 
     parser = argparse.ArgumentParser(
         prog="dmerk",
-        description="Program to generate, compare and analyse directory merkle trees",
+        description="Program to generate and compare merkle trees of directories",
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=f"%(prog)s {importlib.metadata.version(parser.prog)}",
     )
     parser.add_argument(
         "--no-save",
@@ -80,12 +87,12 @@ def _main(args: list[str]) -> None:
     parser_generate.add_argument(
         "-f",
         "--filename",
-        help="provide a custom filename",
+        help="provide a custom filename (or file path to save to)",
     )
     parser_generate.add_argument(
-        "--continue-on-error",
+        "--fail-on-error",
         action="store_true",
-        help="continue upon encountering errors (such as broken symlinks etc.)",
+        help="immediately fail upon encountering errors (such as broken symlinks etc.)",
     )
     # # TODO: compress generate output
     # parser_generate.add_argument("-c", "--compress", help="compress the output file")
@@ -102,7 +109,7 @@ def _main(args: list[str]) -> None:
         "compare",
         description=textwrap.dedent(
             """
-            Compare two directory merkle trees and return the diffs and matches.
+            (Shallow) Compare two directory merkle trees and return the diffs and matches.
 
             path1 and path2 are required, and they are the paths to the directories to compare,
             but they can also be paths to .dmerk files that were created using generate.
@@ -110,15 +117,15 @@ def _main(args: list[str]) -> None:
             Example: `dmerk -p1=Documents_e6eaccb4.dmerk -p2=Documents_b2a7cef7.dmerk`
             
             If provided, subpath1 and subpath2 allows you to compare 2 submerkles within the specified merkles.
-            This is useful only when specifying paths to .dmerk files
+            This is useful primarily when specifying paths to .dmerk files
             Example:
             The following command will load two .dmerk files,
             but compare the "Receipts/Rent" subdirectories within the Documents directory.
             ```
-            dmerk \
-            -p1=Documents_e6eaccb4.dmerk \
-            -p2=Documents_b2a7cef7.dmerk \
-            -sp1=Receipts/Rent \
+            dmerk compare \\
+            -p1=Documents_e6eaccb4.dmerk \\
+            -p2=Documents_b2a7cef7.dmerk \\
+            -sp1=Receipts/Rent \\
             -sp2=Receipts/Rent
             ```
             """
