@@ -109,6 +109,8 @@ class Merkle:
 
         Note that we do a shallow comparison.
         That is, we also do not compare children, because that would defeat the purpose of lazy loading.
+        This should be good enough, because if you think about it,
+        two merkles are only really equal if they have same digest.
 
         Note that two Merkles are equal even if their 'path' attribute is different
         This is because we only care about the data in the filesystem being same,
