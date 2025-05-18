@@ -207,7 +207,7 @@ class CompareWidget(Widget):
         )
         unmatched_child_merkles = sorted(
             filter(lambda m: m.digest not in matches, filtered_child_merkles),
-            key=lambda m: m.digest,
+            key=lambda m: m.path.name,
         )
         for m in matching_child_merkles:
             total_height = matches[m.digest][0]
@@ -216,9 +216,16 @@ class CompareWidget(Widget):
             matches[m.digest] = ((total_height - height), count - 1)
             row = self._get_compare_table_row(m, match=True, height=height)
             compare_table.add_row(*row, key=str(m.path), height=height)
+        name_matches = self._get_name_matches()
+        logging.info(name_matches)
         for m in unmatched_child_merkles:
-            row = self._get_compare_table_row(m, match=False)
-            compare_table.add_row(*row, key=str(m.path), height=3)
+            if m.path.name in name_matches:
+                row = self._get_compare_table_row(m, match=False)
+                compare_table.add_row(*row, key=str(m.path), height=3)
+        for m in unmatched_child_merkles:
+            if m.path.name not in name_matches:
+                row = self._get_compare_table_row(m, match=False)
+                compare_table.add_row(*row, key=str(m.path), height=3)
 
     def _get_merkle_from_row_key(self, row_key: RowKey) -> Merkle:
         child_merkles = [m for m in self.submerkle.children.values()]
@@ -269,9 +276,10 @@ class CompareWidget(Widget):
             other = CompareWidget._get_other_compare_widget(self.id, self.parent)
             row_key = self._get_row_key_from_scroll_y(old_scroll_y)
             matches = self._get_matches()
+            name_matches = self._get_name_matches()
             if other and row_key:
                 m = self._get_merkle_from_row_key(row_key)
-                if m.digest in matches:
+                if m.digest in matches or m.path.name in name_matches:
                     other.query_one(DataTable).scroll_to(
                         None, new_scroll_y, animate=False
                     )
@@ -375,3 +383,15 @@ class CompareWidget(Widget):
                 return matches
         else:
             return dict()
+
+    def _get_name_matches(self) -> set[str]:
+        other = CompareWidget._get_other_compare_widget(self.id, self.parent)
+        if other:
+            if self.loading or other.loading:
+                return set()
+            else:
+                names_1 = [m.path.name for m in self.submerkle.children.values()]
+                names_2 = [m.path.name for m in other.submerkle.children.values()]
+                return set(names_1) & set(names_2)
+        else:
+            return set()
