@@ -220,11 +220,11 @@ class CompareWidget(Widget):
         logging.info(name_matches)
         for m in unmatched_child_merkles:
             if m.path.name in name_matches:
-                row = self._get_compare_table_row(m, match=False)
+                row = self._get_compare_table_row(m, match=False, name_match=True)
                 compare_table.add_row(*row, key=str(m.path), height=3)
         for m in unmatched_child_merkles:
             if m.path.name not in name_matches:
-                row = self._get_compare_table_row(m, match=False)
+                row = self._get_compare_table_row(m, match=False, name_match=False)
                 compare_table.add_row(*row, key=str(m.path), height=3)
 
     def _get_merkle_from_row_key(self, row_key: RowKey) -> Merkle:
@@ -332,34 +332,55 @@ class CompareWidget(Widget):
             return self.merkle
 
     def _get_compare_table_row(
-        self, m: Merkle, match: bool, height: int = 3
+        self, m: Merkle, match: bool, name_match: bool = False, height: int = 3
     ) -> list[Text]:
-        ncw = CompareWidget._get_column_width(
+        NCW = CompareWidget._get_column_width(
             self.size.width, column_key="NAME"
         )  # name column width
-        dcw = CompareWidget._get_column_width(
+        DCW = CompareWidget._get_column_width(
             self.size.width, column_key="DIGEST"
         )  # digest column width
-        if not match:
-            ncw = dcw = 0
+        # Variable Names Explained
+        #   ns: name suffix
+        #   ds: digest suffix
+        #   ncp: name cell prefix
+        #   ncs: name cell suffix
+        #   dcp: digest cell prefix
+        #   dcs: digest cell suffix
+        if match:
+            ns = " " * (NCW - len(m.path.name) - 3)
+            ds = " " * (DCW - len(m.digest))
+            ncp = (" " * (NCW) + "\n") * int((height - 1) / 2)
+            ncs = ("\n" + " " * (NCW)) * (height - 1 - int((height - 1) / 2))
+            dcp = (" " * (DCW) + "\n") * int((height - 1) / 2)
+            dcs = ("\n" + " " * (DCW)) * (height - 1 - int((height - 1) / 2))
+        elif name_match:
+            ns = " " * (NCW - len(m.path.name) - 3)
+            ds = " " * (DCW - len(m.digest))
+            # for name match, we only need ns and ds
+            NCW = 0
+            DCW = 0
+            ncp = (" " * (NCW) + "\n") * int((height - 1) / 2)
+            ncs = ("\n" + " " * (NCW)) * (height - 1 - int((height - 1) / 2))
+            dcp = (" " * (DCW) + "\n") * int((height - 1) / 2)
+            dcs = ("\n" + " " * (DCW)) * (height - 1 - int((height - 1) / 2))
+        else:
+            # if neither (digest) match nor name match, we dont need any padding anywhere
+            NCW = 0
+            DCW = 0
+            ns = " " * (NCW - len(m.path.name) - 3)
+            ds = " " * (DCW - len(m.digest))
+            ncp = (" " * (NCW) + "\n") * int((height - 1) / 2)
+            ncs = ("\n" + " " * (NCW)) * (height - 1 - int((height - 1) / 2))
+            dcp = (" " * (DCW) + "\n") * int((height - 1) / 2)
+            dcs = ("\n" + " " * (DCW)) * (height - 1 - int((height - 1) / 2))
         row = [
             colorhash_styled_text(
-                (
-                    (" " * (ncw) + "\n") * int((height - 1) / 2)
-                    + file_prefix(m.type)
-                    + m.path.name
-                    + " " * (ncw - len(m.path.name) - 3)
-                    + ("\n" + " " * (ncw)) * (height - 1 - int((height - 1) / 2))
-                ),
+                (ncp + file_prefix(m.type) + m.path.name + ns + ncs),
                 m.digest,
             ),
             colorhash_styled_text(
-                (
-                    (" " * (dcw) + "\n") * int((height - 1) / 2)
-                    + m.digest
-                    + " " * (dcw - len(m.digest))
-                    + ("\n" + " " * (dcw)) * (height - 1 - int((height - 1) / 2))
-                ),
+                (dcp + m.digest + ds + dcs),
                 m.digest,
             ),
         ]
