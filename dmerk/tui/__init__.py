@@ -69,6 +69,8 @@ class TextualHandler(logging.Handler):
 class DmerkApp(App[None]):
     """An TUI for dmerk"""
 
+    TITLE = "dmerk TUI"
+
     CSS_PATH = "styles.tcss"
 
     BINDINGS = [
@@ -148,7 +150,9 @@ class DmerkApp(App[None]):
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
-        self.dark = not self.dark  # type: ignore
+        self.theme = (
+            "textual-dark" if self.theme == "textual-light" else "textual-light"
+        )
 
     def on_file_manager_path_selected(self, message: FileManager.PathSelected) -> None:
         logging.debug(message)

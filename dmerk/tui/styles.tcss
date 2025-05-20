@@ -25,7 +25,7 @@ Screen FileManager DataTable {
 Screen FileManager DataTable:focus {
     /* Essentially $surface-lighten-0.5 on dark theme*/
     /* Doesn't work on light theme tho :( */
-    background: #262626; 
+    background: $surface-lighten-2; 
 }
 
 Screen RichLog {
@@ -34,7 +34,7 @@ Screen RichLog {
 Screen RichLog:focus {
     /* Essentially $surface-lighten-0.5 on dark theme*/
     /* Doesn't work on light theme tho :( */
-    background: #262626; 
+    background: $surface-lighten-2; 
 }
 Screen Button#generate {
     width: 1fr;
