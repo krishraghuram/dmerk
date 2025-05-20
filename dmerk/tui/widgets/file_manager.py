@@ -12,7 +12,7 @@ from textual.widgets import DataTable
 from textual.reactive import reactive
 from textual.message import Message
 from textual.events import Resize
-
+from textual.coordinate import Coordinate
 from humanize import naturaltime
 
 
@@ -62,6 +62,17 @@ class FileManager(Widget):
     def compose(self) -> ComposeResult:
         files_table: DataTable[None] = DataTable(header_height=3)
         yield files_table
+
+    def on_mount(self) -> None:
+        dt = self.query_one(DataTable)
+
+        def watch_hover_coordinate(old: Coordinate, new: Coordinate) -> None:
+            try:
+                dt.tooltip = dt.get_cell_at(new).strip()
+            except:
+                pass
+
+        self.watch(dt, "hover_coordinate", watch_hover_coordinate)
 
     def __get_column_width(self) -> int | None:
         if self.size.width != 0:
