@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Any
 from textual.app import ComposeResult
@@ -7,40 +8,64 @@ from textual.widgets._tabbed_content import ContentTabs
 from textual.containers import Vertical
 from textual.message import Message
 from textual.binding import Binding
-from textual.events import DescendantFocus, Focus
+from textual.events import DescendantFocus, Focus, Key
 from .sidebar_button import SidebarButton
 
 
 class FavoritesSidebar(Widget):
     focused_button = None
 
-    BINDINGS = [
-        Binding("up", "cursor_up", "Cursor Up", show=False),
-        Binding("down", "cursor_down", "Cursor Down", show=False),
-        Binding("right", "cursor_right", "Cursor Right", show=False),
-        Binding("tab", "cursor_right", "Tab", show=False),
-    ]
+    # BINDINGS = [
+    #     Binding("right", "cursor_right", "Cursor Right", show=False),
+    #     Binding("up", "cursor_up", "Cursor Up", show=False),
+    #     Binding("shift+tab", "cursor_up", "Shift+Tab", show=False),
+    #     Binding("down", "cursor_down", "Cursor Down", show=False),
+    #     Binding("tab", "cursor_down", "Tab", show=False),
+    # ]
 
-    def action_cursor_up(self):
-        if self.focused_button != self.query(SidebarButton)[0]:
-            self.screen.focus_previous()
-        else:
-            self.screen.query_one(ContentTabs).focus()
+    # def action_cursor_up(self):
+    #     if self.focused_button != self.query(SidebarButton)[0]:
+    #         self.screen.focus_previous()
+    #     else:
+    #         self.screen.query_one(ContentTabs).focus()
 
-    def action_cursor_down(self):
-        if self.focused_button != self.query(SidebarButton)[-1]:
-            self.screen.focus_next()
+    # def action_cursor_down(self):
+    #     self.screen.focus_next()
 
-    def action_cursor_right(self):
-        self.screen.query_one(DataTable).focus()
+    # def action_cursor_right(self):
+    #     self.screen.query_one(DataTable).focus()
 
     def on_descendant_focus(self, event: DescendantFocus):
         self.focused_button = event.widget
+
+    def on_key(self, event: Key):
+        if event.key == "up" or event.key == "shift+tab":
+            if self.focused_button == self.query(SidebarButton)[0]:
+                self.screen.query_one(ContentTabs).focus()
+            else:
+                self.screen.focus_previous()
+        elif event.key == "down" or event.key == "tab":
+            self.screen.focus_next()
+        elif event.key == "right":
+            self.screen.query_one(DataTable).focus()
+        # files_table = self.query_one(DataTable)
+        # if (
+        #     (event.key == "left" and files_table.cursor_column == 0)
+        #     or (event.key == "up" and files_table.cursor_row == 0)
+        #     or event.key == "shift+tab"
+        # ):
+        #     self.screen.query_one(FavoritesSidebar).focus()
 
     def on_focus(self, event: Focus):
         if self.focused_button is None:
             self.focused_button = self.query(SidebarButton)[0]
         self.focused_button.focus()
+
+    def on_mount(self):
+        def log_focused(focused):
+            logging.info(f"{focused=}")
+
+        self.watch(self.screen, "focused", log_focused)
 
     def __init__(self, *args: Any, **kwargs: Any):
         self.can_focus = True

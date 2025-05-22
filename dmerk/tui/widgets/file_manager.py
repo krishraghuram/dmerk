@@ -12,8 +12,7 @@ from textual.widgets import DataTable
 from textual.reactive import reactive
 from textual.message import Message
 from textual.coordinate import Coordinate
-from textual.events import Resize, Focus, Key
-from textual.binding import Binding
+from textual.events import Resize, Key
 
 from .favorites_sidebar import FavoritesSidebar
 
@@ -65,10 +64,12 @@ class FileManager(Widget):
 
     def on_key(self, event: Key):
         files_table = self.query_one(DataTable)
-        if event.key == "left":
-            if files_table.cursor_column == 0:
-                print("Focusing Sidebar")
-                self.screen.query_one(FavoritesSidebar).focus()
+        if (
+            (event.key == "left" and files_table.cursor_column == 0)
+            or (event.key == "up" and files_table.cursor_row == 0)
+            or event.key == "shift+tab"
+        ):
+            self.screen.query_one(FavoritesSidebar).focus()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
