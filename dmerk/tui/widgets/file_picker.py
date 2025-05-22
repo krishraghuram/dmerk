@@ -4,9 +4,11 @@ from typing import cast
 from textual.app import ComposeResult
 from textual.widget import Widget
 from textual.widgets import DataTable, Label
+from textual.widgets._tabbed_content import ContentTabs
 from textual.reactive import reactive
-from textual.events import Resize
+from textual.events import Resize, Focus
 from textual.coordinate import Coordinate
+from textual.binding import Binding
 from rich.text import Text
 
 import dmerk.constants as constants
@@ -26,7 +28,25 @@ def file_prefix(path: Path) -> str:
 
 class FilePicker(Widget):
 
+    BINDINGS = [
+        Binding("up", "cursor_up", "Cursor Up", show=False),
+        Binding("left", "cursor_left", "Cursor Left", show=False),
+        Binding("right", "cursor_right", "Cursor Right", show=False),
+    ]
+
     filter_by = reactive("")
+
+    def action_cursor_up(self):
+        self.screen.query_one(ContentTabs).focus()
+
+    def action_cursor_left(self):
+        self.screen.query_one("#filepicker-left", FilePicker).focus()
+
+    def action_cursor_right(self):
+        self.screen.query_one("#filepicker-right", FilePicker).focus()
+
+    def on_focus(self, event: Focus):
+        self.query_one(DataTable).focus()
 
     def filter(self, p: Path) -> bool:
         # TODO: Implement fuzzy match
@@ -44,6 +64,7 @@ class FilePicker(Widget):
         classes: str | None = None,
         disabled: bool = False,
     ):
+        self.can_focus = True
         super().__init__(name=name, id=id, classes=classes, disabled=disabled)
         if not path:
             path = Path(constants.APP_STATE_PATH)

@@ -2,13 +2,48 @@ from pathlib import Path
 from typing import Any
 from textual.app import ComposeResult
 from textual.widget import Widget
+from textual.widgets import DataTable
+from textual.widgets._tabbed_content import ContentTabs
 from textual.containers import Vertical
 from textual.message import Message
+from textual.binding import Binding
+from textual.events import DescendantFocus, Focus
 from .sidebar_button import SidebarButton
 
 
 class FavoritesSidebar(Widget):
+    focused_button = None
+
+    BINDINGS = [
+        Binding("up", "cursor_up", "Cursor Up", show=False),
+        Binding("down", "cursor_down", "Cursor Down", show=False),
+        Binding("right", "cursor_right", "Cursor Right", show=False),
+        Binding("tab", "cursor_right", "Tab", show=False),
+    ]
+
+    def action_cursor_up(self):
+        if self.focused_button != self.query(SidebarButton)[0]:
+            self.screen.focus_previous()
+        else:
+            self.screen.query_one(ContentTabs).focus()
+
+    def action_cursor_down(self):
+        if self.focused_button != self.query(SidebarButton)[-1]:
+            self.screen.focus_next()
+
+    def action_cursor_right(self):
+        self.screen.query_one(DataTable).focus()
+
+    def on_descendant_focus(self, event: DescendantFocus):
+        self.focused_button = event.widget
+
+    def on_focus(self, event: Focus):
+        if self.focused_button is None:
+            self.focused_button = self.query(SidebarButton)[0]
+        self.focused_button.focus()
+
     def __init__(self, *args: Any, **kwargs: Any):
+        self.can_focus = True
         super().__init__(*args, **kwargs)
 
     def compose(self) -> ComposeResult:
@@ -19,7 +54,8 @@ class FavoritesSidebar(Widget):
             SidebarButton(None, ""),
             SidebarButton(None, ""),
             SidebarButton(None, ""),
-            SidebarButton(None, ""),
+            # TODO: Add a mechanism to "add more" dynamically
+            # TODO: And wrap this widget in a Scrollable
         )
 
     class PathSelected(Message):

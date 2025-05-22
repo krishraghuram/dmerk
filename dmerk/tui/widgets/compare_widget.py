@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path, PurePath
-import logging
 import functools
 from collections import Counter
 from typing import cast
@@ -217,7 +216,6 @@ class CompareWidget(Widget):
             row = self._get_compare_table_row(m, match=True, height=height)
             compare_table.add_row(*row, key=str(m.path), height=height)
         name_matches = self._get_name_matches()
-        logging.info(name_matches)
         for m in unmatched_child_merkles:
             if m.path.name in name_matches:
                 row = self._get_compare_table_row(m, match=False, name_match=True)
@@ -250,17 +248,14 @@ class CompareWidget(Widget):
             for idx in range(len(y_offsets) - scroll_y):
                 row_key, offset = y_offsets[scroll_y + idx]
                 if offset == 0:
-                    logging.debug(f"{row_key.value=}, {idx=}")
                     return row_key
                     break
             else:
-                logging.debug("No matching entry")
                 return None
         else:
             # Return the first visible (even partially visible) row after scroll_y
             try:
                 row_key, _ = y_offsets[scroll_y]
-                logging.debug(f"{row_key.value=}")
                 return row_key
             except IndexError:
                 return None
@@ -268,9 +263,6 @@ class CompareWidget(Widget):
     # BUG: When clicking on a merkle subdirectory, the other CompareWidget gets reset to 0, and this makes navigation a pain
     async def _add_watches(self) -> None:
         def watch_scroll_y(old_scroll_y: float, new_scroll_y: float) -> None:
-            logging.debug(
-                f"watch_scroll_y in {self.id}: {old_scroll_y}, {new_scroll_y}"
-            )
             # We only want to sync scroll when we are scrolling across matches
             # Once we reach unmatched merkles, we no longer want to sync scroll
             other = CompareWidget._get_other_compare_widget(self.id, self.parent)
@@ -309,7 +301,6 @@ class CompareWidget(Widget):
             try:
                 return parent_widget.query_one(f"#{other_id}", CompareWidget)
             except NoMatches:
-                logging.debug(f"No Matches for {other_id}")
                 return None
         else:
             raise ValueError("self.parent is None")

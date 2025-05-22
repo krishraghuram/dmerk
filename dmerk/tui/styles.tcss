@@ -1,5 +1,5 @@
 Screen #files {
-    height: 4fr;
+    height: 6fr;
 }
 Screen #generate {
     height: 1fr;

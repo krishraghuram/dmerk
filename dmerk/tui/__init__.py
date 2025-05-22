@@ -10,9 +10,11 @@ from textual.widgets import (
     TabPane,
     Input,
 )
+from textual.widgets._tabbed_content import ContentTabs
 from textual.containers import Horizontal, Vertical
 from textual.events import Ready
 from textual import work
+from textual.binding import Binding
 from dmerk.tui.widgets import FileManager, FavoritesSidebar, FilePicker
 import dmerk.generate as generate
 import dmerk.constants as constants
@@ -74,8 +76,13 @@ class DmerkApp(App[None]):
     CSS_PATH = "styles.tcss"
 
     BINDINGS = [
-        ("d", "toggle_dark", "Toggle dark mode"),
+        Binding("d", "toggle_dark", "Toggle dark mode"),
+        Binding("down", "cursor_down", "Cursor Down", show=False),
     ]
+
+    def action_cursor_down(self):
+        if self.query_one(ContentTabs).has_focus:
+            self.screen.focus_next()
 
     def on_ready(self, event: Ready) -> None:
         root_logger = logging.getLogger()
@@ -131,9 +138,9 @@ class DmerkApp(App[None]):
                 if highlighted_path.is_dir():
                     self._main(highlighted_path)
                 else:
-                    logging.warning("Please choose a directory")
+                    logging.warning("Please select a directory")
             else:
-                logging.warning("Please choose a path")
+                logging.warning("Please select a path")
         elif message.button.id == "reset-compare":
             for compare_widget in self.query(CompareWidget):
                 compare_widget.reset_to_filepicker()
@@ -155,17 +162,14 @@ class DmerkApp(App[None]):
         )
 
     def on_file_manager_path_selected(self, message: FileManager.PathSelected) -> None:
-        logging.debug(message)
         self.query_one(FavoritesSidebar).path_selected(message.path)
 
     def on_file_manager_path_change(self, message: FileManager.PathChange) -> None:
-        logging.debug(message)
         self.query_one(FavoritesSidebar).path_change(message.path)
 
     def on_favorites_sidebar_path_selected(
         self, message: FavoritesSidebar.PathSelected
     ) -> None:
-        logging.debug(message)
         self.query_one(FileManager).path_selected(message.path)
 
 

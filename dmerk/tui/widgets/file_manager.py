@@ -11,8 +11,12 @@ from textual.widget import Widget
 from textual.widgets import DataTable
 from textual.reactive import reactive
 from textual.message import Message
-from textual.events import Resize
 from textual.coordinate import Coordinate
+from textual.events import Resize, Focus, Key
+from textual.binding import Binding
+
+from .favorites_sidebar import FavoritesSidebar
+
 from humanize import naturaltime
 
 
@@ -58,6 +62,16 @@ class FileManager(Widget):
     sort_by = reactive(Columns.MODIFIED.value.key)
     sort_reverse = reactive(Columns.MODIFIED.value.sort_reverse)
     prev_cell_key = None
+
+    def on_key(self, event: Key):
+        files_table = self.query_one(DataTable)
+        if event.key == "left":
+            if files_table.cursor_column == 0:
+                print("Focusing Sidebar")
+                self.screen.query_one(FavoritesSidebar).focus()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def compose(self) -> ComposeResult:
         files_table: DataTable[None] = DataTable(header_height=3)
