@@ -12,13 +12,11 @@ from textual.widgets import (
 )
 from textual.containers import Horizontal, Vertical
 from textual.events import Ready
+from textual.logging import TextualHandler
 from textual import work
 from dmerk.tui.widgets import FileManager, FavoritesSidebar, FilePicker
 import dmerk.generate as generate
 import dmerk.constants as constants
-import sys
-
-from textual._context import active_app
 
 from dmerk.tui.widgets.compare_widget import CompareWidget
 
@@ -34,36 +32,6 @@ class TextHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
         msg = self.format(record)
         self.text.write(msg)
-
-
-# Monkey Patching from textual source
-# https://github.com/Textualize/textual/blob/8bfa533fe90a1c4d248b4fdeb127d82c1781f003/src/textual/logging.py#L15
-class TextualHandler(logging.Handler):
-    """A Logging handler for Textual apps."""
-
-    def __init__(self, stderr: bool = True, stdout: bool = False) -> None:
-        """Initialize a Textual logging handler.
-
-        Args:
-            stderr: Log to stderr when there is no active app.
-            stdout: Log to stdout when there is not active app.
-        """
-        super().__init__()
-        self._stderr = stderr
-        self._stdout = stdout
-
-    def emit(self, record: logging.LogRecord) -> None:
-        """Invoked by logging."""
-        message = self.format(record)
-        try:
-            app = active_app.get()
-        except LookupError:
-            if self._stderr:
-                print(message, file=sys.stderr)
-            elif self._stdout:
-                print(message, file=sys.stdout)
-        else:
-            app.log.debug(message)
 
 
 class DmerkApp(App[None]):
