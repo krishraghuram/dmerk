@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import itertools
-from typing import Callable, Any
+from typing import Callable, Any, cast
 from enum import Enum
 
 from pathlib import Path
@@ -11,7 +11,7 @@ from textual.widget import Widget
 from textual.widgets import DataTable, Label
 from textual.reactive import reactive
 from textual.message import Message
-from textual.events import Resize
+from textual.events import Resize, Click
 from textual.coordinate import Coordinate
 from textual.containers import Horizontal
 from rich.text import Text
@@ -88,8 +88,22 @@ class FileManager(Widget):
         await self._refresh_label()
         await self._refresh_table()
 
+    def on_click(self, message: Click) -> None:
+        if isinstance(message.widget, Label):
+            labels: list[Label] = []
+            for c in self.query_one(Horizontal).children:
+                if isinstance(c, Label) and isinstance(c.content, Text):
+                    labels.append(c)
+            idx = labels.index(message.widget)
+            parts = [cast(Text, l.content).plain for l in labels[: idx + 1]]
+            self.path = Path("".join(parts))
+
     async def _refresh_label(self) -> None:
-        self.query_one(Label).update(Text(f"{self.path}", style="bold"))
+        label_parts = ["/"]
+        label_parts = label_parts + [f"{p}/" for p in self.path.parts[1:]]
+        labels = [Label(Text(l, style="bold")) for l in label_parts]
+        await self.query_one(Horizontal).remove_children()
+        await self.query_one(Horizontal).mount_all(labels)
 
     async def _refresh_table(self) -> None:
         self.prev_cell_key = None

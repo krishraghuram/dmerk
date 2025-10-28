@@ -153,13 +153,13 @@ class CompareWidget(Widget):
 
     def on_click(self, message: Click) -> None:
         if isinstance(message.widget, Label):
-            labels = []
+            labels: list[Label] = []
             for c in self.query_one(Horizontal).children:
-                if isinstance(c, Label) and isinstance(c.renderable, Text):
+                if isinstance(c, Label) and isinstance(c.content, Text):
                     labels.append(c)
             idx = labels.index(message.widget)
             merkle_subpath_parts = [
-                cast(Text, l.renderable).plain for l in labels[: idx + 1]
+                cast(Text, l.content).plain for l in labels[: idx + 1]
             ]
             self.merkle_subpath = PurePath("".join(merkle_subpath_parts))
 
