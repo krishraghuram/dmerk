@@ -8,11 +8,13 @@ from datetime import datetime
 
 from textual.app import ComposeResult
 from textual.widget import Widget
-from textual.widgets import DataTable
+from textual.widgets import DataTable, Label
 from textual.reactive import reactive
 from textual.message import Message
 from textual.events import Resize
 from textual.coordinate import Coordinate
+from textual.containers import Horizontal
+from rich.text import Text
 from humanize import naturaltime
 
 
@@ -60,6 +62,7 @@ class FileManager(Widget):
     prev_cell_key = None
 
     def compose(self) -> ComposeResult:
+        yield Horizontal(Label(Text(f"{self.path}", style="bold")))
         files_table: DataTable[None] = DataTable(header_height=3)
         yield files_table
 
@@ -80,6 +83,13 @@ class FileManager(Widget):
             return int((self.size.width - 2) / 2) - 2
         else:
             return None
+
+    async def _refresh(self) -> None:
+        await self._refresh_label()
+        await self._refresh_table()
+
+    async def _refresh_label(self) -> None:
+        self.query_one(Label).update(Text(f"{self.path}", style="bold"))
 
     async def _refresh_table(self) -> None:
         self.prev_cell_key = None
@@ -107,24 +117,28 @@ class FileManager(Widget):
                 key=str(file),
                 height=3,
             )
+        # Prevent Vertical Scrollbar
+        files_table.styles.height = (
+            self.size.height - self.query_one(Horizontal).size.height
+        )
 
     async def on_resize(self, event: Resize) -> None:
-        await self._refresh_table()
+        await self._refresh()
 
     async def watch_path(self) -> None:
-        await self._refresh_table()
+        await self._refresh()
 
     async def watch_time_format(self) -> None:
         files_table = self.query_one(DataTable)
         cursor_position = files_table.cursor_coordinate
-        await self._refresh_table()
+        await self._refresh()
         files_table.move_cursor(**cursor_position._asdict())
 
     async def watch_sort_by(self) -> None:
-        await self._refresh_table()
+        await self._refresh()
 
     async def watch_sort_reverse(self) -> None:
-        await self._refresh_table()
+        await self._refresh()
 
     async def on_data_table_header_selected(
         self, message: DataTable.HeaderSelected

@@ -19,6 +19,14 @@ Screen FileManager {
     overflow: auto;
     align: center top;
 }
+Screen FileManager Horizontal {
+    background: $panel-lighten-2;
+    height: auto;
+    width: 100%;
+}
+Screen FileManager Horizontal Label:hover {
+    text-style: underline;
+}
 Screen FileManager DataTable {
     width: 100%;
 }
