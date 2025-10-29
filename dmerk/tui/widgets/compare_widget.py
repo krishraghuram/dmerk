@@ -174,9 +174,10 @@ class CompareWidget(Widget):
 
     async def _refresh_table(self, force: bool = False) -> None:
         matches = self._get_matches()
+        name_matches = self._get_name_matches()
         compare_table = self.query_one(DataTable)
         # Check if we can do "partial refresh"
-        if not force and len(matches) == 0:
+        if not force and len(matches) == 0 and len(name_matches) == 0:
             # Not a force refresh, and there are also no matches
             # Cells which were previously matches, will have solid background color
             # We need to update so that the solid bg color is removed now, since there are no matches
@@ -207,7 +208,7 @@ class CompareWidget(Widget):
         )
         unmatched_child_merkles = sorted(
             filter(lambda m: m.digest not in matches, filtered_child_merkles),
-            key=lambda m: m.path.name,
+            key=lambda m: str.casefold(m.path.name),
         )
         for m in matching_child_merkles:
             total_height = matches[m.digest][0]
@@ -216,7 +217,6 @@ class CompareWidget(Widget):
             matches[m.digest] = ((total_height - height), count - 1)
             row = self._get_compare_table_row(m, match=True, height=height)
             compare_table.add_row(*row, key=str(m.path), height=height)
-        name_matches = self._get_name_matches()
         for m in unmatched_child_merkles:
             if m.path.name in name_matches:
                 row = self._get_compare_table_row(m, match=False, name_match=True)
