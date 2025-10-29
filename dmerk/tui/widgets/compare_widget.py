@@ -217,7 +217,6 @@ class CompareWidget(Widget):
             row = self._get_compare_table_row(m, match=True, height=height)
             compare_table.add_row(*row, key=str(m.path), height=height)
         name_matches = self._get_name_matches()
-        logging.info(name_matches)
         for m in unmatched_child_merkles:
             if m.path.name in name_matches:
                 row = self._get_compare_table_row(m, match=False, name_match=True)

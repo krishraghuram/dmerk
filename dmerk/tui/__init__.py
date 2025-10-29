@@ -62,26 +62,26 @@ class DmerkApp(App[None]):
     def compose(self) -> ComposeResult:
         """Called to add widgets to the app."""
         yield Header()
-        with TabbedContent(initial="generate"):
-            with TabPane("Generate", id="generate"):  # First tab
+        with TabbedContent(initial="tab-generate"):
+            with TabPane("Generate", id="tab-generate"):
                 yield Vertical(
                     Horizontal(FavoritesSidebar(), FileManager(), id="files"),
                     Horizontal(
                         RichLog(),
-                        Button("GENERATE", variant="primary", id="generate"),
+                        Button("GENERATE", variant="primary", id="button-generate"),
                         id="generate",
                     ),
                 )
-            with TabPane("Compare", id="compare"):
+            with TabPane("Compare", id="tab-compare"):
                 yield Vertical(
                     Horizontal(
                         FilePicker(id="filepicker-left"),
                         FilePicker(id="filepicker-right"),
                     ),
                     Input(
-                        id="compare-input", classes="empty", placeholder="Filter by..."
+                        id="input-compare", classes="empty", placeholder="Filter by..."
                     ),
-                    Button("RESET", "primary", id="reset-compare"),
+                    Button("RESET", "primary", id="button-reset-compare"),
                 )
         yield Footer()
 
@@ -93,7 +93,7 @@ class DmerkApp(App[None]):
         merkle.save(filename=filename)
 
     def on_button_pressed(self, message: Button.Pressed) -> None:
-        if message.button.id == "generate":
+        if message.button.id == "button-generate":
             highlighted_path = self.query_one(FileManager).highlighted_path
             if highlighted_path is not None:
                 if highlighted_path.is_dir():
@@ -102,7 +102,7 @@ class DmerkApp(App[None]):
                     logging.warning("Please choose a directory")
             else:
                 logging.warning("Please choose a path")
-        elif message.button.id == "reset-compare":
+        elif message.button.id == "button-reset-compare":
             for compare_widget in self.query(CompareWidget):
                 compare_widget.reset_to_filepicker()
 

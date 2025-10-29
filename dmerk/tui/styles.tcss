@@ -44,12 +44,12 @@ Screen RichLog:focus {
     /* Doesn't work on light theme tho :( */
     background: $surface-lighten-2; 
 }
-Screen Button#generate {
+Screen Button#button-generate {
     width: 1fr;
     height: 100%;
     border: round $primary-lighten-3;
 }
-Screen Button#generate:hover {
+Screen Button#button-generate:hover {
     border: round $primary;
 }
 
@@ -59,14 +59,14 @@ Screen FilePicker {
     overflow: auto;
     align: center top;
 }
-Screen Input {
+Screen Input#input-compare {
     width: 100%;
     background:$surface-lighten-3; 
 }
-Screen Input.empty {
+Screen Input#input-compare.empty {
     background:$surface; 
 }
-Screen Button#reset-compare {
+Screen Button#button-reset-compare {
     width: 100%;
 }
 Screen CompareWidget {
