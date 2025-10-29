@@ -110,7 +110,7 @@ def test_file_permission(generate_function, fs, request, mode, error, error_mess
         print(m1)
         print()
     if e is not None:
-        assert isinstance(e.value, error.expected_exception)
+        assert isinstance(e.value, error.expected_exceptions)
         assert error_message in [str(i) for i in e.value.args]
         print(f"Got expected exception: {repr(e.value)}")
 
@@ -151,7 +151,7 @@ def test_directory_permission(generate_function, fs, request, mode, error):
         print(m1)
         print()
     if e is not None:
-        assert isinstance(e.value, error.expected_exception)
+        assert isinstance(e.value, error.expected_exceptions)
         print(f"Got expected exception: {repr(e.value)}")
 
     print("Resetting permissions so that fs fixture cleanup can occur properly...")
