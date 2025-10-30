@@ -51,6 +51,8 @@ class DmerkApp(App[None]):
         ("d", "toggle_dark", "Toggle dark mode"),
     ]
 
+    BUTTON_GENERATE = "button-generate"
+
     def on_ready(self, event: Ready) -> None:
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.DEBUG)
@@ -77,6 +79,7 @@ class DmerkApp(App[None]):
                         Button(
                             str.upper(Tabs.Generate.name),
                             variant="primary",
+                            id=self.BUTTON_GENERATE,
                         ),
                         id="bottom",
                     ),
@@ -100,7 +103,7 @@ class DmerkApp(App[None]):
         merkle.save(filename=filename)
 
     def on_button_pressed(self, message: Button.Pressed) -> None:
-        if message.button.id == "button-generate":
+        if message.button.id == self.BUTTON_GENERATE:
             highlighted_path = self.query_one(FileManager).highlighted_path
             if highlighted_path is not None:
                 if highlighted_path.is_dir():

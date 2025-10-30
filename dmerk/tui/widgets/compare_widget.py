@@ -53,6 +53,8 @@ class Columns(Enum):
 
 class CompareWidget(Widget):
 
+    BUTTON_RESET_COMPARE = "button-reset-compare"
+
     merkle_subpath: reactive[PurePath | None] = reactive(None)
     prev_cell_key = None
     filter_by = reactive("")
@@ -80,13 +82,13 @@ class CompareWidget(Widget):
         else:
             raise ValueError(f"path {path} must be a dmerk file")
 
-    def _reset_to_filepicker(self) -> None:
+    async def _reset_to_filepicker(self) -> None:
         from dmerk.tui.widgets.file_picker import FilePicker
 
         id_ = self.id.split("-")[-1] if self.id else ""
         id_ = "-".join(["filepicker", id_])
         cast(Widget, self.parent).mount(FilePicker(id=id_), after=self)
-        self.remove()
+        await self.remove()
 
     @work(thread=True)
     async def _main(self, path: Path) -> None:
@@ -107,12 +109,12 @@ class CompareWidget(Widget):
             yield Vertical(
                 Horizontal(Label(Text(f"{self.merkle.path}", style="bold"))),
                 compare_table,
-                Button("RESET", "primary", id="button-reset-compare"),
+                Button("RESET", "primary", id=self.BUTTON_RESET_COMPARE),
             )
 
-    def on_button_pressed(self, message: Button.Pressed) -> None:
-        if message.button.id == "button-reset-compare":
-            self._reset_to_filepicker()
+    async def on_button_pressed(self, message: Button.Pressed) -> None:
+        if message.button.id == self.BUTTON_RESET_COMPARE:
+            await self._reset_to_filepicker()
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if "NAME" in message.cell_key:
@@ -141,9 +143,6 @@ class CompareWidget(Widget):
         await self._refresh()
 
     async def watch_merkle_subpath(self) -> None:
-        await self._refresh()
-
-    async def on_resize(self, event: Resize) -> None:
         await self._refresh()
 
     async def _refresh(self) -> None:

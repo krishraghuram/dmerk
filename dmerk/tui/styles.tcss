@@ -77,14 +77,14 @@ Screen #tab-compare {
         }
         CompareWidget {
             &:first-child {
-                margin: 0 0 0 2; /* left: 2 */
+                margin-left: 2;
             }
             &:last-child {
-                margin: 0 2 0 0; /* right: 2 */
+                margin-right: 2;
             }
             width: 1fr;
             Horizontal { /* CompareWidget Label */
-                margin: 0 2 0 0;
+                margin-right: 2;
                 background: $panel-lighten-2;
                 width: 100%;
                 height: auto;
