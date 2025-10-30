@@ -1,86 +1,100 @@
-Screen #files {
-    height: 4fr;
-}
-Screen #generate {
-    height: 1fr;
+Screen #tab-generate {
+    #top {
+        height: 4fr;
+        FavoritesSidebar {
+            width: 1fr;
+            margin: 0 2;
+            SidebarButton {
+                width: 100%;
+                margin: 1 0;
+                height: 5;
+                &:first-child {
+                    margin: 0 0;
+                }
+            }
+        }
+        FileManager {
+            width: 4fr;
+            overflow: auto;
+            align: center top;
+            Horizontal { /* FileManager Label */
+                background: $panel-lighten-2;
+                height: auto;
+                width: 100%;
+                Label:hover {
+                    text-style: underline;
+                }
+            }
+            DataTable {
+                width: 100%;
+                &:focus {
+                    /* Essentially $surface-lighten-0.5 on dark theme*/
+                    /* Doesn't work on light theme tho :( */
+                    background: $surface-lighten-2; 
+                }
+            }
+        }
+    }
+    #bottom {
+        height: 1fr;
+        RichLog {
+            width: 4fr;
+            &:focus {
+                /* Essentially $surface-lighten-0.5 on dark theme*/
+                /* Doesn't work on light theme tho :( */
+                background: $surface-lighten-2; 
+            }
+        }
+        Button {
+            width: 1fr;
+            height: 100%;
+            border: round $primary-lighten-3;
+            &:hover {
+                border: round $primary;
+            }
+        }
+    }
 }
 
-Screen FavoritesSidebar {
-    width: 1fr;
-    margin: 0 2;
-}
-Screen FavoritesSidebar SidebarButton {
-    width: 100%;
-    margin: 1 0;
-    height: 5;
-}
-Screen FileManager {
-    width: 4fr;
-    overflow: auto;
-    align: center top;
-}
-Screen FileManager Horizontal {
-    background: $panel-lighten-2;
-    height: auto;
-    width: 100%;
-}
-Screen FileManager Horizontal Label:hover {
-    text-style: underline;
-}
-Screen FileManager DataTable {
-    width: 100%;
-}
-Screen FileManager DataTable:focus {
-    /* Essentially $surface-lighten-0.5 on dark theme*/
-    /* Doesn't work on light theme tho :( */
-    background: $surface-lighten-2; 
-}
+Screen #tab-compare {
+    Input {
+        margin: 0 2;
+        width: 100%;
+        color: $text-warning;
+        background:$warning-muted; 
+        border: vkey $primary;
+        &.empty {
+            background:$surface; 
+        }
+    }
+    #horizontal {
+        width: 100%;
+        FilePicker {
+            margin: 0 2;
+            width: 1fr;
+            overflow: auto;
+            align: center top;
+        }
+        CompareWidget {
+            margin: 0 2;
+            width: 1fr;
+            Horizontal { /* CompareWidget Label */
+                background: $panel-lighten-2;
+                width: 100%;
+                height: auto;
+                Label:hover {
+                    text-style: underline;
+                }
+            }
+            DataTable {
+                margin: 0 0 1 0;
+                width: 100%;
+            }
+            Button {
+                width: 100%;
+                dock: bottom;
+            }
+        }
+    }
 
-Screen RichLog {
-    width: 4fr;
-}
-Screen RichLog:focus {
-    /* Essentially $surface-lighten-0.5 on dark theme*/
-    /* Doesn't work on light theme tho :( */
-    background: $surface-lighten-2; 
-}
-Screen Button#button-generate {
-    width: 1fr;
-    height: 100%;
-    border: round $primary-lighten-3;
-}
-Screen Button#button-generate:hover {
-    border: round $primary;
-}
-
-Screen FilePicker {
-    margin: 0 2;
-    width: 4fr;
-    overflow: auto;
-    align: center top;
-}
-Screen Input#input-compare {
-    width: 100%;
-    background:$surface-lighten-3; 
-}
-Screen Input#input-compare.empty {
-    background:$surface; 
-}
-Screen Button#button-reset-compare {
-    width: 100%;
-}
-Screen CompareWidget {
-    width: 50%;
-}
-Screen CompareWidget Horizontal {
-    background: $panel-lighten-2;
-    width: 100%;
-    height: auto;
-}
-Screen CompareWidget Horizontal Label:hover {
-    text-style: underline;
-}
-Screen CompareWidget DataTable {
-    margin: 0 0 1 0;
-    width: 100%;
 }

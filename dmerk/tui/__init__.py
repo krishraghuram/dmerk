@@ -1,3 +1,4 @@
+from enum import Enum
 import logging
 from pathlib import Path
 from textual.app import App, ComposeResult
@@ -34,6 +35,11 @@ class TextHandler(logging.Handler):
         self.text.write(msg)
 
 
+class Tabs(Enum):
+    Generate = "tab-generate"
+    Compare = "tab-compare"
+
+
 class DmerkApp(App[None]):
     """An TUI for dmerk"""
 
@@ -62,26 +68,27 @@ class DmerkApp(App[None]):
     def compose(self) -> ComposeResult:
         """Called to add widgets to the app."""
         yield Header()
-        with TabbedContent(initial="tab-generate"):
-            with TabPane("Generate", id="tab-generate"):
+        with TabbedContent(initial=Tabs.Generate.value):
+            with TabPane(Tabs.Generate.name, id=Tabs.Generate.value):
                 yield Vertical(
-                    Horizontal(FavoritesSidebar(), FileManager(), id="files"),
+                    Horizontal(FavoritesSidebar(), FileManager(), id="top"),
                     Horizontal(
                         RichLog(),
-                        Button("GENERATE", variant="primary", id="button-generate"),
-                        id="generate",
+                        Button(
+                            str.upper(Tabs.Generate.name),
+                            variant="primary",
+                        ),
+                        id="bottom",
                     ),
                 )
-            with TabPane("Compare", id="tab-compare"):
+            with TabPane(Tabs.Compare.name, id=Tabs.Compare.value):
                 yield Vertical(
+                    Input(classes="empty", placeholder="Filter by..."),
                     Horizontal(
                         FilePicker(id="filepicker-left"),
                         FilePicker(id="filepicker-right"),
+                        id="horizontal",
                     ),
-                    Input(
-                        id="input-compare", classes="empty", placeholder="Filter by..."
-                    ),
-                    Button("RESET", "primary", id="button-reset-compare"),
                 )
         yield Footer()
 
@@ -102,9 +109,6 @@ class DmerkApp(App[None]):
                     logging.warning("Please choose a directory")
             else:
                 logging.warning("Please choose a path")
-        elif message.button.id == "button-reset-compare":
-            for compare_widget in self.query(CompareWidget):
-                compare_widget.reset_to_filepicker()
 
     def on_input_changed(self, message: Input.Changed) -> None:
         if message.value == "":

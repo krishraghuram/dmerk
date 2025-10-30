@@ -11,13 +11,13 @@ from textual.worker import Worker, WorkerState
 from textual.app import ComposeResult
 from textual.widget import Widget
 from textual.dom import DOMNode
-from textual.widgets import DataTable, Label
+from textual.widgets import DataTable, Label, Button
 from textual.widgets.data_table import RowKey
 from textual.reactive import reactive
 from textual.events import Resize, DescendantBlur, Click
 from textual.css.query import NoMatches
 from textual.coordinate import Coordinate
-from textual.containers import Horizontal
+from textual.containers import Horizontal, Vertical
 from rich.text import Text
 
 from dmerk.merkle import Merkle
@@ -80,7 +80,7 @@ class CompareWidget(Widget):
         else:
             raise ValueError(f"path {path} must be a dmerk file")
 
-    def reset_to_filepicker(self) -> None:
+    def _reset_to_filepicker(self) -> None:
         from dmerk.tui.widgets.file_picker import FilePicker
 
         id_ = self.id.split("-")[-1] if self.id else ""
@@ -103,9 +103,16 @@ class CompareWidget(Widget):
 
     def compose(self) -> ComposeResult:
         if not self.loading:
-            yield Horizontal(Label(Text(f"{self.merkle.path}", style="bold")))
             compare_table: DataTable[None] = DataTable(header_height=3)
-            yield compare_table
+            yield Vertical(
+                Horizontal(Label(Text(f"{self.merkle.path}", style="bold"))),
+                compare_table,
+                Button("RESET", "primary", id="button-reset-compare"),
+            )
+
+    def on_button_pressed(self, message: Button.Pressed) -> None:
+        if message.button.id == "button-reset-compare":
+            self._reset_to_filepicker()
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if "NAME" in message.cell_key:

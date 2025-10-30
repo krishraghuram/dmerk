@@ -56,7 +56,6 @@ class FilePicker(Widget):
     prev_cell_key = None
 
     def compose(self) -> ComposeResult:
-        yield Label(Text("Pick a dmerk file", style="bold"))
         files_table: DataTable[None] = DataTable(header_height=3)
         yield files_table
 
