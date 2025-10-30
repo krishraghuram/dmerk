@@ -14,7 +14,7 @@ from textual.dom import DOMNode
 from textual.widgets import DataTable, Label, Button
 from textual.widgets.data_table import RowKey
 from textual.reactive import reactive
-from textual.events import Resize, DescendantBlur, Click
+from textual.events import DescendantBlur, Click
 from textual.css.query import NoMatches
 from textual.coordinate import Coordinate
 from textual.containers import Horizontal, Vertical

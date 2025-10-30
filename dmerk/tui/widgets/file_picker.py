@@ -3,11 +3,10 @@ from typing import cast
 
 from textual.app import ComposeResult
 from textual.widget import Widget
-from textual.widgets import DataTable, Label
+from textual.widgets import DataTable
 from textual.reactive import reactive
 from textual.events import Resize
 from textual.coordinate import Coordinate
-from rich.text import Text
 
 import dmerk.constants as constants
 from dmerk.tui.widgets.compare_widget import CompareWidget
