@@ -103,11 +103,14 @@ class CompareWidget(Widget):
         elif event.state in [WorkerState.ERROR, WorkerState.CANCELLED]:
             raise Exception("Worker failed/cancelled")
 
-    async def _refresh_when_ready(self) -> None:
+    async def _refresh_when_ready(self, attempt: int = 0) -> None:
+        MAX_ATTEMPTS = 100
         if self.size.width > 0:
             await self._refresh()
+        elif attempt < MAX_ATTEMPTS:
+            self.call_after_refresh(lambda: self._refresh_when_ready(attempt + 1))
         else:
-            self.call_after_refresh(self._refresh_when_ready)
+            logging.error(f"Widget {self.id} failed to initialize")
 
     def compose(self) -> ComposeResult:
         if not self.loading:
