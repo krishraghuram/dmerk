@@ -19,6 +19,7 @@ from dmerk.tui.widgets import FileManager, FavoritesSidebar, FilePicker
 import dmerk.generate as generate
 import dmerk.constants as constants
 
+from dmerk.tui.widgets.clearable_input import ClearableInput
 from dmerk.tui.widgets.compare_widget import CompareWidget
 
 
@@ -86,7 +87,7 @@ class DmerkApp(App[None]):
                 )
             with TabPane(Tabs.Compare.name, id=Tabs.Compare.value):
                 yield Vertical(
-                    Input(classes="empty", placeholder="Filter by..."),
+                    ClearableInput(placeholder="Filter by..."),
                     Horizontal(
                         FilePicker(id="filepicker-left"),
                         FilePicker(id="filepicker-right"),
@@ -114,10 +115,6 @@ class DmerkApp(App[None]):
                 logging.warning("Please choose a path")
 
     def on_input_changed(self, message: Input.Changed) -> None:
-        if message.value == "":
-            message.input.add_class("empty")
-        else:
-            message.input.remove_class("empty")
         for file_picker in self.query(FilePicker):
             file_picker.filter_by = message.value
         for compare_widget in self.query(CompareWidget):

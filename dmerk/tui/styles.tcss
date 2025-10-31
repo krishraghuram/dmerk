@@ -57,15 +57,10 @@ Screen #tab-generate {
 }
 
 Screen #tab-compare {
-    Input {
+    ClearableInput {
         margin: 0 2;
         width: 100%;
-        color: $text-warning;
-        background:$warning-muted; 
-        border: vkey $primary;
-        &.empty {
-            background:$surface; 
-        }
+        height: auto;
     }
     #horizontal {
         width: 100%;
