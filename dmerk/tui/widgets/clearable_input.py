@@ -16,6 +16,7 @@ from textual.events import (
 from textual.widgets._input import InputType, InputValidationOn
 from textual.suggester import Suggester
 from textual.validation import Validator
+from textual.dom import DOMNode
 from typing import Iterable
 from rich.highlighter import Highlighter
 from rich.console import RenderableType
@@ -31,16 +32,19 @@ class ClearableInput(Widget):
     ID_LABEL_WIDGET = "label_widget"
 
     DEFAULT_CSS = """
-            Horizontal {
+        Horizontal {
             width: 100%;
             height: auto;
             Input {
                 width: 100%;
-                border: vkey $primary;
                 color: $text-warning;
                 background: $warning-muted; 
                 &.empty {
                     background: $surface;
+                }
+                border: vkey $primary;
+                &:focus {
+                    border: vkey $primary;
                 }
             }
             #label_widget {
@@ -139,21 +143,26 @@ class ClearableInput(Widget):
             self.label_widget.remove_class(self.EMPTY_CLASS)
 
     # When label_widget (or the label inside) is clicked, add a click class so that we have visual feedback
+    def _get_event_widget(self, event: MouseUp | MouseDown) -> Widget:
+        return self.app.get_widget_at(event.screen_x, event.screen_y)[0]
+
+    def _is_label_widget_descendant(self, widget: DOMNode | Widget | None) -> bool:
+        return bool(widget and (self.label_widget in widget.ancestors_with_self))
+
     def on_mouse_down(self, event: MouseDown) -> None:
-        event_widget = self.app.get_widget_at(event.screen_x, event.screen_y)[0]
-        if event_widget and (self.label_widget in event_widget.ancestors_with_self):
+        event_widget = self._get_event_widget(event)
+        if self._is_label_widget_descendant(event_widget):
             self.label_widget.add_class(self.CLICK_CLASS)
 
     def on_mouse_up(self, event: MouseUp) -> None:
-        event_widget = self.app.get_widget_at(event.screen_x, event.screen_y)[0]
-        if event_widget and (self.label_widget in event_widget.ancestors_with_self):
+        event_widget = self._get_event_widget(event)
+        if self._is_label_widget_descendant(event_widget):
             self.label_widget.remove_class(self.CLICK_CLASS)
 
     def on_leave(self, event: Leave) -> None:
-        event_widget = event.node
-        if event_widget and (self.label_widget in event_widget.ancestors_with_self):
+        if self._is_label_widget_descendant(event.node):
             self.label_widget.remove_class(self.CLICK_CLASS)
 
     def on_click(self, event: Click) -> None:
-        if event.widget and (self.label_widget in event.widget.ancestors_with_self):
+        if self._is_label_widget_descendant(event.widget):
             self.input.clear()
