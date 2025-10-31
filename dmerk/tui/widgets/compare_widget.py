@@ -92,7 +92,15 @@ class CompareWidget(Widget):
 
     @work(thread=True)
     async def _main(self, path: Path) -> None:
-        self.merkle = Merkle.load(path)
+        merkle = Merkle.load(path)
+        # Create a virtual/dummy parent just so as to start rendering from root, instead root's children
+        self.merkle = Merkle(
+            path=merkle.path.parent,
+            type=Merkle.Type.DIRECTORY,
+            size=0,
+            digest="",
+            children={Path(merkle.path): merkle},
+        )
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         if event.state == WorkerState.SUCCESS:
