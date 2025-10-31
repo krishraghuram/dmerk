@@ -1,11 +1,8 @@
-from functools import partial
-from typing_extensions import Literal
 from textual.widget import Widget
 from textual.widgets import Input, Label
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.events import (
-    Ready,
     Click,
     DescendantFocus,
     DescendantBlur,
@@ -17,7 +14,7 @@ from textual.widgets._input import InputType, InputValidationOn
 from textual.suggester import Suggester
 from textual.validation import Validator
 from textual.dom import DOMNode
-from typing import Iterable
+from typing import Any, Iterable, Literal
 from rich.highlighter import Highlighter
 from rich.console import RenderableType
 
@@ -125,11 +122,11 @@ class ClearableInput(Widget):
             yield self.label_widget
 
     # When input is focused/blurred, set/remove "focus" class on Label Widget, so as to sync background-tint
-    def on_descendant_focus(self, event: DescendantFocus):
+    def on_descendant_focus(self, event: DescendantFocus) -> None:
         if event.widget == self.input:
             self.label_widget.add_class(self.FOCUS_CLASS)
 
-    def on_descendant_blur(self, event: DescendantBlur):
+    def on_descendant_blur(self, event: DescendantBlur) -> None:
         if event.widget == self.input:
             self.label_widget.remove_class(self.FOCUS_CLASS)
 
@@ -164,6 +161,6 @@ class ClearableInput(Widget):
             self.label_widget.remove_class(self.CLICK_CLASS)
 
     # Proxy calls to underlying input
-    def __getattr__(self, name: str):
+    def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to the underlying Input widget."""
         return getattr(self.input, name)
