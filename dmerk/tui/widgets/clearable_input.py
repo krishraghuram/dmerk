@@ -154,11 +154,6 @@ class ClearableInput(Widget):
         if self._is_label_widget_descendant(event_widget):
             self.label_widget.add_class(self.CLICK_CLASS)
 
-    def on_mouse_up(self, event: MouseUp) -> None:
-        event_widget = self._get_event_widget(event)
-        if self._is_label_widget_descendant(event_widget):
-            self.label_widget.remove_class(self.CLICK_CLASS)
-
     def on_leave(self, event: Leave) -> None:
         if self._is_label_widget_descendant(event.node):
             self.label_widget.remove_class(self.CLICK_CLASS)
@@ -166,3 +161,9 @@ class ClearableInput(Widget):
     def on_click(self, event: Click) -> None:
         if self._is_label_widget_descendant(event.widget):
             self.input.clear()
+            self.label_widget.remove_class(self.CLICK_CLASS)
+
+    # Proxy calls to underlying input
+    def __getattr__(self, name: str):
+        """Delegate attribute access to the underlying Input widget."""
+        return getattr(self.input, name)
