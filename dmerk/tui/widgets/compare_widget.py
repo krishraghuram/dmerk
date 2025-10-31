@@ -99,9 +99,15 @@ class CompareWidget(Widget):
             self.loading = False
             await self.recompose()
             await self._add_watches()
-            await self._refresh()
+            self.call_after_refresh(self._refresh_when_ready)
         elif event.state in [WorkerState.ERROR, WorkerState.CANCELLED]:
             raise Exception("Worker failed/cancelled")
+
+    async def _refresh_when_ready(self) -> None:
+        if self.size.width > 0:
+            await self._refresh()
+        else:
+            self.call_after_refresh(self._refresh_when_ready)
 
     def compose(self) -> ComposeResult:
         if not self.loading:
