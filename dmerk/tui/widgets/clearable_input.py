@@ -1,3 +1,4 @@
+from functools import partial
 from typing_extensions import Literal
 from textual.widget import Widget
 from textual.widgets import Input, Label
@@ -10,6 +11,7 @@ from textual.events import (
     DescendantBlur,
     MouseDown,
     MouseUp,
+    Leave,
 )
 from textual.widgets._input import InputType, InputValidationOn
 from textual.suggester import Suggester
@@ -24,42 +26,46 @@ class ClearableInput(Widget):
     LabelText = Literal["⌫", "🗑️", "✖️"]
 
     EMPTY_CLASS = "empty"
+    FOCUS_CLASS = "focus"
+    CLICK_CLASS = "click"
+    ID_LABEL_WIDGET = "label_widget"
 
     DEFAULT_CSS = """
-    Horizontal {
-        width: 100%;
-        height: auto;
-        Input {
-            border: vkey $primary;
-            color: $text-warning;
-            background: $warning-muted; 
-            &.empty {
-                background: $surface;
+            Horizontal {
+            width: 100%;
+            height: auto;
+            Input {
+                width: 100%;
+                border: vkey $primary;
+                color: $text-warning;
+                background: $warning-muted; 
+                &.empty {
+                    background: $surface;
+                }
+            }
+            #label_widget {
+                height: 3;
+                width: 5;
+                position: relative;
+                offset: -7 0;
+                overlay: screen;
+                align: center middle;
+                background: $warning-muted;
+                &.click {
+                    border: round $primary;
+                }
+                &.empty {
+                    background: $surface;
+                }
+                &.focus {
+                    background-tint: $foreground 5%;
+                }
+                Label {
+                    color: $primary;
+                    margin-right: 1;
+                }
             }
         }
-        Widget {
-            height: 3;
-            width: 5;
-            position: relative;
-            offset: -7 0;
-            overlay: screen;
-            align: center middle;
-            background: $warning-muted;
-            &.click {
-                border: round $primary;
-            }
-            &.empty {
-                background: $surface;
-            }
-            &.focus {
-                background-tint: $foreground 5%;
-            }
-            Label {
-                color: $primary;
-                margin-right: 1;
-            }
-        }
-    }
     """
 
     def __init__(
@@ -102,7 +108,11 @@ class ClearableInput(Widget):
             compact=compact,
             classes=self.EMPTY_CLASS,
         )
-        self.label_widget = Widget(Label(label_text), classes=self.EMPTY_CLASS)
+        self.label_widget = Widget(
+            Label(label_text),
+            classes=self.EMPTY_CLASS,
+            id=self.ID_LABEL_WIDGET,
+        )
         super().__init__(name=name, id=id, classes=classes, disabled=disabled)
 
     def compose(self) -> ComposeResult:
@@ -112,50 +122,38 @@ class ClearableInput(Widget):
 
     # When input is focused/blurred, set/remove "focus" class on Label Widget, so as to sync background-tint
     def on_descendant_focus(self, event: DescendantFocus):
-        if event.widget == self.query_one(Input):
-            self.query_one(Widget).add_class("focus")
+        if event.widget == self.input:
+            self.label_widget.add_class(self.FOCUS_CLASS)
 
     def on_descendant_blur(self, event: DescendantBlur):
-        if event.widget == self.query_one(Input):
-            self.query_one(Widget).remove_class("focus")
+        if event.widget == self.input:
+            self.label_widget.remove_class(self.FOCUS_CLASS)
 
+    # When input is empty/not, set/remove empty class
     def on_input_changed(self, message: Input.Changed) -> None:
         if message.value == "":
-            message.input.add_class("empty")
-            self.query_one(Widget).add_class("empty")
+            self.input.add_class(self.EMPTY_CLASS)
+            self.label_widget.add_class(self.EMPTY_CLASS)
         else:
-            message.input.remove_class("empty")
-            self.query_one(Widget).remove_class("empty")
-        for file_picker in self.query(FilePicker):
-            file_picker.filter_by = message.value
-        for compare_widget in self.query(CompareWidget):
-            compare_widget.filter_by = message.value
+            self.input.remove_class(self.EMPTY_CLASS)
+            self.label_widget.remove_class(self.EMPTY_CLASS)
 
+    # When label_widget (or the label inside) is clicked, add a click class so that we have visual feedback
     def on_mouse_down(self, event: MouseDown) -> None:
-        widget_at_event = self.get_widget_at(event.screen_x, event.screen_y)[0]
-        erase_label_widget = self.query_one(
-            f"#{Tabs.Compare.value} #top #{self.ERASE_LABEL_WIDGET}", Widget
-        )
-        if widget_at_event and (
-            erase_label_widget in widget_at_event.ancestors_with_self
-        ):
-            erase_label_widget.add_class("click")
-            self.set_timer(0.2, partial(erase_label_widget.remove_class, "click"))
-            # erase_label_widget.add_class("click")
+        event_widget = self.app.get_widget_at(event.screen_x, event.screen_y)[0]
+        if event_widget and (self.label_widget in event_widget.ancestors_with_self):
+            self.label_widget.add_class(self.CLICK_CLASS)
 
     def on_mouse_up(self, event: MouseUp) -> None:
-        widget_at_event = self.get_widget_at(event.screen_x, event.screen_y)[0]
-        erase_label_widget = self.query_one(
-            f"#{Tabs.Compare.value} #top #{self.ERASE_LABEL_WIDGET}", Widget
-        )
-        if widget_at_event and (
-            erase_label_widget in widget_at_event.ancestors_with_self
-        ):
-            erase_label_widget.remove_class("click")
+        event_widget = self.app.get_widget_at(event.screen_x, event.screen_y)[0]
+        if event_widget and (self.label_widget in event_widget.ancestors_with_self):
+            self.label_widget.remove_class(self.CLICK_CLASS)
+
+    def on_leave(self, event: Leave) -> None:
+        event_widget = event.node
+        if event_widget and (self.label_widget in event_widget.ancestors_with_self):
+            self.label_widget.remove_class(self.CLICK_CLASS)
 
     def on_click(self, event: Click) -> None:
-        erase_label_widget = self.query_one(
-            f"#{Tabs.Compare.value} #top #{self.ERASE_LABEL_WIDGET}", Widget
-        )
-        if event.widget and (erase_label_widget in event.widget.ancestors_with_self):
-            self.query_one(Input).clear()
+        if event.widget and (self.label_widget in event.widget.ancestors_with_self):
+            self.input.clear()

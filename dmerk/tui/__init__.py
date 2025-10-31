@@ -28,6 +28,7 @@ from dmerk.tui.widgets import FileManager, FavoritesSidebar, FilePicker
 import dmerk.generate as generate
 import dmerk.constants as constants
 
+from dmerk.tui.widgets.clearable_input import ClearableInput
 from dmerk.tui.widgets.compare_widget import CompareWidget
 
 
@@ -96,15 +97,11 @@ class DmerkApp(App[None]):
                 )
             with TabPane(Tabs.Compare.name, id=Tabs.Compare.value):
                 yield Vertical(
-                    Horizontal(
-                        Input(classes="empty", placeholder="Filter by..."),
-                        Widget(Label("⌫"), classes="empty", id=self.ERASE_LABEL_WIDGET),
-                        id="top",
-                    ),
+                    ClearableInput(placeholder="Filter by..."),
                     Horizontal(
                         FilePicker(id="filepicker-left"),
                         FilePicker(id="filepicker-right"),
-                        id="bottom",
+                        id="horizontal",
                     ),
                 )
         yield Footer()
@@ -127,37 +124,37 @@ class DmerkApp(App[None]):
             else:
                 logging.warning("Please choose a path")
 
-    def on_descendant_focus(self, event: DescendantFocus) -> None:
-        if event.widget == self.query_one(Input):
-            self.query_one(f"#{self.ERASE_LABEL_WIDGET}", Widget).add_class("focus")
+    # def on_descendant_focus(self, event: DescendantFocus) -> None:
+    #     if event.widget == self.query_one(Input):
+    #         self.query_one(f"#{self.ERASE_LABEL_WIDGET}", Widget).add_class("focus")
 
-    def on_descendant_blur(self, event: DescendantBlur) -> None:
-        if event.widget == self.query_one(Input):
-            self.query_one(f"#{self.ERASE_LABEL_WIDGET}", Widget).remove_class("focus")
+    # def on_descendant_blur(self, event: DescendantBlur) -> None:
+    #     if event.widget == self.query_one(Input):
+    #         self.query_one(f"#{self.ERASE_LABEL_WIDGET}", Widget).remove_class("focus")
 
     def on_input_changed(self, message: Input.Changed) -> None:
-        if message.value == "":
-            message.input.add_class("empty")
-            self.query_one(f"#{self.ERASE_LABEL_WIDGET}", Widget).add_class("empty")
-        else:
-            message.input.remove_class("empty")
-            self.query_one(f"#{self.ERASE_LABEL_WIDGET}", Widget).remove_class("empty")
+        # if message.value == "":
+        #     message.input.add_class("empty")
+        #     self.query_one(f"#{self.ERASE_LABEL_WIDGET}", Widget).add_class("empty")
+        # else:
+        #     message.input.remove_class("empty")
+        #     self.query_one(f"#{self.ERASE_LABEL_WIDGET}", Widget).remove_class("empty")
         for file_picker in self.query(FilePicker):
             file_picker.filter_by = message.value
         for compare_widget in self.query(CompareWidget):
             compare_widget.filter_by = message.value
 
-    def on_mouse_down(self, event: MouseDown) -> None:
-        widget_at_event = self.get_widget_at(event.screen_x, event.screen_y)[0]
-        erase_label_widget = self.query_one(
-            f"#{Tabs.Compare.value} #top #{self.ERASE_LABEL_WIDGET}", Widget
-        )
-        if widget_at_event and (
-            erase_label_widget in widget_at_event.ancestors_with_self
-        ):
-            erase_label_widget.add_class("click")
-            self.set_timer(0.2, partial(erase_label_widget.remove_class, "click"))
-            # erase_label_widget.add_class("click")
+    # def on_mouse_down(self, event: MouseDown) -> None:
+    #     widget_at_event = self.get_widget_at(event.screen_x, event.screen_y)[0]
+    #     erase_label_widget = self.query_one(
+    #         f"#{Tabs.Compare.value} #top #{self.ERASE_LABEL_WIDGET}", Widget
+    #     )
+    #     if widget_at_event and (
+    #         erase_label_widget in widget_at_event.ancestors_with_self
+    #     ):
+    #         erase_label_widget.add_class("click")
+    #         self.set_timer(0.2, partial(erase_label_widget.remove_class, "click"))
+    #         # erase_label_widget.add_class("click")
 
     # def on_mouse_up(self, event: MouseUp) -> None:
     #     widget_at_event = self.get_widget_at(event.screen_x, event.screen_y)[0]
@@ -169,12 +166,12 @@ class DmerkApp(App[None]):
     #     ):
     #         erase_label_widget.remove_class("click")
 
-    def on_click(self, event: Click) -> None:
-        erase_label_widget = self.query_one(
-            f"#{Tabs.Compare.value} #top #{self.ERASE_LABEL_WIDGET}", Widget
-        )
-        if event.widget and (erase_label_widget in event.widget.ancestors_with_self):
-            self.query_one(Input).clear()
+    # def on_click(self, event: Click) -> None:
+    #     erase_label_widget = self.query_one(
+    #         f"#{Tabs.Compare.value} #top #{self.ERASE_LABEL_WIDGET}", Widget
+    #     )
+    #     if event.widget and (erase_label_widget in event.widget.ancestors_with_self):
+    #         self.query_one(Input).clear()
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode."""
