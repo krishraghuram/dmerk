@@ -1,22 +1,22 @@
 # PYTHON_ARGCOMPLETE_OK
 import argparse
-import importlib
 import textwrap
 import sys
 import json
 import logging
 from pathlib import Path
+from typing import Any
 
 import argcomplete
 
-from dmerk import constants
 import dmerk.generate as generate
 import dmerk.compare as compare
 from .utils import load_or_generate
-from dmerk.tui import run as run_tui
 
 
 def _generate(args: argparse.Namespace) -> None:
+    from dmerk import constants
+
     path = Path(args.path).resolve()
     merkle = generate.generate(path, fail_on_error=args.fail_on_error)
     filename = args.filename if args.filename else constants.APP_STATE_PATH
@@ -44,7 +44,26 @@ def _compare(args: argparse.Namespace) -> None:
 
 
 def _tui(args: argparse.Namespace) -> None:
+    from dmerk.tui import run as run_tui
+
     run_tui()
+
+
+class LazyVersionAction(argparse.Action):
+    def __init__(self, option_strings: list[str], dest: str, **kwargs: Any) -> None:
+        super().__init__(option_strings, dest, nargs=0, **kwargs)
+
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: Any,
+        option_string: str | None = None,
+    ) -> None:
+        import importlib.metadata
+
+        version = importlib.metadata.version(parser.prog)
+        parser.exit(message=f"{parser.prog} {version}\n")
 
 
 def _main(args: list[str]) -> None:
@@ -57,8 +76,7 @@ def _main(args: list[str]) -> None:
     parser.add_argument(
         "-v",
         "--version",
-        action="version",
-        version=f"%(prog)s {importlib.metadata.version(parser.prog)}",
+        action=LazyVersionAction,
     )
     parser.add_argument(
         "--no-save",

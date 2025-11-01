@@ -212,7 +212,7 @@ async def test_tui(monkeypatch):
         nonlocal called
         called = True
 
-    monkeypatch.setattr(cli, "run_tui", mock_run_tui)
+    monkeypatch.setattr("dmerk.tui.run", mock_run_tui)
     assert called is False
     cli._main(["tui"])
     assert called is True
