@@ -43,7 +43,7 @@ TIME_FORMAT_CYCLER = itertools.cycle(list(TIME_FORMATS.keys()))
 class Column:
     label: str
     key: str
-    sort_key: Callable[[Path], Any]
+    sort_key: Callable[[Path], str | datetime]
     sort_reverse: bool
 
 
@@ -64,6 +64,10 @@ class FileManager(Widget):
     sort_reverse = reactive(Columns.MODIFIED.value.sort_reverse)
     filter_by = reactive("")
     prev_cell_key = None
+
+    @property
+    def sort_key(self) -> Callable[[Path], str | datetime]:
+        return Columns[self.sort_by].value.sort_key
 
     def compose(self) -> ComposeResult:
         yield ClearableInput(placeholder="Filter by...")
@@ -128,7 +132,7 @@ class FileManager(Widget):
         files_list = [p for p in files_list if fuzzy_match(p.name, self.filter_by)]
         files_list = sorted(
             files_list,
-            key=Columns[self.sort_by].value.sort_key,
+            key=self.sort_key,
             reverse=self.sort_reverse,
         )
         for file in files_list:
@@ -159,13 +163,13 @@ class FileManager(Widget):
         await self._refresh()
         files_table.move_cursor(**cursor_position._asdict())
 
+    async def watch_filter_by(self) -> None:
+        await self._refresh()
+
     async def watch_sort_by(self) -> None:
         await self._refresh()
 
     async def watch_sort_reverse(self) -> None:
-        await self._refresh()
-
-    async def watch_filter_by(self) -> None:
         await self._refresh()
 
     async def on_data_table_header_selected(
