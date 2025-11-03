@@ -73,27 +73,23 @@ class DmerkApp(App[None]):
         yield Header()
         with TabbedContent(initial=Tabs.Generate.value):
             with TabPane(Tabs.Generate.name, id=Tabs.Generate.value):
-                yield Vertical(
-                    Horizontal(FavoritesSidebar(), FileManager(), id="top"),
-                    Horizontal(
-                        RichLog(),
-                        Button(
+                with Vertical():
+                    with Horizontal(id="top"):
+                        yield FavoritesSidebar()
+                        yield FileManager()
+                    with Horizontal(id="bottom"):
+                        yield RichLog()
+                        yield Button(
                             str.upper(Tabs.Generate.name),
                             variant="primary",
                             id=self.BUTTON_GENERATE,
-                        ),
-                        id="bottom",
-                    ),
-                )
+                        )
             with TabPane(Tabs.Compare.name, id=Tabs.Compare.value):
-                yield Vertical(
-                    ClearableInput(placeholder="Filter by..."),
-                    Horizontal(
-                        FilePicker(id="filepicker-left"),
-                        FilePicker(id="filepicker-right"),
-                        id="horizontal",
-                    ),
-                )
+                with Vertical():
+                    yield ClearableInput(placeholder="Filter by...")
+                    with Horizontal(id="horizontal"):
+                        yield FilePicker(id="filepicker-left")
+                        yield FilePicker(id="filepicker-right")
         yield Footer()
 
     @work(thread=True)
