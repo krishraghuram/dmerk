@@ -141,8 +141,9 @@ class FileManager(Widget):
                 height=3,
             )
         # Prevent Vertical Scrollbar
-        files_table.styles.height = (
-            self.size.height - self.query_one(Horizontal).size.height
+        # Logic is, we set files_table height to self height - sum of heights of other widgets
+        files_table.styles.height = self.size.height - sum(
+            [w.size.height for w in self.query_children() if w != files_table]
         )
 
     async def on_resize(self, event: Resize) -> None:
