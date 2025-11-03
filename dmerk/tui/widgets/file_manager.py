@@ -8,7 +8,7 @@ from datetime import datetime
 
 from textual.app import ComposeResult
 from textual.widget import Widget
-from textual.widgets import DataTable, Label
+from textual.widgets import DataTable, Label, Input
 from textual.reactive import reactive
 from textual.message import Message
 from textual.events import Resize, Click
@@ -16,6 +16,9 @@ from textual.coordinate import Coordinate
 from textual.containers import Horizontal
 from rich.text import Text
 from humanize import naturaltime
+
+from dmerk.tui.widgets.clearable_input import ClearableInput
+from dmerk.utils import fuzzy_match
 
 
 def file_prefix(path: Path) -> str:
@@ -59,12 +62,17 @@ class FileManager(Widget):
     time_format = reactive(next(TIME_FORMAT_CYCLER))
     sort_by = reactive(Columns.MODIFIED.value.key)
     sort_reverse = reactive(Columns.MODIFIED.value.sort_reverse)
+    filter_by = reactive("")
     prev_cell_key = None
 
     def compose(self) -> ComposeResult:
+        yield ClearableInput(placeholder="Filter by...")
         yield Horizontal(Label(Text(f"{self.path}", style="bold")))
         files_table: DataTable[None] = DataTable(header_height=3)
         yield files_table
+
+    def on_input_changed(self, message: Input.Changed) -> None:
+        self.filter_by = message.value
 
     def on_mount(self) -> None:
         dt = self.query_one(DataTable)
@@ -117,6 +125,7 @@ class FileManager(Widget):
             )
         files_table.add_row(*["\n..", "\n-"], key="..", height=3)
         files_list = [p for p in self.path.iterdir() if p.exists()]
+        files_list = [p for p in files_list if fuzzy_match(p.name, self.filter_by)]
         files_list = sorted(
             files_list,
             key=Columns[self.sort_by].value.sort_key,
@@ -152,6 +161,9 @@ class FileManager(Widget):
         await self._refresh()
 
     async def watch_sort_reverse(self) -> None:
+        await self._refresh()
+
+    async def watch_filter_by(self) -> None:
         await self._refresh()
 
     async def on_data_table_header_selected(

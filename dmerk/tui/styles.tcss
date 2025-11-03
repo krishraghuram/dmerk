@@ -17,6 +17,9 @@ Screen #tab-generate {
             width: 4fr;
             overflow: auto;
             align: center top;
+            ClearableInput {
+                height: auto;
+            }
             Horizontal { /* FileManager Label */
                 background: $panel-lighten-2;
                 height: auto;
