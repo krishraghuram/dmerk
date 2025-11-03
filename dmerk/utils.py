@@ -27,3 +27,11 @@ def colorhash(hash_hex_string: str) -> str:
         + ",".join([str(int(255 * i)) for i in colorsys.hls_to_rgb(h, l, s)])
         + ")"
     )
+
+
+def fuzzy_match(text: str, query: str | None = None) -> bool:
+    # TODO: Implement actual fuzzy matching
+    if query:
+        return query.casefold() in text.casefold()
+    else:
+        return True

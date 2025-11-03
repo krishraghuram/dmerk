@@ -10,6 +10,7 @@ from textual.coordinate import Coordinate
 
 import dmerk.constants as constants
 from dmerk.tui.widgets.compare_widget import CompareWidget
+from dmerk.utils import fuzzy_match
 
 
 def file_prefix(path: Path) -> str:
@@ -26,13 +27,6 @@ def file_prefix(path: Path) -> str:
 class FilePicker(Widget):
 
     filter_by = reactive("")
-
-    def filter(self, p: Path) -> bool:
-        # TODO: Implement fuzzy match
-        if self.filter_by:
-            return self.filter_by.casefold() in p.name.casefold()
-        else:
-            return True
 
     def __init__(
         self,
@@ -83,7 +77,7 @@ class FilePicker(Widget):
         files_table.add_column("\nName", key="NAME", width=self.__get_column_width())
         files_table.add_row(*["\n.."], key="..", height=3)
         files_list = [p for p in self.path.iterdir() if p.exists()]
-        files_list = list(filter(self.filter, files_list))
+        files_list = [p for p in files_list if fuzzy_match(p.name, self.filter_by)]
         files_list = sorted(files_list, key=lambda p: p.name)
         for file in files_list:
             files_table.add_row(

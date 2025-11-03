@@ -21,7 +21,7 @@ from textual.containers import Horizontal, Vertical
 from rich.text import Text
 
 from dmerk.merkle import Merkle
-from dmerk.utils import colorhash
+from dmerk.utils import colorhash, fuzzy_match
 
 
 def file_prefix(path: Merkle.Type) -> str:
@@ -58,13 +58,6 @@ class CompareWidget(Widget):
     merkle_subpath: reactive[PurePath | None] = reactive(None)
     prev_cell_key = None
     filter_by = reactive("")
-
-    def filter(self, m: Merkle) -> bool:
-        # TODO: Implement fuzzy match
-        if self.filter_by:
-            return self.filter_by.casefold() in m.path.name.casefold()
-        else:
-            return True
 
     def __init__(
         self,
@@ -224,7 +217,9 @@ class CompareWidget(Widget):
                 ),
             )
         child_merkles = [m for m in self.submerkle.children.values()]
-        filtered_child_merkles = list(filter(self.filter, child_merkles))
+        filtered_child_merkles = [
+            m for m in child_merkles if fuzzy_match(m.path.name, self.filter_by)
+        ]
         matching_child_merkles = sorted(
             filter(lambda m: m.digest in matches, filtered_child_merkles),
             key=lambda m: m.digest,
@@ -251,7 +246,9 @@ class CompareWidget(Widget):
 
     def _get_merkle_from_row_key(self, row_key: RowKey) -> Merkle:
         child_merkles = [m for m in self.submerkle.children.values()]
-        filtered_child_merkles = list(filter(self.filter, child_merkles))
+        filtered_child_merkles = [
+            m for m in child_merkles if fuzzy_match(m.path.name, self.filter_by)
+        ]
         for m in filtered_child_merkles:
             if str(m.path) == row_key:
                 return m
