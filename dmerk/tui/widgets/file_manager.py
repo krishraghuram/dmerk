@@ -149,6 +149,7 @@ class FileManager(Widget):
         await self._refresh()
 
     async def watch_path(self) -> None:
+        self.query_one(ClearableInput).clear()
         await self._refresh()
 
     async def watch_time_format(self) -> None:
