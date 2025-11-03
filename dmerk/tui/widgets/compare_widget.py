@@ -289,6 +289,7 @@ class CompareWidget(Widget):
 
     # BUG: When clicking on a merkle subdirectory, the other CompareWidget gets reset to 0, and this makes navigation a pain
     async def _add_watches(self) -> None:
+        ### Watch for synchronized scrolling ###
         def watch_scroll_y(old_scroll_y: float, new_scroll_y: float) -> None:
             logging.debug(
                 f"watch_scroll_y in {self.id}: {old_scroll_y}, {new_scroll_y}"
@@ -307,6 +308,8 @@ class CompareWidget(Widget):
                     )
 
         self.watch(self.query_one(DataTable), "scroll_y", watch_scroll_y, init=False)
+
+        ### Watch for displaying tooltip ###
         dt = self.query_one(DataTable)
 
         def watch_hover_coordinate(old: Coordinate, new: Coordinate) -> None:

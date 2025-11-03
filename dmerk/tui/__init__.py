@@ -44,7 +44,7 @@ class Tabs(Enum):
 class DmerkApp(App[None]):
     """An TUI for dmerk"""
 
-    TITLE = "dmerk TUI"
+    TITLE = "dmerk tui"
 
     CSS_PATH = "styles.tcss"
 
