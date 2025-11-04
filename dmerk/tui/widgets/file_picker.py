@@ -78,7 +78,7 @@ class FilePicker(Widget):
         files_table.add_row(*["\n.."], key="..", height=3)
         files_list = [p for p in self.path.iterdir() if p.exists()]
         files_list = [p for p in files_list if fuzzy_match(p.name, self.filter_by)]
-        files_list = sorted(files_list, key=lambda p: p.name)
+        files_list = sorted(files_list, key=lambda p: str.casefold(p.name))
         for file in files_list:
             files_table.add_row(
                 *["\n" + file_prefix(file) + file.name],

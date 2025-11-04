@@ -48,7 +48,7 @@ class Column:
 
 
 class Columns(Enum):
-    NAME = Column("Name", "NAME", lambda p: p.name, False)
+    NAME = Column("Name", "NAME", lambda p: str.casefold(p.name), False)
     MODIFIED = Column(
         "Modified",
         "MODIFIED",
@@ -117,13 +117,19 @@ class FileManager(Widget):
         await self.query_one(Horizontal).remove_children()
         await self.query_one(Horizontal).mount_all(labels)
 
+    def _get_header_label(self, column: Column):
+        if self.sort_by == column.key:
+            return "\n" + column.label + (" ▾" if self.sort_reverse else " ▴")
+        else:
+            return "\n" + column.label
+
     async def _refresh_table(self) -> None:
         self.prev_cell_key = None
         files_table = self.query_one(DataTable)
         files_table.clear(columns=True)
         for column in Columns:
             files_table.add_column(
-                "\n" + column.value.label,
+                self._get_header_label(column.value),
                 key=column.value.key,
                 width=self.__get_column_width(),
             )

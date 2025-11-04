@@ -4,7 +4,7 @@ from pathlib import Path, PurePath
 import logging
 import functools
 from collections import Counter
-from typing import cast
+from typing import Callable, cast
 
 from textual import work
 from textual.worker import Worker, WorkerState
@@ -13,7 +13,7 @@ from textual.widget import Widget
 from textual.dom import DOMNode
 from textual.widgets import DataTable, Label, Button
 from textual.widgets.data_table import RowKey
-from textual.reactive import reactive
+from textual.reactive import reactive, Reactive
 from textual.events import DescendantBlur, Click
 from textual.css.query import NoMatches
 from textual.coordinate import Coordinate
@@ -44,11 +44,12 @@ def colorhash_styled_text(text: str, digest: str) -> Text:
 class Column:
     label: str
     key: str
+    sort_key: Callable[[Merkle], str]
 
 
 class Columns(Enum):
-    NAME = Column("Name", "NAME")
-    DIGEST = Column("Digest", "DIGEST")
+    NAME = Column("Name", "NAME", lambda m: str.casefold(m.path.name))
+    DIGEST = Column("Digest", "DIGEST", lambda m: m.digest)
 
 
 class CompareWidget(Widget):
@@ -58,6 +59,25 @@ class CompareWidget(Widget):
     merkle_subpath: reactive[PurePath | None] = reactive(None)
     prev_cell_key = None
     filter_by = reactive("")
+    sort_by: Reactive[None | str] = reactive(None)
+    sort_reverse: Reactive[bool] = reactive(False)
+
+    @property
+    def matches_sort_key(self) -> Callable[[Merkle], str]:
+        # By default, we want to sort digest-matches by digest, so that matching items show up side-by-side
+        if self.sort_by:
+            return Columns[self.sort_by].value.sort_key
+        else:
+            return lambda m: m.digest
+
+    @property
+    def unmatched_sort_key(self) -> Callable[[Merkle], str]:
+        # By default, we want to sort name-matches and unmatched by name,
+        # so that user can scroll through them and find the item they are interested in quickly
+        if self.sort_by:
+            return Columns[self.sort_by].value.sort_key
+        else:
+            return lambda m: str.casefold(m.path.name)
 
     def __init__(
         self,
@@ -155,17 +175,38 @@ class CompareWidget(Widget):
     async def watch_merkle_subpath(self) -> None:
         await self._refresh()
 
-    async def _refresh(self) -> None:
-        if not self.loading:
-            await self._refresh_label()
-            await self._refresh_table(force=True)
-            other_compare_widget = CompareWidget._get_other_compare_widget(
-                self.id, self.parent
-            )
-            if other_compare_widget:
-                if not other_compare_widget.loading:
-                    await other_compare_widget._refresh_label()
-                    await other_compare_widget._refresh_table()
+    async def watch_sort_by(self) -> None:
+        self._sync_sort_fields()
+        await self._refresh()
+
+    async def watch_sort_reverse(self) -> None:
+        self._sync_sort_fields()
+        await self._refresh()
+
+    async def on_data_table_header_selected(
+        self, message: DataTable.HeaderSelected
+    ) -> None:
+        """
+        Initially we have (sort_by,sort_reverse) as (None,False)
+        Clicking on a column repeatedly, like clicking on Name several times,
+            should lead to this pattern of length 3
+            Note that we initially sort by NAME, then we reverse it,
+            and then finally we reset back to default behavior of (None,False)
+        Pattern: (NAME,False), (NAME,True), (None,False), (NAME,False), ...
+        At any point, clicking on a new column should start the sequence from new columns,
+            like if we click on Digest at some point, then it starts from,
+        Pattern: (DIGEST,False), (DIGEST,True), (None,False), (DIGEST,False), ...
+        """
+        if self.sort_by != message.column_key.value:
+            if message.column_key.value is not None:
+                self.sort_by = message.column_key.value
+                self.sort_reverse = False
+        else:
+            if self.sort_reverse is False:
+                self.sort_reverse = True
+            else:
+                self.sort_by = None
+                self.sort_reverse = False
 
     def on_click(self, message: Click) -> None:
         if isinstance(message.widget, Label):
@@ -179,6 +220,26 @@ class CompareWidget(Widget):
             ]
             self.merkle_subpath = PurePath("".join(merkle_subpath_parts))
 
+    def _sync_sort_fields(self) -> None:
+        other_compare_widget = CompareWidget._get_other_compare_widget(
+            self.id, self.parent
+        )
+        if other_compare_widget:
+            other_compare_widget.sort_by = self.sort_by
+            other_compare_widget.sort_reverse = self.sort_reverse
+
+    async def _refresh(self) -> None:
+        if not self.loading:
+            await self._refresh_label()
+            await self._refresh_table(force=True)
+            other_compare_widget = CompareWidget._get_other_compare_widget(
+                self.id, self.parent
+            )
+            if other_compare_widget:
+                if not other_compare_widget.loading:
+                    await other_compare_widget._refresh_label()
+                    await other_compare_widget._refresh_table()
+
     async def _refresh_label(self) -> None:
         label_parts = [str(self.merkle.path)]
         label_parts = label_parts + [
@@ -187,6 +248,12 @@ class CompareWidget(Widget):
         labels = [Label(Text(l, style="bold")) for l in label_parts]
         await self.query_one(Horizontal).remove_children()
         await self.query_one(Horizontal).mount_all(labels)
+
+    def _get_header_label(self, column: Column):
+        if self.sort_by == column.key:
+            return "\n" + column.label + (" ▾" if self.sort_reverse else " ▴")
+        else:
+            return "\n" + column.label
 
     async def _refresh_table(self, force: bool = False) -> None:
         matches = self._get_matches()
@@ -210,7 +277,7 @@ class CompareWidget(Widget):
         compare_table.clear(columns=True)
         for column in Columns:
             compare_table.add_column(
-                "\n" + column.value.label,
+                self._get_header_label(column.value),
                 key=column.value.key,
                 width=CompareWidget._get_column_width(
                     self.size.width, column_key=column.value.key
@@ -222,11 +289,13 @@ class CompareWidget(Widget):
         ]
         matching_child_merkles = sorted(
             filter(lambda m: m.digest in matches, filtered_child_merkles),
-            key=lambda m: m.digest,
+            key=self.matches_sort_key,
+            reverse=self.sort_reverse,
         )
         unmatched_child_merkles = sorted(
             filter(lambda m: m.digest not in matches, filtered_child_merkles),
-            key=lambda m: str.casefold(m.path.name),
+            key=self.unmatched_sort_key,
+            reverse=self.sort_reverse,
         )
         for m in matching_child_merkles:
             total_height = matches[m.digest][0]
