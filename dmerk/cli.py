@@ -63,7 +63,8 @@ class LazyVersionAction(argparse.Action):
         import importlib.metadata
 
         version = importlib.metadata.version(parser.prog)
-        parser.exit(message=f"{parser.prog} {version}\n")
+        print(f"{parser.prog} {version}\n")
+        sys.exit(0)
 
 
 def _main(args: list[str]) -> None:

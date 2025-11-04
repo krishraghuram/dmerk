@@ -249,7 +249,7 @@ class CompareWidget(Widget):
         await self.query_one(Horizontal).remove_children()
         await self.query_one(Horizontal).mount_all(labels)
 
-    def _get_header_label(self, column: Column):
+    def _get_header_label(self, column: Column) -> str:
         if self.sort_by == column.key:
             return "\n" + column.label + (" ▾" if self.sort_reverse else " ▴")
         else:

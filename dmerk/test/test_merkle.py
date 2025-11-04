@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 from pathlib import Path, PurePosixPath
 
@@ -270,3 +271,34 @@ def test_merkle_json_encode_type_error():
 
     with pytest.raises(TypeError):
         json.dumps(Foo(), default=Merkle.json_encode, ensure_ascii=False)
+
+
+@pytest.mark.parametrize(
+    "merkle_json,error_message",
+    [
+        (
+            '{"path":"PurePosixPath(\'/home/raghuram/TEST\')","type":{"__merkle_type__":"Type.DIRECTORY"},"size":0,"digest":"d41d8cd98f00b204e9800998ecf8427e"}',
+            "Not a valid Merkle dictionary",
+        ),
+        (
+            '{"path":"PurePosixPath(\'/home/raghuram/TEST\')","type":"INVALID","size":0,"digest":"d41d8cd98f00b204e9800998ecf8427e","__merkle__":true}',
+            "Not a valid Merkle.Type dictionary",
+        ),
+        (
+            '{"path":"PurePosixPath(\'/home/raghuram/TEST\')","type":{},"size":0,"digest":"d41d8cd98f00b204e9800998ecf8427e","__merkle__":true}',
+            "Not a valid Merkle.Type dictionary",
+        ),
+        (
+            '{"path":"PurePosixPath(\'/home/raghuram/TEST\')","type":{"__merkle_type__":"Type.INVALID"},"size":0,"digest":"d41d8cd98f00b204e9800998ecf8427e","__merkle__":true}',
+            "Not a valid Merkle.Type dictionary",
+        ),
+    ],
+)
+def test_load_invalid_merkle(tmp_path, caplog, merkle_json, error_message):
+    caplog.set_level(logging.INFO)
+    file = tmp_path / "invalid.dmerk"
+    file.write_text(merkle_json)
+    with pytest.raises(ValueError) as e:
+        Merkle.load(file)
+    assert str(e.value) == error_message
+    assert error_message in caplog.text

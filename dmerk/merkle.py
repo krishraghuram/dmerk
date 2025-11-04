@@ -88,7 +88,11 @@ class Merkle:
         path = PurePath(eval(data["path"]))
         type_data = data["type"]
         if isinstance(type_data, dict) and "__merkle_type__" in type_data:
-            type_val = eval(type_data["__merkle_type__"])
+            try:
+                type_val = eval(type_data["__merkle_type__"])
+            except AttributeError:
+                logging.error("Not a valid Merkle.Type dictionary")
+                raise ValueError("Not a valid Merkle.Type dictionary")
         else:
             logging.error("Not a valid Merkle.Type dictionary")
             raise ValueError("Not a valid Merkle.Type dictionary")

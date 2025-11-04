@@ -19,6 +19,14 @@ def test_help(capsys, args):
     assert "Program to generate and compare merkle trees of directories" in captured.out
 
 
+@pytest.mark.parametrize("args", ("-v", "--version"))
+def test_version(capsys, args):
+    with pytest.raises(SystemExit):
+        cli._main([args])
+    captured = capsys.readouterr()
+    assert "dmerk 0.2.0" in captured.out
+
+
 def test_subcommand_required(capsys):
     with pytest.raises(SystemExit):
         cli._main([])

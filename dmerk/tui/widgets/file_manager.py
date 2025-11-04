@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import itertools
-from typing import Callable, Any, cast
+from typing import Callable, cast
 from enum import Enum
 
 from pathlib import Path
@@ -117,7 +117,7 @@ class FileManager(Widget):
         await self.query_one(Horizontal).remove_children()
         await self.query_one(Horizontal).mount_all(labels)
 
-    def _get_header_label(self, column: Column):
+    def _get_header_label(self, column: Column) -> str:
         if self.sort_by == column.key:
             return "\n" + column.label + (" ▾" if self.sort_reverse else " ▴")
         else:
