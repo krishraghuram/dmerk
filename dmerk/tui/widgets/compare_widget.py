@@ -14,10 +14,11 @@ from textual.dom import DOMNode
 from textual.widgets import DataTable, Label, Button
 from textual.widgets.data_table import RowKey
 from textual.reactive import reactive, Reactive
-from textual.events import DescendantBlur, Click
+from textual.events import DescendantBlur, Click, Resize
 from textual.css.query import NoMatches
 from textual.coordinate import Coordinate
 from textual.containers import Horizontal, Vertical
+from textual.geometry import Size
 from rich.text import Text
 
 from dmerk.merkle import Merkle
@@ -61,6 +62,7 @@ class CompareWidget(Widget):
     filter_by = reactive("")
     sort_by: Reactive[None | str] = reactive(None)
     sort_reverse: Reactive[bool] = reactive(False)
+    prev_screen_size: Reactive[Size | None] = reactive(None)
 
     @property
     def matches_sort_key(self) -> Callable[[Merkle], str]:
@@ -134,6 +136,7 @@ class CompareWidget(Widget):
             logging.error(f"Widget {self.id} failed to initialize")
 
     def compose(self) -> ComposeResult:
+        self.prev_screen_size = self.screen.size
         if not self.loading:
             compare_table: DataTable[None] = DataTable(header_height=3)
             yield Vertical(
@@ -168,6 +171,11 @@ class CompareWidget(Widget):
 
     def on_descendant_blur(self, message: DescendantBlur) -> None:
         self.prev_cell_key = None
+
+    async def on_resize(self, event: Resize) -> None:
+        if self.prev_screen_size != self.screen.size:
+            await self._refresh()
+        self.prev_screen_size = self.screen.size
 
     async def watch_filter_by(self) -> None:
         await self._refresh()
