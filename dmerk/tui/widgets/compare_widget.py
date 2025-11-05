@@ -416,6 +416,7 @@ class CompareWidget(Widget):
     @staticmethod
     @functools.lru_cache
     def _get_column_width(total_width: int, column_key: str) -> int:
+        MAX_DIGEST_WIDTH = 32
         # The math here is to prevent horizontal scrollbar from appearing
         # The vertical scrollbar may take width of 2
         # Besides that, we have 2 columns, and we have to split the rem width amongst them
@@ -424,9 +425,11 @@ class CompareWidget(Widget):
         TOTAL_AVAILABLE_WIDTH = total_width - 2 - 2 * N_COLS
         if total_width != 0:
             if column_key == Columns.DIGEST.value.key:
-                return 32
+                return min(MAX_DIGEST_WIDTH, TOTAL_AVAILABLE_WIDTH // 2)
             elif column_key == Columns.NAME.value.key:
-                return TOTAL_AVAILABLE_WIDTH - 32
+                return TOTAL_AVAILABLE_WIDTH - min(
+                    MAX_DIGEST_WIDTH, TOTAL_AVAILABLE_WIDTH // 2
+                )
             else:
                 raise ValueError(f"Unknown {column_key=}")
         else:
