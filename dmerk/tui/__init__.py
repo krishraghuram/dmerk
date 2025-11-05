@@ -71,7 +71,7 @@ class DmerkApp(App[None]):
     def compose(self) -> ComposeResult:
         """Called to add widgets to the app."""
         yield Header()
-        with TabbedContent(initial=Tabs.Generate.value):
+        with TabbedContent(initial=Tabs.Compare.value):
             with TabPane(Tabs.Generate.name, id=Tabs.Generate.value):
                 with Vertical():
                     with Horizontal(id="top"):

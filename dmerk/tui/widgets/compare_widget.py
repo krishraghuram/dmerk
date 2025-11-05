@@ -20,6 +20,7 @@ from textual.coordinate import Coordinate
 from textual.containers import Horizontal, Vertical
 from textual.geometry import Size
 from rich.text import Text
+from more_itertools import partition
 
 from dmerk.merkle import Merkle
 from dmerk.utils import colorhash, fuzzy_match
@@ -36,9 +37,12 @@ def file_prefix(path: Merkle.Type) -> str:
         return "⭐ "
 
 
-# Bug: https://trello.com/c/iizCU2oj
 def colorhash_styled_text(text: str, digest: str) -> Text:
     return Text(str(text), style=f"bold grey11 on {colorhash(digest)}", no_wrap=True)
+
+
+def color_styled_text(text: str, color: str) -> Text:
+    return Text(str(text), style=f"bold grey11 on {color}", no_wrap=True)
 
 
 @dataclass
@@ -53,16 +57,44 @@ class Columns(Enum):
     DIGEST = Column("Digest", "DIGEST", lambda m: m.digest)
 
 
+@dataclass
+class Subsection:
+    class Key(Enum):
+        DIGEST_MATCH = "Digest Match"
+        NAME_MATCH = "Name Match"
+        UNMATCHED = "Unmatched"
+
+    class Display(Enum):
+        COLLAPSED = "Collapsed"
+        EXPANDED = "Expanded"
+
+        def other(self) -> "Subsection.Display":
+            """Return the other state"""
+            cls = self.__class__
+            return cls.EXPANDED if self is cls.COLLAPSED else cls.COLLAPSED
+
+    key: Key
+    display: Display
+
+    @property
+    def label(self) -> str:
+        return self.key.value
+
+    def toggle_display(self) -> None:
+        self.display = self.display.other()
+
+
 class CompareWidget(Widget):
 
     BUTTON_RESET_COMPARE = "button-reset-compare"
 
-    merkle_subpath: reactive[PurePath | None] = reactive(None)
     prev_cell_key = None
+    prev_screen_size: Reactive[Size | None] = reactive(None)
+    merkle_subpath: reactive[PurePath | None] = reactive(None)
     filter_by = reactive("")
     sort_by: Reactive[None | str] = reactive(None)
     sort_reverse: Reactive[bool] = reactive(False)
-    prev_screen_size: Reactive[Size | None] = reactive(None)
+    subsections: Reactive[None | list[Subsection]] = reactive(None)
 
     @property
     def matches_sort_key(self) -> Callable[[Merkle], str]:
@@ -96,6 +128,11 @@ class CompareWidget(Widget):
             self._main(path)
         else:
             raise ValueError(f"path {path} must be a dmerk file")
+        self.subsections = [
+            Subsection(Subsection.Key.DIGEST_MATCH, Subsection.Display.EXPANDED),
+            Subsection(Subsection.Key.NAME_MATCH, Subsection.Display.EXPANDED),
+            Subsection(Subsection.Key.UNMATCHED, Subsection.Display.EXPANDED),
+        ]
 
     async def _reset_to_filepicker(self) -> None:
         from dmerk.tui.widgets.file_picker import FilePicker
@@ -150,9 +187,13 @@ class CompareWidget(Widget):
             await self._reset_to_filepicker()
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
-        if "NAME" in message.cell_key:
-            if self.prev_cell_key == message.cell_key:
-                path = message.cell_key.row_key.value
+        cell_key = message.cell_key
+        if "NAME" in cell_key:
+            if (subsection := self._get_subsection(cell_key.row_key)) is not None:
+                subsection.toggle_display()
+                self.mutate_reactive(CompareWidget.subsections)
+            elif self.prev_cell_key == cell_key:
+                path = cell_key.row_key.value
                 if path == "..":
                     if self.merkle_subpath:
                         self.merkle_subpath = self.merkle_subpath.parent
@@ -167,7 +208,7 @@ class CompareWidget(Widget):
                             self.merkle_subpath = self.merkle_subpath / pure_path
                         else:
                             self.merkle_subpath = pure_path
-        self.prev_cell_key = message.cell_key
+        self.prev_cell_key = cell_key
 
     def on_descendant_blur(self, message: DescendantBlur) -> None:
         self.prev_cell_key = None
@@ -177,10 +218,10 @@ class CompareWidget(Widget):
             await self._refresh()
         self.prev_screen_size = self.screen.size
 
-    async def watch_filter_by(self) -> None:
+    async def watch_merkle_subpath(self) -> None:
         await self._refresh()
 
-    async def watch_merkle_subpath(self) -> None:
+    async def watch_filter_by(self) -> None:
         await self._refresh()
 
     async def watch_sort_by(self) -> None:
@@ -189,6 +230,9 @@ class CompareWidget(Widget):
 
     async def watch_sort_reverse(self) -> None:
         self._sync_sort_fields()
+        await self._refresh()
+
+    async def watch_subsections(self) -> None:
         await self._refresh()
 
     async def on_data_table_header_selected(
@@ -263,6 +307,40 @@ class CompareWidget(Widget):
         else:
             return "\n" + column.label
 
+    def _display_digest_matches(self, matches, matching_child_merkles):
+        for m in matching_child_merkles:
+            total_height = matches[m.digest][0]
+            count = matches[m.digest][1]
+            height = int(total_height / count)
+            matches[m.digest] = ((total_height - height), count - 1)
+            row = self._get_compare_table_row(m, match=True, height=height)
+            self.query_one(DataTable).add_row(*row, key=str(m.path), height=height)
+
+    def _display_name_matches(self, name_matches, unmatched_child_merkles):
+        for m in unmatched_child_merkles:
+            if m.path.name in name_matches:
+                row = self._get_compare_table_row(m, match=False, name_match=True)
+                self.query_one(DataTable).add_row(*row, key=str(m.path), height=3)
+
+    def _display_unmatched(self, name_matches, unmatched_child_merkles):
+        for m in unmatched_child_merkles:
+            if m.path.name not in name_matches:
+                row = self._get_compare_table_row(m, match=False, name_match=False)
+                self.query_one(DataTable).add_row(*row, key=str(m.path), height=3)
+
+    def _is_subsection(self, o: Text | RowKey | None) -> bool:
+        return self._get_subsection(o) is not None
+
+    def _get_subsection(self, o: Text | RowKey | None) -> Subsection | None:
+        if o is None:
+            return None
+        for subsection in self.subsections:
+            if isinstance(o, RowKey) and subsection.key.name == o:
+                return subsection
+            elif isinstance(o, Text) and subsection.label in o.plain:
+                return subsection
+        return None
+
     async def _refresh_table(self, force: bool = False) -> None:
         matches = self._get_matches()
         name_matches = self._get_name_matches()
@@ -275,11 +353,15 @@ class CompareWidget(Widget):
             # This requires removing the space char `" "` from the start and end of each line of each cell
             for r in range(len(compare_table.rows)):
                 for c in range(len(compare_table.columns)):
-                    cell_value: Text = compare_table.get_cell_at(Coordinate(r, c))
+                    coord = Coordinate(r, c)
+                    row_key = compare_table.coordinate_to_cell_key(coord).row_key
+                    if self._is_subsection(row_key):
+                        break
+                    cell_value: Text = compare_table.get_cell_at(coord)
                     cell_value.plain = "\n".join(
                         [l.strip() for l in cell_value.plain.split("\n")]
                     )
-                    compare_table.update_cell_at(Coordinate(r, c), cell_value)
+                    compare_table.update_cell_at(coord, cell_value)
             return  # prevent full refresh
         # Full Refresh Code Below
         compare_table.clear(columns=True)
@@ -295,31 +377,38 @@ class CompareWidget(Widget):
         filtered_child_merkles = [
             m for m in child_merkles if fuzzy_match(m.path.name, self.filter_by)
         ]
+        unmatched, matching = partition(
+            lambda m: m.digest in matches, filtered_child_merkles
+        )
         matching_child_merkles = sorted(
-            filter(lambda m: m.digest in matches, filtered_child_merkles),
-            key=self.matches_sort_key,
-            reverse=self.sort_reverse,
+            matching, key=self.matches_sort_key, reverse=self.sort_reverse
         )
         unmatched_child_merkles = sorted(
-            filter(lambda m: m.digest not in matches, filtered_child_merkles),
-            key=self.unmatched_sort_key,
-            reverse=self.sort_reverse,
+            unmatched, key=self.unmatched_sort_key, reverse=self.sort_reverse
         )
-        for m in matching_child_merkles:
-            total_height = matches[m.digest][0]
-            count = matches[m.digest][1]
-            height = int(total_height / count)
-            matches[m.digest] = ((total_height - height), count - 1)
-            row = self._get_compare_table_row(m, match=True, height=height)
-            compare_table.add_row(*row, key=str(m.path), height=height)
-        for m in unmatched_child_merkles:
-            if m.path.name in name_matches:
-                row = self._get_compare_table_row(m, match=False, name_match=True)
-                compare_table.add_row(*row, key=str(m.path), height=3)
-        for m in unmatched_child_merkles:
-            if m.path.name not in name_matches:
-                row = self._get_compare_table_row(m, match=False, name_match=False)
-                compare_table.add_row(*row, key=str(m.path), height=3)
+        # Add subsections
+        for subsection in self.subsections:
+            if subsection.display == Subsection.Display.COLLAPSED:
+                compare_table.add_row(
+                    *self._get_compare_table_subsection_row(f"▸ {subsection.label}"),
+                    key=subsection.key.name,
+                    height=3,
+                )
+            else:
+                compare_table.add_row(
+                    *self._get_compare_table_subsection_row(f"▾ {subsection.label}"),
+                    key=subsection.key.name,
+                    height=3,
+                )
+                match subsection.key:
+                    case Subsection.Key.DIGEST_MATCH:
+                        self._display_digest_matches(matches, matching_child_merkles)
+                    case Subsection.Key.NAME_MATCH:
+                        self._display_name_matches(
+                            name_matches, unmatched_child_merkles
+                        )
+                    case Subsection.Key.UNMATCHED:
+                        self._display_unmatched(name_matches, unmatched_child_merkles)
 
     def _get_merkle_from_row_key(self, row_key: RowKey) -> Merkle:
         child_merkles = [m for m in self.submerkle.children.values()]
@@ -365,13 +454,14 @@ class CompareWidget(Widget):
     async def _add_watches(self) -> None:
         ### Watch for synchronized scrolling ###
         def watch_scroll_y(old_scroll_y: float, new_scroll_y: float) -> None:
-            logging.debug(
-                f"watch_scroll_y in {self.id}: {old_scroll_y}, {new_scroll_y}"
-            )
             # We only want to sync scroll when we are scrolling across matches
             # Once we reach unmatched merkles, we no longer want to sync scroll
             other = CompareWidget._get_other_compare_widget(self.id, self.parent)
-            row_key = self._get_row_key_from_scroll_y(old_scroll_y)
+            # Loop until we get the first non-subsection row, walrus operator FTW :)
+            while self._is_subsection(
+                row_key := self._get_row_key_from_scroll_y(old_scroll_y)
+            ):
+                old_scroll_y += 1
             matches = self._get_matches()
             name_matches = self._get_name_matches()
             if other and row_key:
@@ -441,6 +531,32 @@ class CompareWidget(Widget):
             return self.merkle.traverse(self.merkle_subpath)
         else:
             return self.merkle
+
+    def _get_compare_table_subsection_row(self, label: str, height: int = 3):
+        NCW = CompareWidget._get_column_width(
+            self.size.width, column_key="NAME"
+        )  # name column width
+        DCW = CompareWidget._get_column_width(
+            self.size.width, column_key="DIGEST"
+        )  # digest column width
+        ns = " " * (NCW - len(label))
+        ds = " " * (DCW)
+        ncp = (" " * (NCW) + "\n") * int((height - 1) / 2)
+        ncs = ("\n" + " " * (NCW)) * (height - 1 - int((height - 1) / 2))
+        dcp = (" " * (DCW) + "\n") * int((height - 1) / 2)
+        dcs = ("\n" + " " * (DCW)) * (height - 1 - int((height - 1) / 2))
+        color = "rgb(120,120,120)"
+        row = [
+            color_styled_text(
+                (ncp + label + ns + ncs),
+                color,
+            ),
+            color_styled_text(
+                (dcp + "" + ds + dcs),
+                color,
+            ),
+        ]
+        return row
 
     def _get_compare_table_row(
         self, m: Merkle, match: bool, name_match: bool = False, height: int = 3
