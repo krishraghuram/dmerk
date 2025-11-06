@@ -229,24 +229,20 @@ class CompareWidget(Widget):
             self.merkle_subpath = PurePath("".join(merkle_subpath_parts))
 
     def _sync_sort_fields(self) -> None:
-        other_compare_widget = CompareWidget._get_other_compare_widget(
-            self.id, self.parent
-        )
-        if other_compare_widget:
-            other_compare_widget.sort_by = self.sort_by
-            other_compare_widget.sort_reverse = self.sort_reverse
+        other = CompareWidget._get_other_compare_widget(self.id, self.parent)
+        if other:
+            other.sort_by = self.sort_by
+            other.sort_reverse = self.sort_reverse
 
     async def _refresh(self) -> None:
         if not self.loading:
             await self._refresh_label()
             await self._refresh_table(force=True)
-            other_compare_widget = CompareWidget._get_other_compare_widget(
-                self.id, self.parent
-            )
-            if other_compare_widget:
-                if not other_compare_widget.loading:
-                    await other_compare_widget._refresh_label()
-                    await other_compare_widget._refresh_table()
+            other = CompareWidget._get_other_compare_widget(self.id, self.parent)
+            if other:
+                if not other.loading:
+                    await other._refresh_label()
+                    await other._refresh_table()
 
     async def _refresh_label(self) -> None:
         label_parts = [str(self.merkle.path)]
