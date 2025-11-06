@@ -241,8 +241,10 @@ class CompareWidget(Widget):
             other = CompareWidget._get_other_compare_widget(self.id, self.parent)
             if other:
                 if not other.loading:
+                    scroll_y = other.query_one(DataTable).scroll_y
                     await other._refresh_label()
                     await other._refresh_table()
+                    other.query_one(DataTable).scroll_to(None, scroll_y, animate=False)
 
     async def _refresh_label(self) -> None:
         label_parts = [str(self.merkle.path)]
@@ -263,20 +265,20 @@ class CompareWidget(Widget):
         matches = self._get_matches()
         name_matches = self._get_name_matches()
         compare_table = self.query_one(DataTable)
-        # Check if we can do "partial refresh"
-        if not force and len(matches) == 0 and len(name_matches) == 0:
-            # Not a force refresh, and there are also no matches
-            # Cells which were previously matches, will have solid background color
-            # We need to update so that the solid bg color is removed now, since there are no matches
-            # This requires removing the space char `" "` from the start and end of each line of each cell
-            for r in range(len(compare_table.rows)):
-                for c in range(len(compare_table.columns)):
-                    cell_value: Text = compare_table.get_cell_at(Coordinate(r, c))
-                    cell_value.plain = "\n".join(
-                        [l.strip() for l in cell_value.plain.split("\n")]
-                    )
-                    compare_table.update_cell_at(Coordinate(r, c), cell_value)
-            return  # prevent full refresh
+        # # Check if we can do "partial refresh"
+        # if not force and len(matches) == 0 and len(name_matches) == 0:
+        #     # Not a force refresh, and there are also no matches
+        #     # Cells which were previously matches, will have solid background color
+        #     # We need to update so that the solid bg color is removed now, since there are no matches
+        #     # This requires removing the space char `" "` from the start and end of each line of each cell
+        #     for r in range(len(compare_table.rows)):
+        #         for c in range(len(compare_table.columns)):
+        #             cell_value: Text = compare_table.get_cell_at(Coordinate(r, c))
+        #             cell_value.plain = "\n".join(
+        #                 [l.strip() for l in cell_value.plain.split("\n")]
+        #             )
+        #             compare_table.update_cell_at(Coordinate(r, c), cell_value)
+        #     return  # prevent full refresh
         # Full Refresh Code Below
         compare_table.clear(columns=True)
         for column in Columns:
