@@ -310,14 +310,14 @@ class CompareWidget(Widget):
             matches[m.digest] = ((total_height - height), count - 1)
             row = self._get_compare_table_row(m, match=True, height=height)
             compare_table.add_row(*row, key=str(m.path), height=height)
+        # for m in unmatched_child_merkles:
+        #     if m.path.name in name_matches:
+        #         row = self._get_compare_table_row(m, match=False, name_match=True)
+        #         compare_table.add_row(*row, key=str(m.path), height=3)
         for m in unmatched_child_merkles:
-            if m.path.name in name_matches:
-                row = self._get_compare_table_row(m, match=False, name_match=True)
-                compare_table.add_row(*row, key=str(m.path), height=3)
-        for m in unmatched_child_merkles:
-            if m.path.name not in name_matches:
-                row = self._get_compare_table_row(m, match=False, name_match=False)
-                compare_table.add_row(*row, key=str(m.path), height=3)
+            # if m.path.name not in name_matches:
+            row = self._get_compare_table_row(m, match=False, name_match=False)
+            compare_table.add_row(*row, key=str(m.path), height=3)
 
     def _get_merkle_from_row_key(self, row_key: RowKey) -> Merkle:
         child_merkles = [m for m in self.submerkle.children.values()]
