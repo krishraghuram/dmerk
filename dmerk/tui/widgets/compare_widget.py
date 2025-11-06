@@ -94,7 +94,7 @@ class CompareWidget(Widget):
     filter_by = reactive("")
     sort_by: Reactive[None | str] = reactive(None)
     sort_reverse: Reactive[bool] = reactive(False)
-    subsections: Reactive[None | list[Subsection]] = reactive(None)
+    subsections: Reactive[list[Subsection]] = reactive([])
 
     @property
     def matches_sort_key(self) -> Callable[[Merkle], str]:
@@ -273,24 +273,22 @@ class CompareWidget(Widget):
             self.merkle_subpath = PurePath("".join(merkle_subpath_parts))
 
     def _sync_sort_fields(self) -> None:
-        other_compare_widget = CompareWidget._get_other_compare_widget(
-            self.id, self.parent
-        )
-        if other_compare_widget:
-            other_compare_widget.sort_by = self.sort_by
-            other_compare_widget.sort_reverse = self.sort_reverse
+        other = CompareWidget._get_other_compare_widget(self.id, self.parent)
+        if other:
+            other.sort_by = self.sort_by
+            other.sort_reverse = self.sort_reverse
 
     async def _refresh(self) -> None:
         if not self.loading:
             await self._refresh_label()
             await self._refresh_table(force=True)
-            other_compare_widget = CompareWidget._get_other_compare_widget(
-                self.id, self.parent
-            )
-            if other_compare_widget:
-                if not other_compare_widget.loading:
-                    await other_compare_widget._refresh_label()
-                    await other_compare_widget._refresh_table()
+            other = CompareWidget._get_other_compare_widget(self.id, self.parent)
+            if other:
+                if not other.loading:
+                    scroll_y = other.query_one(DataTable).scroll_y
+                    await other._refresh_label()
+                    await other._refresh_table()
+                    other.query_one(DataTable).scroll_to(None, scroll_y, animate=False)
 
     async def _refresh_label(self) -> None:
         label_parts = [str(self.merkle.path)]
@@ -346,23 +344,23 @@ class CompareWidget(Widget):
         name_matches = self._get_name_matches()
         compare_table = self.query_one(DataTable)
         # Check if we can do "partial refresh"
-        if not force and len(matches) == 0 and len(name_matches) == 0:
-            # Not a force refresh, and there are also no matches
-            # Cells which were previously matches, will have solid background color
-            # We need to update so that the solid bg color is removed now, since there are no matches
-            # This requires removing the space char `" "` from the start and end of each line of each cell
-            for r in range(len(compare_table.rows)):
-                for c in range(len(compare_table.columns)):
-                    coord = Coordinate(r, c)
-                    row_key = compare_table.coordinate_to_cell_key(coord).row_key
-                    if self._is_subsection(row_key):
-                        break
-                    cell_value: Text = compare_table.get_cell_at(coord)
-                    cell_value.plain = "\n".join(
-                        [l.strip() for l in cell_value.plain.split("\n")]
-                    )
-                    compare_table.update_cell_at(coord, cell_value)
-            return  # prevent full refresh
+        # if not force and len(matches) == 0 and len(name_matches) == 0:
+        #     # Not a force refresh, and there are also no matches
+        #     # Cells which were previously matches, will have solid background color
+        #     # We need to update so that the solid bg color is removed now, since there are no matches
+        #     # This requires removing the space char `" "` from the start and end of each line of each cell
+        #     for r in range(len(compare_table.rows)):
+        #         for c in range(len(compare_table.columns)):
+        #             coord = Coordinate(r, c)
+        #             row_key = compare_table.coordinate_to_cell_key(coord).row_key
+        #             if self._is_subsection(row_key):
+        #                 break
+        #             cell_value: Text = compare_table.get_cell_at(coord)
+        #             cell_value.plain = "\n".join(
+        #                 [l.strip() for l in cell_value.plain.split("\n")]
+        #             )
+        #             compare_table.update_cell_at(coord, cell_value)
+        #     return  # prevent full refresh
         # Full Refresh Code Below
         compare_table.clear(columns=True)
         for column in Columns:
@@ -454,14 +452,14 @@ class CompareWidget(Widget):
     async def _add_watches(self) -> None:
         ### Watch for synchronized scrolling ###
         def watch_scroll_y(old_scroll_y: float, new_scroll_y: float) -> None:
-            # We only want to sync scroll when we are scrolling across matches
-            # Once we reach unmatched merkles, we no longer want to sync scroll
+            # Loop until we get the first non-subsection row's row_key, btw, walrus operator FTW :)
             other = CompareWidget._get_other_compare_widget(self.id, self.parent)
-            # Loop until we get the first non-subsection row, walrus operator FTW :)
             while self._is_subsection(
                 row_key := self._get_row_key_from_scroll_y(old_scroll_y)
             ):
                 old_scroll_y += 1
+            # We only want to sync scroll when we are scrolling across matches
+            # Once we reach unmatched merkles, we no longer want to sync scroll
             matches = self._get_matches()
             name_matches = self._get_name_matches()
             if other and row_key:
