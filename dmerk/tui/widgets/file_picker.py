@@ -39,7 +39,7 @@ class FilePicker(Widget):
     ):
         super().__init__(name=name, id=id, classes=classes, disabled=disabled)
         if not path:
-            path = Path(constants.APP_STATE_PATH)
+            path = Path(constants.APP_STATE_PATH) / "OLD_STUFF" / "OLD1"
         if path.is_dir():
             self.path = path
         else:
