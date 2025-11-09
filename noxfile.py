@@ -30,6 +30,12 @@ def lint(session):
 
 
 @nox.session()
+def isort(session):
+    session.install(".[dev]")
+    session.run("isort", "dmerk")
+
+
+@nox.session()
 def format(session):
     session.install(".[dev]")
     out = session.run("black", "dmerk", silent=True)

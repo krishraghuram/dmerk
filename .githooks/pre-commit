@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+nox --session isort
 nox --session lint
 nox --session format
 nox --session mypy
