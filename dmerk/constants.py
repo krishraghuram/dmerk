@@ -1,4 +1,4 @@
-from importlib.metadata import version, metadata
+from importlib.metadata import metadata, version
 
 import platformdirs
 

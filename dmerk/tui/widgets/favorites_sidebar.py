@@ -1,9 +1,11 @@
 from pathlib import Path
 from typing import Any
+
 from textual.app import ComposeResult
-from textual.widget import Widget
 from textual.containers import Vertical
 from textual.message import Message
+from textual.widget import Widget
+
 from .sidebar_button import SidebarButton
 
 

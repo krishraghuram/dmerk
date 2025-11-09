@@ -1,13 +1,11 @@
-import textwrap
 import json
 import logging
+import textwrap
 from pathlib import Path
 
 import pytest
 
-from .. import cli
-from .. import generate
-from .. import constants
+from .. import cli, constants, generate
 
 
 @pytest.mark.parametrize("args", ("-h", "--help"))

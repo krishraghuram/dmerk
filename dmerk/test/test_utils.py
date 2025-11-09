@@ -1,9 +1,10 @@
-import pytest
 from pathlib import Path
+
+import pytest
 
 import dmerk.generate
 from dmerk.merkle import Merkle
-from dmerk.utils import load_or_generate, colorhash, fuzzy_match
+from dmerk.utils import colorhash, fuzzy_match, load_or_generate
 
 
 def test_load_or_generate_load(monkeypatch, tmp_path):

@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import cast
 
 from textual.app import ComposeResult
+from textual.coordinate import Coordinate
+from textual.events import Resize
+from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import DataTable
-from textual.reactive import reactive
-from textual.events import Resize
-from textual.coordinate import Coordinate
 
 import dmerk.constants as constants
 from dmerk.tui.widgets.compare_widget import CompareWidget

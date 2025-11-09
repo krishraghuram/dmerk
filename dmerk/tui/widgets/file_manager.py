@@ -1,21 +1,20 @@
-from dataclasses import dataclass
 import itertools
-from typing import Callable, cast
-from enum import Enum
-
-from pathlib import Path
+from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
+from pathlib import Path
+from typing import Callable, cast
 
-from textual.app import ComposeResult
-from textual.widget import Widget
-from textual.widgets import DataTable, Label, Input
-from textual.reactive import reactive
-from textual.message import Message
-from textual.events import Resize, Click
-from textual.coordinate import Coordinate
-from textual.containers import Horizontal
-from rich.text import Text
 from humanize import naturaltime
+from rich.text import Text
+from textual.app import ComposeResult
+from textual.containers import Horizontal
+from textual.coordinate import Coordinate
+from textual.events import Click, Resize
+from textual.message import Message
+from textual.reactive import reactive
+from textual.widget import Widget
+from textual.widgets import DataTable, Input, Label
 
 from dmerk.tui.widgets.clearable_input import ClearableInput
 from dmerk.utils import fuzzy_match

@@ -1,14 +1,11 @@
 import random
 from pathlib import PosixPath, PurePath
 
-
 import pytest
 
-
-from ..conftest import update_metadata, assert_merkle
 from ...generate import default_generate
 from ...merkle import Merkle
-
+from ..conftest import assert_merkle, update_metadata
 
 Type = Merkle.Type
 

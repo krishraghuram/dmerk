@@ -1,16 +1,18 @@
 # PYTHON_ARGCOMPLETE_OK
+
 import argparse
-import textwrap
-import sys
 import json
 import logging
+import sys
+import textwrap
 from pathlib import Path
 from typing import Any
 
 import argcomplete
 
-import dmerk.generate as generate
 import dmerk.compare as compare
+import dmerk.generate as generate
+
 from .utils import load_or_generate
 
 

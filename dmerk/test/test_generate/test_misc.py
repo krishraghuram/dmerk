@@ -1,5 +1,5 @@
-from pathlib import PosixPath
 import importlib
+from pathlib import PosixPath
 
 
 def test_generate_proxy(monkeypatch):

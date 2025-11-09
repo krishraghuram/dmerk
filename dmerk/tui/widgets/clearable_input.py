@@ -1,22 +1,23 @@
-from textual.widget import Widget
-from textual.widgets import Input, Label
+from typing import Any, Iterable, Literal
+
+from rich.console import RenderableType
+from rich.highlighter import Highlighter
 from textual.app import ComposeResult
 from textual.containers import Horizontal
+from textual.dom import DOMNode
 from textual.events import (
     Click,
-    DescendantFocus,
     DescendantBlur,
+    DescendantFocus,
+    Leave,
     MouseDown,
     MouseUp,
-    Leave,
 )
-from textual.widgets._input import InputType, InputValidationOn
 from textual.suggester import Suggester
 from textual.validation import Validator
-from textual.dom import DOMNode
-from typing import Any, Iterable, Literal
-from rich.highlighter import Highlighter
-from rich.console import RenderableType
+from textual.widget import Widget
+from textual.widgets import Input, Label
+from textual.widgets._input import InputType, InputValidationOn
 
 
 class ClearableInput(Widget):

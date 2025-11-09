@@ -1,24 +1,26 @@
-from enum import Enum
+import importlib.metadata
 import logging
+from enum import Enum
 from pathlib import Path
+
+from textual import work
 from textual.app import App, ComposeResult
-from textual.widgets import (
-    Footer,
-    Header,
-    RichLog,
-    Button,
-    TabbedContent,
-    TabPane,
-    Input,
-)
 from textual.containers import Horizontal, Vertical
 from textual.events import Ready
 from textual.logging import TextualHandler
-from textual import work
-from dmerk.tui.widgets import FileManager, FavoritesSidebar, FilePicker
-import dmerk.generate as generate
-import dmerk.constants as constants
+from textual.widgets import (
+    Button,
+    Footer,
+    Header,
+    Input,
+    RichLog,
+    TabbedContent,
+    TabPane,
+)
 
+import dmerk.constants as constants
+import dmerk.generate as generate
+from dmerk.tui.widgets import FavoritesSidebar, FileManager, FilePicker
 from dmerk.tui.widgets.clearable_input import ClearableInput
 from dmerk.tui.widgets.compare_widget import CompareWidget
 
@@ -44,7 +46,7 @@ class Tabs(Enum):
 class DmerkApp(App[None]):
     """An TUI for dmerk"""
 
-    TITLE = "dmerk tui"
+    TITLE = f"dmerk tui v{importlib.metadata.version('dmerk')}"
 
     CSS_PATH = "styles.tcss"
 

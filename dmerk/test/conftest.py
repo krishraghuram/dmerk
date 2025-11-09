@@ -1,8 +1,8 @@
 import collections
 import os
-from pathlib import Path
 import shutil
 import typing
+from pathlib import Path
 
 import pytest
 

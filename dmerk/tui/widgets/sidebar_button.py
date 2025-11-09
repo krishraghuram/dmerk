@@ -2,8 +2,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from textual.widgets import Button
 from textual.message import Message
+from textual.widgets import Button
 
 
 class SidebarButton(Button):

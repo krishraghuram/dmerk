@@ -1,8 +1,8 @@
-import pathlib
 import cProfile
+import pathlib
+import platform
 import pstats
 import time
-import platform
 
 import pytest
 

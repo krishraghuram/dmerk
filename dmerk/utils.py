@@ -1,7 +1,8 @@
+import colorsys
+from pathlib import Path
+
 import dmerk.generate as generate
 from dmerk.merkle import Merkle
-from pathlib import Path
-import colorsys
 
 
 def load_or_generate(path: Path, no_save: bool) -> Merkle:

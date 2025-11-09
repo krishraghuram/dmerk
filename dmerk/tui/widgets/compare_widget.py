@@ -1,25 +1,25 @@
+import functools
+import logging
+from collections import Counter
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path, PurePath
-import logging
-import functools
-from collections import Counter
 from typing import Callable, cast
 
-from textual import work
-from textual.worker import Worker, WorkerState
-from textual.app import ComposeResult
-from textual.widget import Widget
-from textual.dom import DOMNode
-from textual.widgets import DataTable, Label, Button
-from textual.widgets.data_table import RowKey
-from textual.reactive import reactive, Reactive
-from textual.events import DescendantBlur, Click, Resize
-from textual.css.query import NoMatches
-from textual.coordinate import Coordinate
-from textual.containers import Horizontal, Vertical
-from textual.geometry import Size
 from rich.text import Text
+from textual import work
+from textual.app import ComposeResult
+from textual.containers import Horizontal, Vertical
+from textual.coordinate import Coordinate
+from textual.css.query import NoMatches
+from textual.dom import DOMNode
+from textual.events import Click, DescendantBlur, Resize
+from textual.geometry import Size
+from textual.reactive import Reactive, reactive
+from textual.widget import Widget
+from textual.widgets import Button, DataTable, Label
+from textual.widgets.data_table import RowKey
+from textual.worker import Worker, WorkerState
 
 from dmerk.merkle import Merkle
 from dmerk.utils import colorhash, fuzzy_match

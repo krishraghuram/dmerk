@@ -7,7 +7,6 @@ import pytest
 
 from ..merkle import Merkle
 
-
 MERKLE_KWARGS = [
     {
         "path": Path("/home/raghuram/"),
