@@ -32,6 +32,7 @@ class FilePicker(Widget):
         self,
         path: Path | None = None,
         *,
+        filter_by: str | None = None,
         name: str | None = None,
         id: str | None = None,
         classes: str | None = None,
@@ -44,6 +45,8 @@ class FilePicker(Widget):
             self.path = path
         else:
             raise ValueError(f"path {path} must be a directory")
+        if filter_by:
+            self.filter_by = filter_by
 
     path = reactive(Path.home())
     prev_cell_key = None
@@ -103,7 +106,9 @@ class FilePicker(Widget):
     def _mount_compare_widget(self, path: Path) -> None:
         id_ = self.id.split("-")[-1] if self.id else ""
         id_ = "-".join(["compare", id_])
-        cast(Widget, self.parent).mount(CompareWidget(path, id=id_), after=self)
+        cast(Widget, self.parent).mount(
+            CompareWidget(path, id=id_, filter_by=self.filter_by), after=self
+        )
         self.remove()
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:

@@ -85,6 +85,7 @@ class CompareWidget(Widget):
         self,
         path: Path,
         *,
+        filter_by: str | None = None,
         name: str | None = None,
         id: str | None = None,
         classes: str | None = None,
@@ -96,13 +97,17 @@ class CompareWidget(Widget):
             self._main(path)
         else:
             raise ValueError(f"path {path} must be a dmerk file")
+        if filter_by:
+            self.filter_by = filter_by
 
     async def _reset_to_filepicker(self) -> None:
         from dmerk.tui.widgets.file_picker import FilePicker
 
         id_ = self.id.split("-")[-1] if self.id else ""
         id_ = "-".join(["filepicker", id_])
-        cast(Widget, self.parent).mount(FilePicker(id=id_), after=self)
+        cast(Widget, self.parent).mount(
+            FilePicker(id=id_, filter_by=self.filter_by), after=self
+        )
         await self.remove()
 
     @work(thread=True)
