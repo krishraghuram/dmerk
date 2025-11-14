@@ -462,6 +462,12 @@ class CompareWidget(Widget):
     def _get_compare_table_row(
         self, m: Merkle, match: bool, name_match: bool = False, height: int = 3
     ) -> list[Text]:
+        """Generate a formatted table row for a Merkle node in the comparison view.
+
+        - Matches: Full cell background (horizontal + vertical padding)
+        - Name matches: Horizontal line background (horizontal padding only)
+        - No match: No background padding (just text gets colored)
+        """
         NCW = CompareWidget._get_column_width(
             self.size.width, column_key="NAME"
         )  # name column width
@@ -472,65 +478,34 @@ class CompareWidget(Widget):
             self.size.width, column_key="DIGEST"
         )  # digest column width
         # Variable Names Explained
-        #   ns: name suffix
-        #   ds: digest suffix
-        #   ncp: name cell prefix
-        #   ncs: name cell suffix
-        #   dcp: digest cell prefix
-        #   dcs: digest cell suffix
-        if match:
-            ns = " " * (NCW - len(m.path.name) - 3)
-            ds = " " * (DCW - len(m.digest))
-            ss = " " * (SCW - len(naturalsize(m.size)))
-            ncp = self.__column_prefix(NCW, height)
-            dcp = self.__column_prefix(DCW, height)
-            scp = self.__column_prefix(SCW, height)
-            ncs = self.__column_suffix(NCW, height)
-            dcs = self.__column_suffix(DCW, height)
-            scs = self.__column_suffix(SCW, height)
-        elif name_match:
-            ns = " " * (NCW - len(m.path.name) - 3)
-            ds = " " * (DCW - len(m.digest))
-            ss = " " * (SCW - len(naturalsize(m.size)))
-            # for name match, we only need ns and ds
-            NCW = 0
-            DCW = 0
-            SCW = 0
-            ncp = self.__column_prefix(NCW, height)
-            dcp = self.__column_prefix(DCW, height)
-            scp = self.__column_prefix(SCW, height)
-            ncs = self.__column_suffix(NCW, height)
-            dcs = self.__column_suffix(DCW, height)
-            scs = self.__column_suffix(SCW, height)
-        else:
+        #   ns, ds, ss: name, digest, size "suffix" - the amount of padding after the cell value on the same line
+        #   ncp, dcp, scp: name, digest, size "cell prefix" - the amount of multiline-padding before cell value
+        #   ncs, dcs, scs: name, digest, size "cell suffix" - the amount of multiline-padding after cell value
+        ns = " " * (NCW - len(m.path.name) - 3)
+        ds = " " * (DCW - len(m.digest))
+        ss = " " * (SCW - len(naturalsize(m.size)))
+        if name_match:
+            # for name match, we only need "suffix", dont need "cell prefix" or "cell suffix"
+            NCW = DCW = SCW = 0
+        if not match and not name_match:
             # if neither (digest) match nor name match, we dont need any padding anywhere
-            NCW = 0
-            DCW = 0
-            SCW = 0
-            ns = " " * (NCW - len(m.path.name) - 3)
-            ds = " " * (DCW - len(m.digest))
-            ss = " " * (SCW - len(naturalsize(m.size)))
-            ncp = self.__column_prefix(NCW, height)
-            dcp = self.__column_prefix(DCW, height)
-            scp = self.__column_prefix(SCW, height)
-            ncs = self.__column_suffix(NCW, height)
-            dcs = self.__column_suffix(DCW, height)
-            scs = self.__column_suffix(SCW, height)
-        row = [
-            colorhash_styled_text(
-                (ncp + file_prefix(m.type) + m.path.name + ns + ncs),
-                m.digest,
-            ),
-            colorhash_styled_text(
-                (scp + naturalsize(m.size) + ss + scs),
-                m.digest,
-            ),
-            colorhash_styled_text(
-                (dcp + m.digest + ds + dcs),
-                m.digest,
-            ),
-        ]
-        return row
+            ns = ds = ss = ""
+            NCW = DCW = SCW = 0
+        ncp = self.__column_prefix(NCW, height)
+        dcp = self.__column_prefix(DCW, height)
+        scp = self.__column_prefix(SCW, height)
+        ncs = self.__column_suffix(NCW, height)
+        dcs = self.__column_suffix(DCW, height)
+        scs = self.__column_suffix(SCW, height)
+        # Build cells and return row
+        name_cell = colorhash_styled_text(
+            f"{ncp}{file_prefix(m.type)}{m.path.name}{ns}{ncs}", m.digest
+        )
+        size_cell = colorhash_styled_text(
+            f"{scp}{naturalsize(m.size)}{ss}{scs}", m.digest
+        )
+        digest_cell = colorhash_styled_text(f"{dcp}{m.digest}{ds}{dcs}", m.digest)
+        return [name_cell, size_cell, digest_cell]
 
     def _get_matches(self) -> dict[str, tuple[int, int]]:
         other = CompareWidget._get_other_compare_widget(self.id, self.parent)
