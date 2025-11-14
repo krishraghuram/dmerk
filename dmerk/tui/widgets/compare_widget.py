@@ -47,23 +47,26 @@ class Column:
     label: str
     key: str
     sort_key: Callable[[Merkle], str | int]
+    sort_reverse: bool = False
 
 
 class Columns(Enum):
     NAME = Column("Name", "NAME", lambda m: str.casefold(m.path.name))
-    SIZE = Column("Size", "SIZE", lambda m: m.size)
+    SIZE = Column("Size", "SIZE", lambda m: m.size, sort_reverse=True)
     DIGEST = Column("Digest", "DIGEST", lambda m: m.digest)
 
 
 class CompareWidget(Widget):
 
     BUTTON_RESET_COMPARE = "button-reset-compare"
+    DEFAULT_SORT_BY = None
+    DEFAULT_SORT_REVERSE = False
 
     merkle_subpath: reactive[PurePath | None] = reactive(None)
     prev_cell_key = None
     filter_by = reactive("")
-    sort_by: Reactive[None | str] = reactive(None)
-    sort_reverse: Reactive[bool] = reactive(False)
+    sort_by: Reactive[None | str] = reactive(DEFAULT_SORT_BY)
+    sort_reverse: Reactive[bool] = reactive(DEFAULT_SORT_REVERSE)
     prev_screen_size: Reactive[Size | None] = reactive(None)
 
     @property
@@ -202,26 +205,28 @@ class CompareWidget(Widget):
         self, message: DataTable.HeaderSelected
     ) -> None:
         """
-        Initially we have (sort_by,sort_reverse) as (None,False)
-        Clicking on a column repeatedly, like clicking on Name several times,
-            should lead to this pattern of length 3
-            Note that we initially sort by NAME, then we reverse it,
-            and then finally we reset back to default behavior of (None,False)
-        Pattern: (NAME,False), (NAME,True), (None,False), (NAME,False), ...
-        At any point, clicking on a new column should start the sequence from new columns,
-            like if we click on Digest at some point, then it starts from,
-        Pattern: (DIGEST,False), (DIGEST,True), (None,False), (DIGEST,False), ...
+        Handle column header clicks with three-state sorting cycle.
+
+        Clicking the same column cycles through:
+        1. Default sort direction for that column
+        2. Reversed sort direction
+        3. Reset to default table sorting
+
+        Clicking a different column starts a new cycle from step 1.
         """
         if self.sort_by != message.column_key.value:
-            if message.column_key.value is not None:
-                self.sort_by = message.column_key.value
-                self.sort_reverse = False
+            if message.column_key.value is None:
+                raise ValueError("Illegal State")
+            self.sort_by = message.column_key.value
+            self.sort_reverse = Columns[self.sort_by].value.sort_reverse
         else:
-            if self.sort_reverse is False:
-                self.sort_reverse = True
+            if self.sort_by is None:
+                raise ValueError("Illegal State")
+            if self.sort_reverse is Columns[self.sort_by].value.sort_reverse:
+                self.sort_reverse = not Columns[self.sort_by].value.sort_reverse
             else:
-                self.sort_by = None
-                self.sort_reverse = False
+                self.sort_by = self.DEFAULT_SORT_BY
+                self.sort_reverse = self.DEFAULT_SORT_REVERSE
 
     def on_click(self, message: Click) -> None:
         if isinstance(message.widget, Label):
