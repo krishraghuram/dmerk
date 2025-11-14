@@ -24,7 +24,7 @@ def test_version(capsys, args):
     with pytest.raises(SystemExit):
         cli._main([args])
     captured = capsys.readouterr()
-    assert "dmerk 0.3.0" in captured.out
+    assert "dmerk 0.3.1.dev0" in captured.out
 
 
 def test_subcommand_required(capsys):
