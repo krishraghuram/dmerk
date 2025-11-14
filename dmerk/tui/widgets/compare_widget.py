@@ -6,6 +6,7 @@ from enum import Enum
 from pathlib import Path, PurePath
 from typing import Callable, cast
 
+from humanize import naturalsize
 from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
@@ -45,11 +46,12 @@ def colorhash_styled_text(text: str, digest: str) -> Text:
 class Column:
     label: str
     key: str
-    sort_key: Callable[[Merkle], str]
+    sort_key: Callable[[Merkle], str | int]
 
 
 class Columns(Enum):
     NAME = Column("Name", "NAME", lambda m: str.casefold(m.path.name))
+    SIZE = Column("Size", "SIZE", lambda m: m.size)
     DIGEST = Column("Digest", "DIGEST", lambda m: m.digest)
 
 
@@ -65,7 +67,7 @@ class CompareWidget(Widget):
     prev_screen_size: Reactive[Size | None] = reactive(None)
 
     @property
-    def matches_sort_key(self) -> Callable[[Merkle], str]:
+    def matches_sort_key(self) -> Callable[[Merkle], str | int]:
         # By default, we want to sort digest-matches by digest, so that matching items show up side-by-side
         if self.sort_by:
             return Columns[self.sort_by].value.sort_key
@@ -73,7 +75,7 @@ class CompareWidget(Widget):
             return lambda m: m.digest
 
     @property
-    def unmatched_sort_key(self) -> Callable[[Merkle], str]:
+    def unmatched_sort_key(self) -> Callable[[Merkle], str | int]:
         # By default, we want to sort name-matches and unmatched by name,
         # so that user can scroll through them and find the item they are interested in quickly
         if self.sort_by:
@@ -417,15 +419,19 @@ class CompareWidget(Widget):
     @staticmethod
     @functools.lru_cache
     def _get_column_width(total_width: int, column_key: str) -> int:
-        MAX_DIGEST_WIDTH = 32
+        MAX_DIGEST_WIDTH = 8
+        SIZE_WIDTH = 10
         # The math here is to prevent horizontal scrollbar from appearing
         # The vertical scrollbar may take width of 2
         # Besides that, we have 2 columns, and we have to split the rem width amongst them
         # Each column has a built-in padding of 1 on both sides (see cell_padding in DataTable docs)
-        N_COLS = 2
+        N_COLS = len(Columns)
         TOTAL_AVAILABLE_WIDTH = total_width - 2 - 2 * N_COLS
+        TOTAL_AVAILABLE_WIDTH = TOTAL_AVAILABLE_WIDTH - SIZE_WIDTH
         if total_width != 0:
-            if column_key == Columns.DIGEST.value.key:
+            if column_key == Columns.SIZE.value.key:
+                return SIZE_WIDTH
+            elif column_key == Columns.DIGEST.value.key:
                 return min(MAX_DIGEST_WIDTH, TOTAL_AVAILABLE_WIDTH // 2)
             elif column_key == Columns.NAME.value.key:
                 return TOTAL_AVAILABLE_WIDTH - min(
@@ -443,12 +449,25 @@ class CompareWidget(Widget):
         else:
             return self.merkle
 
+    @staticmethod
+    @functools.lru_cache
+    def __column_prefix(column_width: int, height: int) -> str:
+        return (" " * (column_width) + "\n") * int((height - 1) / 2)
+
+    @staticmethod
+    @functools.lru_cache
+    def __column_suffix(column_width: int, height: int) -> str:
+        return ("\n" + " " * (column_width)) * (height - 1 - int((height - 1) / 2))
+
     def _get_compare_table_row(
         self, m: Merkle, match: bool, name_match: bool = False, height: int = 3
     ) -> list[Text]:
         NCW = CompareWidget._get_column_width(
             self.size.width, column_key="NAME"
         )  # name column width
+        SCW = CompareWidget._get_column_width(
+            self.size.width, column_key="SIZE"
+        )  # size column width
         DCW = CompareWidget._get_column_width(
             self.size.width, column_key="DIGEST"
         )  # digest column width
@@ -462,33 +481,48 @@ class CompareWidget(Widget):
         if match:
             ns = " " * (NCW - len(m.path.name) - 3)
             ds = " " * (DCW - len(m.digest))
-            ncp = (" " * (NCW) + "\n") * int((height - 1) / 2)
-            ncs = ("\n" + " " * (NCW)) * (height - 1 - int((height - 1) / 2))
-            dcp = (" " * (DCW) + "\n") * int((height - 1) / 2)
-            dcs = ("\n" + " " * (DCW)) * (height - 1 - int((height - 1) / 2))
+            ss = " " * (SCW - len(naturalsize(m.size)))
+            ncp = self.__column_prefix(NCW, height)
+            dcp = self.__column_prefix(DCW, height)
+            scp = self.__column_prefix(SCW, height)
+            ncs = self.__column_suffix(NCW, height)
+            dcs = self.__column_suffix(DCW, height)
+            scs = self.__column_suffix(SCW, height)
         elif name_match:
             ns = " " * (NCW - len(m.path.name) - 3)
             ds = " " * (DCW - len(m.digest))
+            ss = " " * (SCW - len(naturalsize(m.size)))
             # for name match, we only need ns and ds
             NCW = 0
             DCW = 0
-            ncp = (" " * (NCW) + "\n") * int((height - 1) / 2)
-            ncs = ("\n" + " " * (NCW)) * (height - 1 - int((height - 1) / 2))
-            dcp = (" " * (DCW) + "\n") * int((height - 1) / 2)
-            dcs = ("\n" + " " * (DCW)) * (height - 1 - int((height - 1) / 2))
+            SCW = 0
+            ncp = self.__column_prefix(NCW, height)
+            dcp = self.__column_prefix(DCW, height)
+            scp = self.__column_prefix(SCW, height)
+            ncs = self.__column_suffix(NCW, height)
+            dcs = self.__column_suffix(DCW, height)
+            scs = self.__column_suffix(SCW, height)
         else:
             # if neither (digest) match nor name match, we dont need any padding anywhere
             NCW = 0
             DCW = 0
+            SCW = 0
             ns = " " * (NCW - len(m.path.name) - 3)
             ds = " " * (DCW - len(m.digest))
-            ncp = (" " * (NCW) + "\n") * int((height - 1) / 2)
-            ncs = ("\n" + " " * (NCW)) * (height - 1 - int((height - 1) / 2))
-            dcp = (" " * (DCW) + "\n") * int((height - 1) / 2)
-            dcs = ("\n" + " " * (DCW)) * (height - 1 - int((height - 1) / 2))
+            ss = " " * (SCW - len(naturalsize(m.size)))
+            ncp = self.__column_prefix(NCW, height)
+            dcp = self.__column_prefix(DCW, height)
+            scp = self.__column_prefix(SCW, height)
+            ncs = self.__column_suffix(NCW, height)
+            dcs = self.__column_suffix(DCW, height)
+            scs = self.__column_suffix(SCW, height)
         row = [
             colorhash_styled_text(
                 (ncp + file_prefix(m.type) + m.path.name + ns + ncs),
+                m.digest,
+            ),
+            colorhash_styled_text(
+                (scp + naturalsize(m.size) + ss + scs),
                 m.digest,
             ),
             colorhash_styled_text(
