@@ -523,8 +523,16 @@ class CompareWidget(Widget):
             if self.loading or other.loading:
                 return set()
             else:
-                names_1 = [m.path.name for m in self.submerkle.children.values()]
-                names_2 = [m.path.name for m in other.submerkle.children.values()]
+                names_1 = [
+                    m.path.name
+                    for m in self.submerkle.children.values()
+                    if m.digest not in self._get_matches()
+                ]
+                names_2 = [
+                    m.path.name
+                    for m in other.submerkle.children.values()
+                    if m.digest not in other._get_matches()
+                ]
                 return set(names_1) & set(names_2)
         else:
             return set()
