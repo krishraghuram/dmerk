@@ -191,6 +191,7 @@ class CompareWidget(Widget):
         await self._refresh()
 
     async def watch_merkle_subpath(self) -> None:
+        self._get_matches.cache_clear()
         await self._refresh()
 
     async def watch_sort_by(self) -> None:
@@ -272,7 +273,9 @@ class CompareWidget(Widget):
             return "\n" + column.label
 
     async def _refresh_table(self, force: bool = False) -> None:
-        matches = self._get_matches()
+        matches = self._get_matches(
+            CompareWidget._get_other_compare_widget(self.id, self.parent)
+        )
         name_matches = self._get_name_matches()
         compare_table = self.query_one(DataTable)
         # Check if we can do "partial refresh"
@@ -380,7 +383,9 @@ class CompareWidget(Widget):
             # Once we reach unmatched merkles, we no longer want to sync scroll
             other = CompareWidget._get_other_compare_widget(self.id, self.parent)
             row_key = self._get_row_key_from_scroll_y(old_scroll_y)
-            matches = self._get_matches()
+            matches = self._get_matches(
+                CompareWidget._get_other_compare_widget(self.id, self.parent)
+            )
             name_matches = self._get_name_matches()
             if other and row_key:
                 m = self._get_merkle_from_row_key(row_key)
@@ -512,8 +517,8 @@ class CompareWidget(Widget):
         digest_cell = colorhash_styled_text(f"{dcp}{m.digest}{ds}{dcs}", m.digest)
         return [name_cell, size_cell, digest_cell]
 
-    def _get_matches(self) -> dict[str, tuple[int, int]]:
-        other = CompareWidget._get_other_compare_widget(self.id, self.parent)
+    @functools.lru_cache
+    def _get_matches(self, other) -> dict[str, tuple[int, int]]:
         if other:
             if self.loading or other.loading:
                 return dict()
@@ -537,15 +542,18 @@ class CompareWidget(Widget):
             if self.loading or other.loading:
                 return set()
             else:
+                digest_matches = self._get_matches(
+                    CompareWidget._get_other_compare_widget(self.id, self.parent)
+                )
                 names_1 = [
                     m.path.name
                     for m in self.submerkle.children.values()
-                    if m.digest not in self._get_matches()
+                    if m.digest not in digest_matches
                 ]
                 names_2 = [
                     m.path.name
                     for m in other.submerkle.children.values()
-                    if m.digest not in other._get_matches()
+                    if m.digest not in digest_matches
                 ]
                 return set(names_1) & set(names_2)
         else:
