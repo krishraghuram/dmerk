@@ -1,3 +1,4 @@
+import pyinstrument
 import functools
 import logging
 from collections import Counter
@@ -7,6 +8,7 @@ from pathlib import Path, PurePath
 from typing import Callable, cast
 
 from humanize import naturalsize
+import pyinstrument.renderers
 from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
@@ -96,6 +98,9 @@ class CompareWidget(Widget):
         classes: str | None = None,
         disabled: bool = False,
     ):
+        if id.endswith("left"):
+            self.profiler = pyinstrument.Profiler()
+            self.profiler.start()
         super().__init__(name=name, id=id, classes=classes, disabled=disabled)
         self.loading = True
         if path.is_file() and path.suffix == ".dmerk":
@@ -106,6 +111,17 @@ class CompareWidget(Widget):
             self.filter_by = filter_by
 
     async def _reset_to_filepicker(self) -> None:
+        if self.id.endswith("left"):
+            self.profiler.stop()
+            with open("/home/raghuram/Workspace/dmerk/pyinstrument2", "w") as file:
+                # file.write(
+                #     self.profiler.output(
+                #         pyinstrument.renderers.JSONRenderer(timeline=True)
+                #     )
+                # )
+                file.write(self.profiler.output_text(timeline=True))
+            # self.profiler.write_html("/home/raghuram/Workspace/dmerk/pyinstrument.html")
+
         from dmerk.tui.widgets.file_picker import FilePicker
 
         id_ = self.id.split("-")[-1] if self.id else ""
