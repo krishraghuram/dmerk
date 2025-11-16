@@ -107,6 +107,14 @@ class Merkle:
             _children_data=children_data,
         )
 
+    def __hash__(self) -> int:
+        return hash(
+            tuple(
+                getattr(self, slotname, None)
+                for slotname in set(Merkle.SLOTS) - {"path", "children"}
+            )
+        )
+
     def __eq__(self, other: Any) -> bool:
         """
         Return True if self is equal to other, else False

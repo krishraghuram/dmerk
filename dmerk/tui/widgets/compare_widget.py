@@ -272,11 +272,11 @@ class CompareWidget(Widget):
             return "\n" + column.label
 
     async def _refresh_table(self, force: bool = False) -> None:
-        matches = self._get_matches()
-        name_matches = self._get_name_matches()
+        digest_matches = self.digest_matches
+        name_matches = self.name_matches
         compare_table = self.query_one(DataTable)
         # Check if we can do "partial refresh"
-        if not force and len(matches) == 0 and len(name_matches) == 0:
+        if not force and len(digest_matches) == 0 and len(name_matches) == 0:
             # Not a force refresh, and there are also no matches
             # Cells which were previously matches, will have solid background color
             # We need to update so that the solid bg color is removed now, since there are no matches
@@ -304,20 +304,23 @@ class CompareWidget(Widget):
             m for m in child_merkles if fuzzy_match(m.path.name, self.filter_by)
         ]
         matching_child_merkles = sorted(
-            filter(lambda m: m.digest in matches, filtered_child_merkles),
+            filter(lambda m: m.digest in digest_matches, filtered_child_merkles),
             key=self.matches_sort_key,
             reverse=self.sort_reverse,
         )
         unmatched_child_merkles = sorted(
-            filter(lambda m: m.digest not in matches, filtered_child_merkles),
+            filter(lambda m: m.digest not in digest_matches, filtered_child_merkles),
             key=self.unmatched_sort_key,
             reverse=self.sort_reverse,
         )
+        digest_matches = (
+            digest_matches.copy()
+        )  # So that we dont mutate self.digest_matches (which is cached) and cause bugs
         for m in matching_child_merkles:
-            total_height = matches[m.digest][0]
-            count = matches[m.digest][1]
+            total_height = digest_matches[m.digest][0]
+            count = digest_matches[m.digest][1]
             height = int(total_height / count)
-            matches[m.digest] = ((total_height - height), count - 1)
+            digest_matches[m.digest] = ((total_height - height), count - 1)
             row = self._get_compare_table_row(m, match=True, height=height)
             compare_table.add_row(*row, key=str(m.path), height=height)
         for m in unmatched_child_merkles:
@@ -380,11 +383,9 @@ class CompareWidget(Widget):
             # Once we reach unmatched merkles, we no longer want to sync scroll
             other = CompareWidget._get_other_compare_widget(self.id, self.parent)
             row_key = self._get_row_key_from_scroll_y(old_scroll_y)
-            matches = self._get_matches()
-            name_matches = self._get_name_matches()
             if other and row_key:
                 m = self._get_merkle_from_row_key(row_key)
-                if m.digest in matches or m.path.name in name_matches:
+                if m.digest in self.digest_matches or m.path.name in self.name_matches:
                     other.query_one(DataTable).scroll_to(
                         None, new_scroll_y, animate=False
                     )
@@ -422,7 +423,7 @@ class CompareWidget(Widget):
             raise ValueError("self.parent is None")
 
     @staticmethod
-    @functools.lru_cache
+    @functools.cache
     def _get_column_width(total_width: int, column_key: str) -> int:
         MAX_DIGEST_WIDTH = 8
         SIZE_WIDTH = 10
@@ -455,12 +456,12 @@ class CompareWidget(Widget):
             return self.merkle
 
     @staticmethod
-    @functools.lru_cache
+    @functools.cache
     def __column_prefix(column_width: int, height: int) -> str:
         return (" " * (column_width) + "\n") * int((height - 1) / 2)
 
     @staticmethod
-    @functools.lru_cache
+    @functools.cache
     def __column_suffix(column_width: int, height: int) -> str:
         return ("\n" + " " * (column_width)) * (height - 1 - int((height - 1) / 2))
 
@@ -469,7 +470,7 @@ class CompareWidget(Widget):
     ) -> list[Text]:
         """Generate a formatted table row for a Merkle node in the comparison view.
 
-        - Matches: Full cell background (horizontal + vertical padding)
+        - Digest Matches: Full cell background (horizontal + vertical padding)
         - Name matches: Horizontal line background (horizontal padding only)
         - No match: No background padding (just text gets colored)
         """
@@ -512,41 +513,57 @@ class CompareWidget(Widget):
         digest_cell = colorhash_styled_text(f"{dcp}{m.digest}{ds}{dcs}", m.digest)
         return [name_cell, size_cell, digest_cell]
 
-    def _get_matches(self) -> dict[str, tuple[int, int]]:
+    @staticmethod
+    @functools.cache
+    def _get_digest_matches(
+        self_submerkle: Merkle, other_submerkle: Merkle
+    ) -> dict[str, tuple[int, int]]:
+        digests_1 = [m.digest for m in self_submerkle.children.values()]
+        digests_2 = [m.digest for m in other_submerkle.children.values()]
+        intersection = set(digests_1) & set(digests_2)
+        counter_1 = Counter(digests_1)
+        counter_2 = Counter(digests_2)
+        digest_matches = {
+            i: (3 * max(counter_1[i], counter_2[i]), counter_1[i]) for i in intersection
+        }
+        return digest_matches
+
+    @property
+    def digest_matches(self) -> dict[str, tuple[int, int]]:
         other = CompareWidget._get_other_compare_widget(self.id, self.parent)
         if other:
             if self.loading or other.loading:
                 return dict()
             else:
-                digests_1 = [m.digest for m in self.submerkle.children.values()]
-                digests_2 = [m.digest for m in other.submerkle.children.values()]
-                intersection = set(digests_1) & set(digests_2)
-                counter_1 = Counter(digests_1)
-                counter_2 = Counter(digests_2)
-                matches = {
-                    i: (3 * max(counter_1[i], counter_2[i]), counter_1[i])
-                    for i in intersection
-                }
-                return matches
+                return self._get_digest_matches(self.submerkle, other.submerkle)
         else:
             return dict()
 
-    def _get_name_matches(self) -> set[str]:
+    @staticmethod
+    @functools.cache
+    def _get_name_matches(self_submerkle: Merkle, other_submerkle: Merkle) -> set[str]:
+        digest_matches = CompareWidget._get_digest_matches(
+            self_submerkle, other_submerkle
+        )
+        names_1 = [
+            m.path.name
+            for m in self_submerkle.children.values()
+            if m.digest not in digest_matches
+        ]
+        names_2 = [
+            m.path.name
+            for m in other_submerkle.children.values()
+            if m.digest not in digest_matches
+        ]
+        return set(names_1) & set(names_2)
+
+    @property
+    def name_matches(self) -> set[str]:
         other = CompareWidget._get_other_compare_widget(self.id, self.parent)
         if other:
             if self.loading or other.loading:
                 return set()
             else:
-                names_1 = [
-                    m.path.name
-                    for m in self.submerkle.children.values()
-                    if m.digest not in self._get_matches()
-                ]
-                names_2 = [
-                    m.path.name
-                    for m in other.submerkle.children.values()
-                    if m.digest not in other._get_matches()
-                ]
-                return set(names_1) & set(names_2)
+                return self._get_name_matches(self.submerkle, other.submerkle)
         else:
             return set()
