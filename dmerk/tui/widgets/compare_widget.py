@@ -423,7 +423,7 @@ class CompareWidget(Widget):
             raise ValueError("self.parent is None")
 
     @staticmethod
-    @functools.cache
+    @functools.lru_cache(maxsize=128)
     def _get_column_width(total_width: int, column_key: str) -> int:
         MAX_DIGEST_WIDTH = 8
         SIZE_WIDTH = 10
@@ -448,20 +448,27 @@ class CompareWidget(Widget):
         else:
             return 0
 
+    # Note that we CANNOT make this a staticmethod, since we use virtual/dummy parent merkle above (in worker _main)
+    # The virtual/dummy parent merkle has identical hash values regardless of which merkle tree is loaded
+    # And so, if this was a staticmethod, we'd have cache collisions (i.e., we'd incorrectly return the wrong merkle)
+    @functools.lru_cache(maxsize=16)
+    def _submerkle(self, merkle: Merkle, subpath: PurePath | None) -> Merkle:
+        if subpath and subpath != merkle.path:
+            return merkle.traverse(subpath)
+        else:
+            return merkle
+
     @property
     def submerkle(self) -> Merkle:
-        if self.merkle_subpath and self.merkle_subpath != self.merkle.path:
-            return self.merkle.traverse(self.merkle_subpath)
-        else:
-            return self.merkle
+        return self._submerkle(self.merkle, self.merkle_subpath)
 
     @staticmethod
-    @functools.cache
+    @functools.lru_cache(maxsize=128)
     def __column_prefix(column_width: int, height: int) -> str:
         return (" " * (column_width) + "\n") * int((height - 1) / 2)
 
     @staticmethod
-    @functools.cache
+    @functools.lru_cache(maxsize=128)
     def __column_suffix(column_width: int, height: int) -> str:
         return ("\n" + " " * (column_width)) * (height - 1 - int((height - 1) / 2))
 
@@ -514,7 +521,7 @@ class CompareWidget(Widget):
         return [name_cell, size_cell, digest_cell]
 
     @staticmethod
-    @functools.cache
+    @functools.lru_cache(maxsize=16)
     def _get_digest_matches(
         self_submerkle: Merkle, other_submerkle: Merkle
     ) -> dict[str, tuple[int, int]]:
@@ -540,7 +547,7 @@ class CompareWidget(Widget):
             return dict()
 
     @staticmethod
-    @functools.cache
+    @functools.lru_cache(maxsize=16)
     def _get_name_matches(self_submerkle: Merkle, other_submerkle: Merkle) -> set[str]:
         digest_matches = CompareWidget._get_digest_matches(
             self_submerkle, other_submerkle
