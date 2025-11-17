@@ -9,8 +9,12 @@ from typing import Any, Dict
 
 
 class Merkle:
+    # Internal (real) slots
     __slots__ = ("path", "type", "size", "digest", "_children_data", "_children")
+    # Public slots
     SLOTS = ("path", "type", "size", "digest", "children")
+    # Slots that represent data held within, used for equality testing, hash value etc.
+    DATA_SLOTS = set(SLOTS) - {"path", "children"}
 
     class Type(enum.Enum):
         FILE = "file"
@@ -108,11 +112,17 @@ class Merkle:
         )
 
     def __hash__(self) -> int:
+        """
+        Return hash value of merkle
+
+        The hash value of a merkle should just be it's digest.
+        However, since our digest algo can generate same digest for a file and directory provided they have same content,
+        For now, we are including all of Merkle.DATA_SLOTS in hash value, which means hash depends on digest, type and size.
+
+        We can fix this if/when we update the merkle generation logic to include file metadata into digest computation.
+        """
         return hash(
-            tuple(
-                getattr(self, slotname, None)
-                for slotname in set(Merkle.SLOTS) - {"path", "children"}
-            )
+            tuple(getattr(self, slotname, None) for slotname in Merkle.DATA_SLOTS)
         )
 
     def __eq__(self, other: Any) -> bool:
@@ -134,7 +144,7 @@ class Merkle:
             return all(
                 [
                     (getattr(self, slotname, None) == getattr(other, slotname, None))
-                    for slotname in set(Merkle.SLOTS) - {"path", "children"}
+                    for slotname in Merkle.DATA_SLOTS
                 ]
             )
 
