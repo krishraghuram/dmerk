@@ -21,6 +21,7 @@ dependencies = [
   "humanize",
   "platformdirs",
   "argcomplete",
+  "more-itertools",
 ]
 
 [project.optional-dependencies]

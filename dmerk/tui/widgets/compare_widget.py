@@ -7,6 +7,7 @@ from pathlib import Path, PurePath
 from typing import Callable, cast
 
 from humanize import naturalsize
+from more_itertools import partition
 from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
@@ -288,19 +289,18 @@ class CompareWidget(Widget):
                     self.size.width, column_key=column.value.key
                 ),
             )
-        child_merkles = [m for m in self.submerkle.children.values()]
-        filtered_child_merkles = [
+        child_merkles = (m for m in self.submerkle.children.values())
+        filtered_child_merkles = (
             m for m in child_merkles if fuzzy_match(m.path.name, self.filter_by)
-        ]
+        )
+        unmatched, matching = partition(
+            lambda m: m.digest in digest_matches, filtered_child_merkles
+        )
         matching_child_merkles = sorted(
-            filter(lambda m: m.digest in digest_matches, filtered_child_merkles),
-            key=self.matches_sort_key,
-            reverse=self.sort_reverse,
+            matching, key=self.matches_sort_key, reverse=self.sort_reverse
         )
         unmatched_child_merkles = sorted(
-            filter(lambda m: m.digest not in digest_matches, filtered_child_merkles),
-            key=self.unmatched_sort_key,
-            reverse=self.sort_reverse,
+            unmatched, key=self.unmatched_sort_key, reverse=self.sort_reverse
         )
         digest_matches = (
             digest_matches.copy()
@@ -322,10 +322,10 @@ class CompareWidget(Widget):
                 compare_table.add_row(*row, key=str(m.path), height=3)
 
     def _get_merkle_from_row_key(self, row_key: RowKey) -> Merkle:
-        child_merkles = [m for m in self.submerkle.children.values()]
-        filtered_child_merkles = [
+        child_merkles = (m for m in self.submerkle.children.values())
+        filtered_child_merkles = (
             m for m in child_merkles if fuzzy_match(m.path.name, self.filter_by)
-        ]
+        )
         for m in filtered_child_merkles:
             if str(m.path) == row_key:
                 return m
@@ -515,6 +515,7 @@ class CompareWidget(Widget):
     def _get_digest_matches(
         self_submerkle: Merkle, other_submerkle: Merkle
     ) -> dict[str, tuple[int, int]]:
+        # Note: Cant use generators here since we need digest_1 and digest_2 multiple times
         digests_1 = [m.digest for m in self_submerkle.children.values()]
         digests_2 = [m.digest for m in other_submerkle.children.values()]
         intersection = set(digests_1) & set(digests_2)
@@ -542,16 +543,16 @@ class CompareWidget(Widget):
         digest_matches = CompareWidget._get_digest_matches(
             self_submerkle, other_submerkle
         )
-        names_1 = [
+        names_1 = (
             m.path.name
             for m in self_submerkle.children.values()
             if m.digest not in digest_matches
-        ]
-        names_2 = [
+        )
+        names_2 = (
             m.path.name
             for m in other_submerkle.children.values()
             if m.digest not in digest_matches
-        ]
+        )
         return set(names_1) & set(names_2)
 
     @property
