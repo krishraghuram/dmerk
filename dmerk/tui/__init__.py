@@ -2,6 +2,7 @@ import importlib.metadata
 import logging
 from enum import Enum
 from pathlib import Path
+import textwrap
 
 from textual import work
 from textual.app import App, ComposeResult
@@ -23,6 +24,7 @@ import dmerk.generate as generate
 from dmerk.tui.widgets import FavoritesSidebar, FileManager, FilePicker
 from dmerk.tui.widgets.clearable_input import ClearableInput
 from dmerk.tui.widgets.compare_widget import CompareWidget
+from dmerk.utils import colorhash, prefix_symbol_path
 
 
 # Taken from: https://github.com/Textualize/textual/discussions/2072#discussioncomment-5666856
@@ -69,6 +71,23 @@ class DmerkApp(App[None]):
         root_logger.handlers.clear()
         root_logger.addHandler(rich_log_handler)
         root_logger.addHandler(TextualHandler())
+
+        self.set_interval(10, self._log_cache_stats)
+
+    def _log_cache_stats(self):
+        logging.debug(
+            textwrap.dedent(
+                f"""
+            {colorhash.cache_info()=}
+            {prefix_symbol_path.cache_info()=}
+            {CompareWidget._get_digest_matches.cache_info()=}
+            {CompareWidget._get_name_matches.cache_info()=}
+            {CompareWidget._column_prefix.cache_info()=}
+            {CompareWidget._column_suffix.cache_info()=}
+            {CompareWidget._get_column_width.cache_info()=}
+            """
+            )
+        )
 
     def compose(self) -> ComposeResult:
         """Called to add widgets to the app."""

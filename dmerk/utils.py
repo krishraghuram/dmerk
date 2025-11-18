@@ -1,4 +1,5 @@
 import colorsys
+import functools
 from pathlib import Path
 
 import dmerk.generate as generate
@@ -15,6 +16,7 @@ def load_or_generate(path: Path, no_save: bool) -> Merkle:
     return merkle
 
 
+@functools.lru_cache(maxsize=1024)
 def colorhash(hash_hex_string: str) -> str:
     hash_bytearray = bytearray.fromhex(hash_hex_string)
     hash_binary_string = "".join([f"{i:08b}" for i in hash_bytearray])
@@ -28,6 +30,26 @@ def colorhash(hash_hex_string: str) -> str:
         + ",".join([str(int(255 * i)) for i in colorsys.hls_to_rgb(h, l, s)])
         + ")"
     )
+
+
+@functools.lru_cache(maxsize=256)
+def prefix_symbol_path(path: Path) -> str:
+    if path.is_symlink():
+        return "🔗 "
+    elif path.is_dir():
+        return "📁 "
+    elif path.is_file():
+        return "📄 "
+    else:
+        return "⭐ "
+
+
+PREFIX_SYMBOL_MERKLE: dict[Merkle.Type | None, str] = {
+    Merkle.Type.SYMLINK: "🔗 ",
+    Merkle.Type.DIRECTORY: "📁 ",
+    Merkle.Type.FILE: "📄 ",
+    None: "⭐ ",
+}
 
 
 def fuzzy_match(text: str, query: str | None = None) -> bool:

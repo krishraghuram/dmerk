@@ -10,18 +10,7 @@ from textual.widgets import DataTable
 
 import dmerk.constants as constants
 from dmerk.tui.widgets.compare_widget import CompareWidget
-from dmerk.utils import fuzzy_match
-
-
-def file_prefix(path: Path) -> str:
-    if path.is_symlink():
-        return "🔗 "
-    elif path.is_dir():
-        return "📁 "
-    elif path.is_file():
-        return "📄 "
-    else:
-        return "⭐ "
+from dmerk.utils import fuzzy_match, prefix_symbol_path
 
 
 class FilePicker(Widget):
@@ -84,7 +73,7 @@ class FilePicker(Widget):
         files_list = sorted(files_list, key=lambda p: str.casefold(p.name))
         for file in files_list:
             files_table.add_row(
-                *["\n" + file_prefix(file) + file.name],
+                *["\n" + prefix_symbol_path(file) + file.name],
                 key=str(file),
                 height=3,
             )

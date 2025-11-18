@@ -17,18 +17,7 @@ from textual.widget import Widget
 from textual.widgets import DataTable, Input, Label
 
 from dmerk.tui.widgets.clearable_input import ClearableInput
-from dmerk.utils import fuzzy_match
-
-
-def file_prefix(path: Path) -> str:
-    if path.is_symlink():
-        return "🔗 "
-    elif path.is_dir():
-        return "📁 "
-    elif path.is_file():
-        return "📄 "
-    else:
-        return "⭐ "
+from dmerk.utils import fuzzy_match, prefix_symbol_path
 
 
 TIME_FORMATS: dict[str, Callable[[float], str]] = {
@@ -143,7 +132,7 @@ class FileManager(Widget):
         for file in files_list:
             files_table.add_row(
                 *[
-                    "\n" + file_prefix(file) + file.name,
+                    "\n" + prefix_symbol_path(file) + file.name,
                     "\n" + TIME_FORMATS[self.time_format](file.stat().st_ctime),
                 ],
                 key=str(file),

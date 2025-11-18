@@ -23,18 +23,7 @@ from textual.widgets.data_table import RowKey
 from textual.worker import Worker, WorkerState
 
 from dmerk.merkle import Merkle
-from dmerk.utils import colorhash, fuzzy_match
-
-
-def file_prefix(path: Merkle.Type) -> str:
-    if path == Merkle.Type.SYMLINK:
-        return "🔗 "
-    elif path == Merkle.Type.DIRECTORY:
-        return "📁 "
-    elif path == Merkle.Type.FILE:
-        return "📄 "
-    else:
-        return "⭐ "
+from dmerk.utils import colorhash, fuzzy_match, PREFIX_SYMBOL_MERKLE
 
 
 # Bug: https://trello.com/c/iizCU2oj
@@ -464,12 +453,12 @@ class CompareWidget(Widget):
 
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    def __column_prefix(column_width: int, height: int) -> str:
+    def _column_prefix(column_width: int, height: int) -> str:
         return (" " * (column_width) + "\n") * int((height - 1) / 2)
 
     @staticmethod
     @functools.lru_cache(maxsize=128)
-    def __column_suffix(column_width: int, height: int) -> str:
+    def _column_suffix(column_width: int, height: int) -> str:
         return ("\n" + " " * (column_width)) * (height - 1 - int((height - 1) / 2))
 
     def _get_compare_table_row(
@@ -504,15 +493,16 @@ class CompareWidget(Widget):
             # if neither (digest) match nor name match, we dont need any padding anywhere
             ns = ds = ss = ""
             NCW = DCW = SCW = 0
-        ncp = self.__column_prefix(NCW, height)
-        dcp = self.__column_prefix(DCW, height)
-        scp = self.__column_prefix(SCW, height)
-        ncs = self.__column_suffix(NCW, height)
-        dcs = self.__column_suffix(DCW, height)
-        scs = self.__column_suffix(SCW, height)
+        ncp = self._column_prefix(NCW, height)
+        dcp = self._column_prefix(DCW, height)
+        scp = self._column_prefix(SCW, height)
+        ncs = self._column_suffix(NCW, height)
+        dcs = self._column_suffix(DCW, height)
+        scs = self._column_suffix(SCW, height)
         # Build cells and return row
+        prefix_symbol = PREFIX_SYMBOL_MERKLE.get(m.type, PREFIX_SYMBOL_MERKLE.get(None))
         name_cell = colorhash_styled_text(
-            f"{ncp}{file_prefix(m.type)}{m.path.name}{ns}{ncs}", m.digest
+            f"{ncp}{prefix_symbol}{m.path.name}{ns}{ncs}", m.digest
         )
         size_cell = colorhash_styled_text(
             f"{scp}{naturalsize(m.size)}{ss}{scs}", m.digest
