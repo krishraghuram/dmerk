@@ -1,4 +1,5 @@
 import importlib.metadata
+import functools
 import logging
 import textwrap
 from enum import Enum
@@ -7,7 +8,7 @@ from pathlib import Path
 from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
-from textual.events import Ready
+from textual.events import Ready, Key
 from textual.logging import TextualHandler
 from textual.widgets import (
     Button,
@@ -21,6 +22,7 @@ from textual.widgets import (
 
 import dmerk.constants as constants
 import dmerk.generate as generate
+from dmerk.tui.navigation import Direction, NavigationSchema
 from dmerk.tui.widgets import FavoritesSidebar, FileManager, FilePicker
 from dmerk.tui.widgets.clearable_input import ClearableInput
 from dmerk.tui.widgets.compare_widget import CompareWidget
@@ -58,6 +60,10 @@ class DmerkApp(App[None]):
 
     BUTTON_GENERATE = "button-generate"
 
+    @functools.cached_property
+    def navigation_schema(self):
+        return NavigationSchema(self)
+
     def on_ready(self, event: Ready) -> None:
         # Set scroll sensitivity
         self.scroll_sensitivity_y = 1.0
@@ -75,7 +81,7 @@ class DmerkApp(App[None]):
         root_logger.addHandler(rich_log_handler)
         root_logger.addHandler(TextualHandler())
         # Log cache stats
-        self.set_interval(10, self._log_cache_stats)
+        # self.set_interval(10, self._log_cache_stats)
 
     def _log_cache_stats(self) -> None:
         logging.debug(
@@ -159,6 +165,13 @@ class DmerkApp(App[None]):
     ) -> None:
         logging.debug(message)
         self.query_one(FileManager).path_selected(message.path)
+
+    def on_key(self, event: Key) -> None:
+        try:
+            direction = Direction.from_key(event.key)
+        except ValueError:
+            return
+        self.navigation_schema.navigate(self.focused, direction)
 
 
 app = DmerkApp()
