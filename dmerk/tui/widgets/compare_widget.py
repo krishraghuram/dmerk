@@ -24,7 +24,7 @@ from textual.widgets.data_table import RowKey
 from textual.worker import Worker, WorkerState
 
 from dmerk.merkle import Merkle
-from dmerk.utils import colorhash, fuzzy_match, PREFIX_SYMBOL_MERKLE
+from dmerk.utils import PREFIX_SYMBOL_MERKLE, colorhash, fuzzy_match
 
 
 # Bug: https://trello.com/c/iizCU2oj

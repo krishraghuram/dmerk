@@ -1,8 +1,8 @@
 import importlib.metadata
 import logging
+import textwrap
 from enum import Enum
 from pathlib import Path
-import textwrap
 
 from textual import work
 from textual.app import App, ComposeResult
@@ -74,7 +74,7 @@ class DmerkApp(App[None]):
 
         self.set_interval(10, self._log_cache_stats)
 
-    def _log_cache_stats(self):
+    def _log_cache_stats(self) -> None:
         logging.debug(
             textwrap.dedent(
                 f"""

@@ -19,7 +19,6 @@ from textual.widgets import DataTable, Input, Label
 from dmerk.tui.widgets.clearable_input import ClearableInput
 from dmerk.utils import fuzzy_match, prefix_symbol_path
 
-
 TIME_FORMATS: dict[str, Callable[[float], str]] = {
     "HUMAN_FRIENDLY": lambda timestamp: naturaltime(datetime.fromtimestamp(timestamp)),
     "ISO8601": lambda timestamp: datetime.fromtimestamp(timestamp).isoformat(),

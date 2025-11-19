@@ -4,7 +4,7 @@ import pytest
 
 import dmerk.generate
 from dmerk.merkle import Merkle
-from dmerk.utils import colorhash, fuzzy_match, load_or_generate
+from dmerk.utils import colorhash, fuzzy_match, load_or_generate, prefix_symbol_path
 
 
 def test_load_or_generate_load(monkeypatch, tmp_path):
@@ -56,6 +56,44 @@ def test_colorhash(hash_hex_string, expected_return_value):
         assert 0 <= int(val) <= 255
     if expected_return_value is not None:
         assert result == expected_return_value
+
+
+@pytest.mark.parametrize(
+    "expected,path_patches",
+    [
+        (
+            "🔗 ",
+            (("is_symlink", lambda self: True),),
+        ),
+        (
+            "📁 ",
+            (
+                ("is_symlink", lambda self: False),
+                ("is_dir", lambda self: True),
+            ),
+        ),
+        (
+            "📄 ",
+            (
+                ("is_symlink", lambda self: False),
+                ("is_dir", lambda self: False),
+                ("is_file", lambda self: True),
+            ),
+        ),
+        (
+            "⭐ ",
+            (
+                ("is_symlink", lambda self: False),
+                ("is_dir", lambda self: False),
+                ("is_file", lambda self: False),
+            ),
+        ),
+    ],
+)
+def test_prefix_symbol_path(monkeypatch, tmp_path, expected, path_patches):
+    for name, patch in path_patches:
+        monkeypatch.setattr(Path, name, patch)
+    assert prefix_symbol_path(tmp_path) == expected
 
 
 @pytest.mark.parametrize(

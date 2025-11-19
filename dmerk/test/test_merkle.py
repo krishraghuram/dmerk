@@ -65,6 +65,17 @@ def test_merkle_init_non_absolute_purepath_error(kwargs):
 
 
 @pytest.mark.parametrize("kwargs", MERKLE_KWARGS)
+def test_merkle_hash(kwargs):
+    m = Merkle(**kwargs)
+    assert hash(m) != None
+    assert hash(m) == hash(Merkle(**kwargs))
+    assert m == Merkle(**{**kwargs, "path": Path("/home/raghuram/foo")})
+    assert m != Merkle(**{**kwargs, "type": Merkle.Type.FILE})
+    assert m != Merkle(**{**kwargs, "size": 2000})
+    assert m != Merkle(**{**kwargs, "digest": "sha_digest_2"})
+
+
+@pytest.mark.parametrize("kwargs", MERKLE_KWARGS)
 def test_merkle_eq(kwargs):
     m = Merkle(**kwargs)
     assert m == Merkle(**kwargs)
