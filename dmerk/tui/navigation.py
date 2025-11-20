@@ -6,7 +6,7 @@ import functools
 from collections import defaultdict
 
 from textual.widget import Widget
-from textual.widgets import TabbedContent, DataTable, RichLog
+from textual.widgets import TabbedContent, DataTable, RichLog, Button
 from textual.widgets._tabbed_content import ContentTab, ContentTabs
 from textual.app import App
 from textual.events import Key, DescendantFocus, Focus, DescendantBlur, Blur
@@ -95,7 +95,9 @@ class NavigationSchema:
                         else RelativeTarget.FOCUS_PREVIOUS
                     ),
                     Direction.DOWN: lambda w, d: (
-                        "RichLog" if w.last_child else RelativeTarget.FOCUS_NEXT
+                        "TabPane#tab-generate Vertical Horizontal#bottom"
+                        if w.last_child
+                        else RelativeTarget.FOCUS_NEXT
                     ),
                 }
             ),
@@ -125,13 +127,19 @@ class NavigationSchema:
                         ),
                         True,
                     ),
-                    Direction.DOWN: "RichLog",
+                    Direction.DOWN: "TabPane#tab-generate Vertical Horizontal#bottom",
                 }
             ),
             "RichLog": dd(
                 {
                     Direction.UP: "TabPane#tab-generate Vertical Horizontal#top",
                     Direction.RIGHT: f"Button#{cast(DmerkApp, self.app).BUTTON_GENERATE}",
+                }
+            ),
+            f"Button#{cast(DmerkApp, self.app).BUTTON_GENERATE}": dd(
+                {
+                    Direction.UP: "TabPane#tab-generate Vertical Horizontal#top",
+                    Direction.LEFT: "RichLog",
                 }
             ),
         }
@@ -220,7 +228,7 @@ class NavigationSchema:
 
 class NavigationMixin:
     COMBINER = "+"
-    MODIFIER = "alt"
+    MODIFIER = "shift"
     DIRECTIONS = ["up", "down", "left", "right"]
 
     def __init__(self, *args: Any, **kwargs: Any):
@@ -299,6 +307,7 @@ navigation_mixin_classes = [
     RichLog,
     Horizontal,
     Vertical,
+    Button,
 ]
 for cls in navigation_mixin_classes:
     cls.__bases__ = (NavigationMixin,) + cls.__bases__
