@@ -2,6 +2,8 @@ import logging
 from typing import Any, Callable, cast, Optional
 from enum import Enum
 from dataclasses import dataclass
+import functools
+from collections import defaultdict
 
 from textual.widget import Widget
 from textual.widgets import TabbedContent, DataTable
@@ -49,6 +51,11 @@ CallableTarget = Callable[[Widget, Direction], StaticTarget]
 Target = StaticTarget | CallableTarget
 NavSchema = dict[Source, dict[Direction, Target]]
 
+# defaultdict used in NavSchema, that returns (None,True)
+# None, meaning we dont want to focus any widget
+# True, meaning we want to bubble the event
+dd: Callable = functools.partial(defaultdict, lambda: (None, True))
+
 
 class NavigationSchema:
     def __init__(self, app: App):
@@ -57,54 +64,59 @@ class NavigationSchema:
         self.app = app
 
         self._schema: NavSchema = {
-            "TabbedContent": {
-                Direction.UP: (None, True),
-                Direction.DOWN: lambda w, d: (
-                    (
+            "TabbedContent": dd(
+                {
+                    Direction.UP: (None, True),
+                    Direction.DOWN: lambda w, d: (
                         (
-                            "ClearableInput"
-                            if cast(TabbedContent, w).active == Tabs.Compare.value
-                            else "FavoritesSidebar"
-                        )
-                        if isinstance(w.app.focused, ContentTabs)
-                        else None
+                            (
+                                "ClearableInput"
+                                if cast(TabbedContent, w).active == Tabs.Compare.value
+                                else "FavoritesSidebar"
+                            )
+                            if isinstance(w.app.focused, ContentTabs)
+                            else None
+                        ),
+                        True,
                     ),
-                    True,
-                ),
-                Direction.RIGHT: (None, True),
-                Direction.LEFT: (None, True),
-            },
-            "FavoritesSidebar": {
-                # Direction.UP: RelativeTarget.FOCUS_PREVIOUS,
-                # Direction.DOWN: RelativeTarget.FOCUS_NEXT,
-                Direction.RIGHT: "FileManager",
-            },
-            "SidebarButton": {
-                Direction.UP: lambda w, d: (
-                    "ContentTabs" if w.first_child else RelativeTarget.FOCUS_PREVIOUS
-                ),
-                Direction.DOWN: lambda w, d: (
-                    "RichLog" if w.last_child else RelativeTarget.FOCUS_NEXT
-                ),
-                # Direction.RIGHT: (None, True),
-            },
-            "FileManager ClearableInput": {
-                Direction.UP: "ContentTabs",
-                Direction.DOWN: "FileManager DataTable",
-                Direction.LEFT: "FavoritesSidebar",
-            },
-            "FileManager DataTable": {
-                Direction.UP: lambda w, d: (
-                    ("FileManager ClearableInput"),
-                    True,
-                ),
-                Direction.DOWN: (None, True),
-                Direction.LEFT: lambda w, d: (
-                    ("FavoritesSidebar"),
-                    True,
-                ),
-                Direction.RIGHT: (None, True),
-            },
+                }
+            ),
+            "FavoritesSidebar": dd(
+                {
+                    Direction.RIGHT: "FileManager",
+                }
+            ),
+            "SidebarButton": dd(
+                {
+                    Direction.UP: lambda w, d: (
+                        "ContentTabs"
+                        if w.first_child
+                        else RelativeTarget.FOCUS_PREVIOUS
+                    ),
+                    Direction.DOWN: lambda w, d: (
+                        "RichLog" if w.last_child else RelativeTarget.FOCUS_NEXT
+                    ),
+                }
+            ),
+            "FileManager ClearableInput": dd(
+                {
+                    Direction.UP: "ContentTabs",
+                    Direction.DOWN: "FileManager DataTable",
+                    Direction.LEFT: "FavoritesSidebar",
+                }
+            ),
+            "FileManager DataTable": dd(
+                {
+                    Direction.UP: lambda w, d: (
+                        ("FileManager ClearableInput"),
+                        True,
+                    ),
+                    Direction.LEFT: lambda w, d: (
+                        ("FavoritesSidebar"),
+                        True,
+                    ),
+                }
+            ),
         }
 
         # # Tabs
@@ -167,7 +179,7 @@ class NavigationSchema:
                 nav_sources = [nav_source]
             for nav_source in nav_sources:
                 if nav_source == widget:
-                    nav_target = nav_targets.get(direction)
+                    nav_target = nav_targets[direction]
                     bubble = False
                     if callable(nav_target):
                         nav_target = nav_target(nav_source, direction)
