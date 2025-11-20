@@ -6,10 +6,12 @@ from textual.containers import Vertical
 from textual.message import Message
 from textual.widget import Widget
 
+from dmerk.tui.navigation import NavigationMixin, FocusPassthroughMixin
+
 from .sidebar_button import SidebarButton
 
 
-class FavoritesSidebar(Widget):
+class FavoritesSidebar(NavigationMixin, FocusPassthroughMixin, Widget):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
@@ -17,7 +19,6 @@ class FavoritesSidebar(Widget):
         yield Vertical(
             SidebarButton(Path("/"), "Computer"),
             SidebarButton(Path.home(), "Home"),
-            SidebarButton(None, ""),
             SidebarButton(None, ""),
             SidebarButton(None, ""),
             SidebarButton(None, ""),

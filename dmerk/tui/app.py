@@ -1,4 +1,5 @@
 import importlib.metadata
+import functools
 import logging
 import textwrap
 from enum import Enum
@@ -21,6 +22,7 @@ from textual.widgets import (
 
 import dmerk.constants as constants
 import dmerk.generate as generate
+from dmerk.tui.navigation import NavigationSchema
 from dmerk.tui.widgets import FavoritesSidebar, FileManager, FilePicker
 from dmerk.tui.widgets.clearable_input import ClearableInput
 from dmerk.tui.widgets.compare_widget import CompareWidget
@@ -37,7 +39,7 @@ class TextHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         msg = self.format(record)
-        self.text.write(msg)
+        self.text.write(msg, scroll_end=self.text.is_vertical_scroll_end)
 
 
 class Tabs(Enum):
@@ -58,6 +60,10 @@ class DmerkApp(App[None]):
 
     BUTTON_GENERATE = "button-generate"
 
+    @functools.cached_property
+    def navigation_schema(self):
+        return NavigationSchema(self)
+
     def on_ready(self, event: Ready) -> None:
         # Set scroll sensitivity
         self.scroll_sensitivity_y = 1.0
@@ -75,10 +81,10 @@ class DmerkApp(App[None]):
         root_logger.addHandler(rich_log_handler)
         root_logger.addHandler(TextualHandler())
         # Log cache stats
-        self.set_interval(10, self._log_cache_stats)
+        self.set_interval(2, self._log_cache_stats)
 
     def _log_cache_stats(self) -> None:
-        logging.debug(
+        logging.info(
             textwrap.dedent(
                 f"""
             {colorhash.cache_info()=}
@@ -102,7 +108,7 @@ class DmerkApp(App[None]):
                         yield FavoritesSidebar()
                         yield FileManager()
                     with Horizontal(id="bottom"):
-                        yield RichLog()
+                        yield RichLog(auto_scroll=False)
                         yield Button(
                             str.upper(Tabs.Generate.name),
                             variant="primary",
