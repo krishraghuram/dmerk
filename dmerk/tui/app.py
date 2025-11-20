@@ -1,5 +1,5 @@
-import importlib.metadata
 import functools
+import importlib.metadata
 import logging
 import textwrap
 from enum import Enum

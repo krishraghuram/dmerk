@@ -6,7 +6,7 @@ from textual.containers import Vertical
 from textual.message import Message
 from textual.widget import Widget
 
-from dmerk.tui.navigation import NavigationMixin, FocusPassthroughMixin
+from dmerk.tui.navigation import FocusPassthroughMixin, NavigationMixin
 
 from .sidebar_button import SidebarButton
 

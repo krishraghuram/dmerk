@@ -16,9 +16,9 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import DataTable, Input, Label
 
+from dmerk.tui.navigation import FocusPassthroughMixin, NavigationMixin
 from dmerk.tui.widgets.clearable_input import ClearableInput
 from dmerk.utils import fuzzy_match, prefix_symbol_path
-from dmerk.tui.navigation import NavigationMixin, FocusPassthroughMixin
 
 TIME_FORMATS: dict[str, Callable[[float], str]] = {
     "HUMAN_FRIENDLY": lambda timestamp: naturaltime(datetime.fromtimestamp(timestamp)),
