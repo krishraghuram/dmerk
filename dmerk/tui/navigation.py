@@ -17,7 +17,7 @@ class Direction(Enum):
     RIGHT = "Right"
 
     @classmethod
-    def from_key(cls, key: str) -> "Direction":
+    def from_key(cls, key: str | None) -> "Direction":
         if key == "up":
             return cls.UP
         elif key == "down":
@@ -86,6 +86,7 @@ class NavigationSchema:
                 Direction.DOWN: lambda w, d: (
                     "RichLog" if w.last_child else RelativeTarget.FOCUS_NEXT
                 ),
+                # Direction.RIGHT: (None, True),
             },
             "FileManager ClearableInput": {
                 Direction.UP: "ContentTabs",
@@ -94,20 +95,12 @@ class NavigationSchema:
             },
             "FileManager DataTable": {
                 Direction.UP: lambda w, d: (
-                    (
-                        "FileManager ClearableInput"
-                        if cast(DataTable, w).cursor_row == 0
-                        else None
-                    ),
+                    ("FileManager ClearableInput"),
                     True,
                 ),
                 Direction.DOWN: (None, True),
                 Direction.LEFT: lambda w, d: (
-                    (
-                        "FavoritesSidebar"
-                        if cast(DataTable, w).cursor_column == 0
-                        else None
-                    ),
+                    ("FavoritesSidebar"),
                     True,
                 ),
                 Direction.RIGHT: (None, True),
@@ -197,16 +190,26 @@ class NavigationSchema:
 
 
 class NavigationMixin:
+    COMBINER = "+"
+    MODIFIER = "alt"
+
     def __init__(self, *args: Any, **kwargs: Any):
         assert isinstance(self, Widget)
         super().__init__(*args, **kwargs)
+
+    def _get_direction(self, event_key: str) -> str | None:
+        keys = event_key.split(self.COMBINER)
+        if len(keys) == 2 and self.MODIFIER in keys:
+            return list(set(keys) - {self.MODIFIER})[0]
+        return None
 
     def on_key(self, event: Key) -> None:
         assert isinstance(self, Widget)
         from dmerk.tui.app import DmerkApp
 
         try:
-            direction = Direction.from_key(event.key)
+            direction_str = self._get_direction(event.key)
+            direction = Direction.from_key(direction_str)
         except ValueError:
             return
         if not cast(DmerkApp, self.app).navigation_schema.navigate(self, direction):
