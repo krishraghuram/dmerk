@@ -6,10 +6,11 @@ import functools
 from collections import defaultdict
 
 from textual.widget import Widget
-from textual.widgets import TabbedContent, DataTable
+from textual.widgets import TabbedContent, DataTable, RichLog
 from textual.widgets._tabbed_content import ContentTab, ContentTabs
 from textual.app import App
 from textual.events import Key, DescendantFocus, Focus, DescendantBlur, Blur
+from textual.containers import Horizontal, Vertical
 
 
 class Direction(Enum):
@@ -59,7 +60,7 @@ dd: Callable = functools.partial(defaultdict, lambda: (None, True))
 
 class NavigationSchema:
     def __init__(self, app: App):
-        from dmerk.tui.app import Tabs
+        from dmerk.tui.app import Tabs, DmerkApp
 
         self.app = app
 
@@ -107,14 +108,30 @@ class NavigationSchema:
             ),
             "FileManager DataTable": dd(
                 {
+                    # TODO: Unlike <dir>, alt+<dir> should work even when not on row=0 or column=0
                     Direction.UP: lambda w, d: (
-                        ("FileManager ClearableInput"),
+                        (
+                            "FileManager ClearableInput"
+                            if cast(DataTable, w).cursor_row == 0
+                            else None
+                        ),
                         True,
                     ),
                     Direction.LEFT: lambda w, d: (
-                        ("FavoritesSidebar"),
+                        (
+                            "FavoritesSidebar"
+                            if cast(DataTable, w).cursor_column == 0
+                            else None
+                        ),
                         True,
                     ),
+                    Direction.DOWN: "RichLog",
+                }
+            ),
+            "RichLog": dd(
+                {
+                    Direction.UP: "TabPane#tab-generate Vertical Horizontal#top",
+                    Direction.RIGHT: f"Button#{cast(DmerkApp, self.app).BUTTON_GENERATE}",
                 }
             ),
         }
@@ -204,6 +221,7 @@ class NavigationSchema:
 class NavigationMixin:
     COMBINER = "+"
     MODIFIER = "alt"
+    DIRECTIONS = ["up", "down", "left", "right"]
 
     def __init__(self, *args: Any, **kwargs: Any):
         assert isinstance(self, Widget)
@@ -213,6 +231,8 @@ class NavigationMixin:
         keys = event_key.split(self.COMBINER)
         if len(keys) == 2 and self.MODIFIER in keys:
             return list(set(keys) - {self.MODIFIER})[0]
+        # elif len(keys) == 1 and keys[0] in self.DIRECTIONS:
+        #     return keys[0]
         return None
 
     def on_key(self, event: Key) -> None:
@@ -269,13 +289,23 @@ class FocusPassthroughMixin:
         self._previously_focused = self.app.focused
 
 
-# Patch mixins into textual widgets
+# Patch textual widgets
+set_can_focus_classes = [Horizontal, Vertical]
+for cls in set_can_focus_classes:
+    cls.can_focus = True
 navigation_mixin_classes = [
     TabbedContent,
     DataTable,
+    RichLog,
+    Horizontal,
+    Vertical,
 ]
 for cls in navigation_mixin_classes:
-    cls.__bases__ = cls.__bases__ + (NavigationMixin,)
-focus_passthrough_mixin_classes = [TabbedContent]
+    cls.__bases__ = (NavigationMixin,) + cls.__bases__
+focus_passthrough_mixin_classes = [
+    TabbedContent,
+    Horizontal,
+    Vertical,
+]
 for cls in focus_passthrough_mixin_classes:
-    cls.__bases__ = cls.__bases__ + (FocusPassthroughMixin,)
+    cls.__bases__ = (FocusPassthroughMixin,) + cls.__bases__
