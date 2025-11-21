@@ -127,12 +127,24 @@ class NavigationSchema:
                         ),
                         True,
                     ),
-                    Direction.DOWN: "TabPane#tab-generate Vertical Horizontal#bottom",
+                    # Direction.DOWN: "TabPane#tab-generate Vertical Horizontal#bottom",
+                    Direction.DOWN: lambda w, d: (
+                        (
+                            ("TabPane#tab-generate Vertical Horizontal#bottom", False)
+                            if cast(DataTable, w).cursor_row
+                            == cast(DataTable, w).row_count - 1
+                            else (None, True)
+                        )
+                    ),
                 }
             ),
             "RichLog": dd(
                 {
-                    Direction.UP: "TabPane#tab-generate Vertical Horizontal#top",
+                    Direction.UP: lambda w, d: (
+                        ("TabPane#tab-generate Vertical Horizontal#top", False)
+                        if cast(RichLog, w).scroll_y == 0
+                        else (None, True)
+                    ),
                     Direction.RIGHT: f"Button#{cast(DmerkApp, self.app).BUTTON_GENERATE}",
                 }
             ),
@@ -237,10 +249,10 @@ class NavigationMixin:
 
     def _get_direction(self, event_key: str) -> str | None:
         keys = event_key.split(self.COMBINER)
-        if len(keys) == 2 and self.MODIFIER in keys:
-            return list(set(keys) - {self.MODIFIER})[0]
-        # elif len(keys) == 1 and keys[0] in self.DIRECTIONS:
-        #     return keys[0]
+        if len(keys) == 1 and keys[0] in self.DIRECTIONS:
+            return keys[0]
+        # elif len(keys) == 2 and self.MODIFIER in keys:
+        #     return list(set(keys) - {self.MODIFIER})[0]
         return None
 
     def on_key(self, event: Key) -> None:
@@ -274,7 +286,7 @@ class FocusPassthroughMixin:
         self._previously_focused = self.app.focused
 
     def descendant_had_focus(self) -> bool:
-        "Return true if previously focused widget was a child"
+        "Return true if previously focused widget was a child of self"
         return bool(
             self._previously_focused
             and self in self._previously_focused.ancestors_with_self
