@@ -6,7 +6,6 @@ import functools
 from collections import defaultdict
 
 from textual.css.query import NoMatches
-from textual.dom import DOMNode
 from textual.widget import Widget
 from textual.widgets import TabbedContent, DataTable, RichLog, Button
 from textual.widgets._tabbed_content import ContentTab, ContentTabs
@@ -229,59 +228,35 @@ class FocusDirection(Enum):
 
 class FocusPassthroughMixin:
     def __init__(self, *args: Any, **kwargs: Any):
-        assert isinstance(self, DOMNode)
+        assert isinstance(self, Widget)
         super().__init__(*args, **kwargs)
         self._child_to_passthrough_focus: Widget | None = None
         self._previously_focused: Widget | None = None
         self.can_focus: bool = True
 
-    @property
-    def previously_focused(self):
-        assert isinstance(self, DOMNode)
-        if self._previously_focused is not None:
-            # print(f"In previously_focused: {self},{self._previously_focused}")
-            return self._previously_focused
-        else:
-            for widget in self.ancestors:
-                if isinstance(widget, FocusPassthroughMixin):
-                    if widget._previously_focused is not None:
-                        # print(
-                        #     f"In previously_focused: {widget},{widget._previously_focused}"
-                        # )
-                        return widget._previously_focused
-                    elif widget == self.app:
-                        # print(
-                        #     f"In previously_focused: {widget},{widget._previously_focused}"
-                        # )
-                        return widget._previously_focused
-
     def on_descendant_focus(self, event: DescendantFocus) -> None:
-        assert isinstance(self, DOMNode)
+        assert isinstance(self, Widget)
         self._child_to_passthrough_focus = event.widget
         self._previously_focused = self.app.focused
 
     def on_descendant_blur(self, event: DescendantBlur) -> None:
-        assert isinstance(self, DOMNode)
-        self._previously_focused = self.app.focused
-
-    def on_blur(self, event: Blur) -> None:
-        assert isinstance(self, DOMNode)
+        assert isinstance(self, Widget)
         self._previously_focused = self.app.focused
 
     def descendant_had_focus(self) -> bool:
         "Return true if previously focused widget was a child of self"
         return bool(
-            self.previously_focused
-            and self in self.previously_focused.ancestors_with_self
+            self._previously_focused
+            and self in self._previously_focused.ancestors_with_self
         )
 
     def _on_content_tabs_descendant_focus(self) -> bool:
-        assert isinstance(self, DOMNode)
+        assert isinstance(self, Widget)
         try:
             content_tabs = self.app.query_one(ContentTabs)
             if (
-                self.previously_focused
-                and content_tabs not in self.previously_focused.ancestors_with_self
+                self._previously_focused
+                and content_tabs not in self._previously_focused.ancestors_with_self
                 and content_tabs in self.ancestors_with_self
             ):
                 return True
@@ -292,12 +267,12 @@ class FocusPassthroughMixin:
     def focus_direction(self) -> FocusDirection:
         assert isinstance(self, Widget)
         DEFAULT = FocusDirection.NEXT
-        if self.previously_focused is None:
+        if self._previously_focused is None:
             return DEFAULT
 
         focus_chain = self.screen.focus_chain
         try:
-            prev_idx = focus_chain.index(self.previously_focused)
+            prev_idx = focus_chain.index(self._previously_focused)
             curr_idx = focus_chain.index(self)
             if prev_idx < curr_idx:
                 focus_direction = FocusDirection.NEXT
@@ -313,13 +288,13 @@ class FocusPassthroughMixin:
             return DEFAULT
 
     def on_focus(self, event: Focus) -> None:
-        assert isinstance(self, DOMNode)
+        assert isinstance(self, Widget)
         print(f"{self.ancestors_with_self=}")
-        # print(f"{cast(Widget, self.parent).children=}")
-        # print(f"{self.children=}")
+        print(f"{cast(Widget, self.parent).children=}")
+        print(f"{self.children=}")
         print(f"{self.descendant_had_focus()=}")
         print(f"{self._child_to_passthrough_focus=}")
-        print(f"{self.previously_focused=}")
+        print(f"{self._previously_focused=}")
         print(f"{self._on_content_tabs_descendant_focus()=}")
         # If focus came from one of our descendants, don't trap it
         if self.descendant_had_focus():
@@ -337,10 +312,11 @@ class FocusPassthroughMixin:
             except NoMatches as e:
                 pass
             # Just pass focus to next widget in the focus chain
-            # BUG:
-            # Just pass focus to prev/next widget in the focus chain
-            # Depending on whether user is moving focus forward or backward
             self.app.screen.focus_next()
+
+    def on_blur(self, event: Blur) -> None:
+        assert isinstance(self, Widget)
+        self._previously_focused = self.app.focused
 
 
 # Patch textual widgets
