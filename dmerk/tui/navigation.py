@@ -167,25 +167,14 @@ class NavigationSchema:
                     Direction.DOWN: "Horizontal#horizontal",
                 }
             ),
-            "Horizontal#horizontal": dd(
+            "Horizontal#horizontal > #left > FilePicker": dd(
                 {
                     Direction.UP: lambda w, d: (
-                        (RelativeTarget.FOCUS_PREVIOUS, False)
+                        ("ClearableInput", False)
                         if w.query_one(DataTable).cursor_row == 0
-                        or len(w.query(f"#{CompareWidget.BUTTON_RESET_COMPARE}")) > 0
                         else (None, True)
                     ),
-                    Direction.DOWN: lambda w, d: (
-                        (RelativeTarget.FOCUS_NEXT, False)
-                        if w.query_one(DataTable).cursor_row
-                        == len(w.query_one(DataTable).rows) - 1
-                        else (None, True)
-                    ),
-                }
-            ),
-            "Horizontal#horizontal > #left": dd(
-                {
-                    # TODO: Dont just move focus to widget on right, also set cursor to same row
+                    # TODO: Dont just move focus horizontally, also set cursor to same row horizontally
                     Direction.RIGHT: lambda w, d: (
                         ("Horizontal#horizontal > #right", False)
                         if w.query_one(DataTable).cursor_column
@@ -194,16 +183,58 @@ class NavigationSchema:
                     ),
                 }
             ),
-            "Horizontal#horizontal > #right": dd(
+            "Horizontal#horizontal > #right > FilePicker": dd(
                 {
-                    # TODO: Dont just move focus to widget on left, also set cursor to same row
+                    Direction.UP: lambda w, d: (
+                        ("ClearableInput", False)
+                        if w.query_one(DataTable).cursor_row == 0
+                        else (None, True)
+                    ),
+                    # TODO: Dont just move focus horizontally, also set cursor to same row horizontally
                     Direction.LEFT: lambda w, d: (
                         ("Horizontal#horizontal > #left", False)
                         if w.query_one(DataTable).cursor_column == 0
                         else (None, True)
-                    )
+                    ),
                 }
             ),
+            # "Horizontal#horizontal": dd(
+            #     {
+            #         Direction.UP: lambda w, d: (
+            #             (RelativeTarget.FOCUS_PREVIOUS, False)
+            #             if w.query_one(DataTable).cursor_row == 0
+            #             or len(w.query(f"#{CompareWidget.BUTTON_RESET_COMPARE}")) > 0
+            #             else (None, True)
+            #         ),
+            #         Direction.DOWN: lambda w, d: (
+            #             (RelativeTarget.FOCUS_NEXT, False)
+            #             if w.query_one(DataTable).cursor_row
+            #             == len(w.query_one(DataTable).rows) - 1
+            #             else (None, True)
+            #         ),
+            #     }
+            # ),
+            # "Horizontal#horizontal > #left": dd(
+            #     {
+            #         # TODO: Dont just move focus to widget on right, also set cursor to same row
+            #         Direction.RIGHT: lambda w, d: (
+            #             ("Horizontal#horizontal > #right", False)
+            #             if w.query_one(DataTable).cursor_column
+            #             == len(w.query_one(DataTable).columns) - 1
+            #             else (None, True)
+            #         ),
+            #     }
+            # ),
+            # "Horizontal#horizontal > #right": dd(
+            #     {
+            #         # TODO: Dont just move focus to widget on left, also set cursor to same row
+            #         Direction.LEFT: lambda w, d: (
+            #             ("Horizontal#horizontal > #left", False)
+            #             if w.query_one(DataTable).cursor_column == 0
+            #             else (None, True)
+            #         )
+            #     }
+            # ),
         }
 
     def navigate(self, widget: Widget, direction: Direction) -> Bubble:
