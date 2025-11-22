@@ -57,12 +57,15 @@ NavSchema = dict[Source, dict[Direction, Target]]
 # defaultdict used in NavSchema, that returns (None,True)
 # None, meaning we dont want to focus any widget
 # True, meaning we want to bubble the event
-dd: Callable = functools.partial(defaultdict, lambda: (None, True))
+dd: Callable[[dict[Direction, Target]], dict[Direction, Target]] = functools.partial(
+    defaultdict, lambda: (None, True)
+)
 
 
 class NavigationSchema:
     def __init__(self, app: App):
         from dmerk.tui.app import Tabs, DmerkApp
+        from dmerk.tui.widgets import CompareWidget
 
         self.app = app
 
@@ -135,7 +138,7 @@ class NavigationSchema:
                         (
                             ("TabPane#tab-generate Vertical Horizontal#bottom", False)
                             if cast(DataTable, w).cursor_row
-                            == cast(DataTable, w).row_count - 1
+                            == len(cast(DataTable, w).rows) - 1
                             else (None, True)
                         )
                     ),
@@ -159,16 +162,35 @@ class NavigationSchema:
             ),
             ### Tab Compare ###
             "ClearableInput": dd({Direction.DOWN: "Horizontal#horizontal"}),
-            "Horizontal#horizontal  #left": dd(
+            "Horizontal#horizontal > #left": dd(
                 {
-                    Direction.UP: "ClearableInput",
-                    Direction.RIGHT: "Horizontal#horizontal  #right",
+                    # TODO: Dont just move focus to widget on right, also set cursor to same row
+                    Direction.RIGHT: lambda w, d: (
+                        ("Horizontal#horizontal > #right", False)
+                        if w.query_one(DataTable).cursor_column
+                        == len(w.query_one(DataTable).columns) - 1
+                        else (None, True)
+                    ),
+                    Direction.UP: lambda w, d: (
+                        ("ClearableInput", False)
+                        if w.query_one(DataTable).cursor_row == 0
+                        else (None, True)
+                    ),
                 }
             ),
-            "Horizontal#horizontal  #right": dd(
+            "Horizontal#horizontal > #right": dd(
                 {
-                    Direction.UP: "ClearableInput",
-                    Direction.LEFT: "Horizontal#horizontal  #left",
+                    # TODO: Dont just move focus to widget on left, also set cursor to same row
+                    Direction.LEFT: lambda w, d: (
+                        ("Horizontal#horizontal > #left", False)
+                        if w.query_one(DataTable).cursor_column == 0
+                        else (None, True)
+                    ),
+                    Direction.UP: lambda w, d: (
+                        ("ClearableInput", False)
+                        if w.query_one(DataTable).cursor_row == 0
+                        else (None, True)
+                    ),
                 }
             ),
         }
