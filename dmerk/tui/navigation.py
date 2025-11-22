@@ -162,6 +162,22 @@ class NavigationSchema:
             ),
             ### Tab Compare ###
             "ClearableInput": dd({Direction.DOWN: "Horizontal#horizontal"}),
+            "Horizontal#horizontal": dd(
+                {
+                    Direction.UP: lambda w, d: (
+                        (RelativeTarget.FOCUS_PREVIOUS, False)
+                        if w.query_one(DataTable).cursor_row == 0
+                        or len(w.query(f"#{CompareWidget.BUTTON_RESET_COMPARE}")) > 0
+                        else (None, True)
+                    ),
+                    Direction.DOWN: lambda w, d: (
+                        (RelativeTarget.FOCUS_NEXT, False)
+                        if w.query_one(DataTable).cursor_row
+                        == len(w.query_one(DataTable).rows) - 1
+                        else (None, True)
+                    ),
+                }
+            ),
             "Horizontal#horizontal > #left": dd(
                 {
                     # TODO: Dont just move focus to widget on right, also set cursor to same row
@@ -169,17 +185,6 @@ class NavigationSchema:
                         ("Horizontal#horizontal > #right", False)
                         if w.query_one(DataTable).cursor_column
                         == len(w.query_one(DataTable).columns) - 1
-                        else (None, True)
-                    ),
-                    Direction.UP: lambda w, d: (
-                        (RelativeTarget.FOCUS_PREVIOUS, False)
-                        if w.query_one(DataTable).cursor_row == 0
-                        else (None, True)
-                    ),
-                    Direction.DOWN: lambda w, d: (
-                        (RelativeTarget.FOCUS_NEXT, False)
-                        if w.query_one(DataTable).cursor_row
-                        == len(w.query_one(DataTable).rows) - 1
                         else (None, True)
                     ),
                 }
@@ -191,18 +196,7 @@ class NavigationSchema:
                         ("Horizontal#horizontal > #left", False)
                         if w.query_one(DataTable).cursor_column == 0
                         else (None, True)
-                    ),
-                    Direction.UP: lambda w, d: (
-                        (RelativeTarget.FOCUS_PREVIOUS, False)
-                        if w.query_one(DataTable).cursor_row == 0
-                        else (None, True)
-                    ),
-                    Direction.DOWN: lambda w, d: (
-                        (RelativeTarget.FOCUS_NEXT, False)
-                        if w.query_one(DataTable).cursor_row
-                        == len(w.query_one(DataTable).rows) - 1
-                        else (None, True)
-                    ),
+                    )
                 }
             ),
         }
