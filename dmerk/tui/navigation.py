@@ -306,19 +306,8 @@ class FocusPassthroughMixin:
 
     def on_focus(self, event: Focus) -> None:
         assert isinstance(self, DOMNode)
-        #############
-        print(f"{self.ancestors_with_self=}")
-        # print(f"{cast(Widget, self.parent).children=}")
-        # print(f"{self.children=}")
-        print(f"{self._descendant_had_focus()=}")
-        print(f"{self._focus_direction()=}")
-        print(f"{self._child_to_passthrough_focus=}")
-        print(f"{self.screen.focus_chain=}")
-        print(f"{self.screen.focus_chain.index(self)=}")
-        #############
         # Special Cases
         if isinstance(self, TabbedContent):
-            print("RESETING...")
             for node in self.app.walk_children():
                 if isinstance(node, FocusPassthroughMixin):
                     node._child_to_passthrough_focus = None
