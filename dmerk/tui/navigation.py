@@ -203,6 +203,9 @@ class NavigationMixin:
         keys = event_key.split(self.COMBINER)
         if len(keys) == 1 and keys[0] in self.DIRECTIONS:
             return keys[0]
+        # TODO: Enable "shift+<direction>"
+        # This will be useful for widgets which are scrollable, that use directional keys for scrolling
+        # For these widgets, "shift+<direction>" can be used to escape the scrolling, and force switch the focus
         # elif len(keys) == 2 and self.MODIFIER in keys:
         #     return list(set(keys) - {self.MODIFIER})[0]
         return None
