@@ -227,15 +227,6 @@ class FocusDirection(Enum):
     PREVIOUS = "previous"
 
 
-class FocusDirection(Enum):
-    """
-    Indicate the direction in which user is moving focus.
-    """
-
-    NEXT = "next"
-    PREVIOUS = "previous"
-
-
 class FocusPassthroughMixin:
     def __init__(self, *args: Any, **kwargs: Any):
         assert isinstance(self, DOMNode)
@@ -338,7 +329,7 @@ class FocusPassthroughMixin:
 set_can_focus_classes = [Horizontal, Vertical]
 for cls in set_can_focus_classes:
     cls.can_focus = True
-navigation_mixin_classes = [
+navigation_mixin_classes: list[type[Widget]] = [
     TabbedContent,
     DataTable,
     RichLog,
@@ -348,7 +339,7 @@ navigation_mixin_classes = [
 ]
 for cls in navigation_mixin_classes:
     cls.__bases__ = (NavigationMixin,) + cls.__bases__
-focus_passthrough_mixin_classes = [
+focus_passthrough_mixin_classes: list[type[Widget]] = [
     TabbedContent,
     Horizontal,
     Vertical,
