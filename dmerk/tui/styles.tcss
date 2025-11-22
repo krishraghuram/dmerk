@@ -89,6 +89,9 @@ Screen #tab-compare {
                 Label:hover {
                     text-style: underline;
                 }
+                Label:focus {
+                    text-style: underline;
+                }
             }
             DataTable {
                 margin: 0 0 1 0;
