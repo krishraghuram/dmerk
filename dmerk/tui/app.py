@@ -7,7 +7,7 @@ from pathlib import Path
 
 from textual import work
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal, Vertical, Container
 from textual.events import Ready
 from textual.logging import TextualHandler
 from textual.widgets import (
@@ -118,8 +118,8 @@ class DmerkApp(FocusPassthroughMixin, App[None]):
                 with Vertical():
                     yield ClearableInput(placeholder="Filter by...")
                     with Horizontal(id="horizontal"):
-                        yield FilePicker(id="filepicker-left")
-                        yield FilePicker(id="filepicker-right")
+                        yield Container(FilePicker(), id="left")
+                        yield Container(FilePicker(), id="right")
         yield Footer()
 
     @work(thread=True)

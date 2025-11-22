@@ -98,10 +98,8 @@ class CompareWidget(Widget):
     async def _reset_to_filepicker(self) -> None:
         from dmerk.tui.widgets.file_picker import FilePicker
 
-        id_ = self.id.split("-")[-1] if self.id else ""
-        id_ = "-".join(["filepicker", id_])
         cast(Widget, self.parent).mount(
-            FilePicker(id=id_, filter_by=self.filter_by), after=self
+            FilePicker(filter_by=self.filter_by), after=self
         )
         await self.remove()
 
@@ -231,7 +229,7 @@ class CompareWidget(Widget):
             self.merkle_subpath = PurePath("".join(merkle_subpath_parts))
 
     def _sync_sort_fields(self) -> None:
-        other = CompareWidget._get_other_compare_widget(self.id, self.parent)
+        other = CompareWidget._get_other_compare_widget(self)
         if other:
             other.sort_by = self.sort_by
             other.sort_reverse = self.sort_reverse
@@ -240,7 +238,7 @@ class CompareWidget(Widget):
         if not self.loading:
             await self._refresh_label()
             await self._refresh_table(force=True)
-            other = CompareWidget._get_other_compare_widget(self.id, self.parent)
+            other = CompareWidget._get_other_compare_widget(self)
             if other:
                 if not other.loading:
                     await other._refresh_label()
@@ -370,7 +368,7 @@ class CompareWidget(Widget):
             )
             # We only want to sync scroll when we are scrolling across matches
             # Once we reach unmatched merkles, we no longer want to sync scroll
-            other = CompareWidget._get_other_compare_widget(self.id, self.parent)
+            other = CompareWidget._get_other_compare_widget(self)
             row_key = self._get_row_key_from_scroll_y(old_scroll_y)
             if other and row_key:
                 m = self._get_merkle_from_row_key(row_key)
@@ -392,24 +390,27 @@ class CompareWidget(Widget):
 
         self.watch(dt, "hover_coordinate", watch_hover_coordinate)
 
-    @staticmethod
-    def _get_other_compare_widget(
-        self_id: str | None, parent_widget: DOMNode | None
-    ) -> "CompareWidget|None":
-        if self_id == "compare-left":
-            other_id = "compare-right"
-        elif self_id == "compare-right":
-            other_id = "compare-left"
+    def _get_other_compare_widget(self) -> "CompareWidget|None":
+        parent = self.parent
+        if parent is not None:
+            if parent.id == "left":
+                other_parent_id = "right"
+            elif parent.id == "right":
+                other_parent_id = "left"
+            else:
+                raise ValueError(f"Unexpected parent id {parent.id}")
         else:
-            raise ValueError(f"Unexpected id {self_id}")
-        if parent_widget:
+            raise ValueError("self.parent is None!!!")
+        grandparent = parent.parent
+        if grandparent is not None:
             try:
-                return parent_widget.query_one(f"#{other_id}", CompareWidget)
+                other_parent = grandparent.query_one(f"#{other_parent_id}")
+                return other_parent.query_one(CompareWidget)
             except NoMatches:
-                logging.debug(f"No Matches for {other_id}")
+                logging.debug(f"No Matches for {other_parent_id}")
                 return None
         else:
-            raise ValueError("self.parent is None")
+            raise ValueError("parent.parent is None!!!")
 
     @staticmethod
     @functools.lru_cache(maxsize=128)
@@ -528,7 +529,7 @@ class CompareWidget(Widget):
 
     @property
     def digest_matches(self) -> dict[str, tuple[int, int]]:
-        other = CompareWidget._get_other_compare_widget(self.id, self.parent)
+        other = CompareWidget._get_other_compare_widget(self)
         if other:
             if self.loading or other.loading:
                 return dict()
@@ -557,7 +558,7 @@ class CompareWidget(Widget):
 
     @property
     def name_matches(self) -> set[str]:
-        other = CompareWidget._get_other_compare_widget(self.id, self.parent)
+        other = CompareWidget._get_other_compare_widget(self)
         if other:
             if self.loading or other.loading:
                 return set()

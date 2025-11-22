@@ -93,10 +93,8 @@ class FilePicker(Widget):
         self.prev_cell_key = None
 
     def _mount_compare_widget(self, path: Path) -> None:
-        id_ = self.id.split("-")[-1] if self.id else ""
-        id_ = "-".join(["compare", id_])
         cast(Widget, self.parent).mount(
-            CompareWidget(path, id=id_, filter_by=self.filter_by), after=self
+            CompareWidget(path, filter_by=self.filter_by), after=self
         )
         self.remove()
 
