@@ -25,6 +25,7 @@ from textual.worker import Worker, WorkerState
 
 from dmerk.merkle import Merkle
 from dmerk.utils import PREFIX_SYMBOL_MERKLE, colorhash, fuzzy_match
+from dmerk.tui.navigation import FocusPassthroughMixin, NavigationMixin
 
 
 # Bug: https://trello.com/c/iizCU2oj
@@ -46,7 +47,7 @@ class Columns(Enum):
     DIGEST = Column("Digest", "DIGEST", lambda m: m.digest)
 
 
-class CompareWidget(Widget):
+class CompareWidget(NavigationMixin, FocusPassthroughMixin, Widget):
 
     BUTTON_RESET_COMPARE = "button-reset-compare"
     DEFAULT_SORT_BY = None

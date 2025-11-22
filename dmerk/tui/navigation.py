@@ -12,7 +12,7 @@ from textual.widgets import TabbedContent, DataTable, RichLog, Button
 from textual.widgets._tabbed_content import ContentTab, ContentTabs
 from textual.app import App
 from textual.events import Key, DescendantFocus, Focus, DescendantBlur, Blur
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal, Vertical, Container
 
 
 class Direction(Enum):
@@ -67,6 +67,7 @@ class NavigationSchema:
         self.app = app
 
         self._schema: NavSchema = {
+            ### Tab Generate ###
             "TabbedContent": dd(
                 {
                     Direction.UP: (None, True),
@@ -154,6 +155,20 @@ class NavigationSchema:
                 {
                     Direction.UP: "TabPane#tab-generate Vertical Horizontal#top",
                     Direction.LEFT: "RichLog",
+                }
+            ),
+            ### Tab Compare ###
+            "ClearableInput": dd({Direction.DOWN: "Horizontal#horizontal"}),
+            "Horizontal#horizontal  #left": dd(
+                {
+                    Direction.UP: "ClearableInput",
+                    Direction.RIGHT: "Horizontal#horizontal  #right",
+                }
+            ),
+            "Horizontal#horizontal  #right": dd(
+                {
+                    Direction.UP: "ClearableInput",
+                    Direction.LEFT: "Horizontal#horizontal  #left",
                 }
             ),
         }
@@ -341,6 +356,7 @@ navigation_mixin_classes: list[type[Widget]] = [
     Horizontal,
     Vertical,
     Button,
+    Container,
 ]
 for cls in navigation_mixin_classes:
     cls.__bases__ = (NavigationMixin,) + cls.__bases__
@@ -348,6 +364,7 @@ focus_passthrough_mixin_classes: list[type[Widget]] = [
     TabbedContent,
     Horizontal,
     Vertical,
+    Container,
 ]
 for cls in focus_passthrough_mixin_classes:
     cls.__bases__ = (FocusPassthroughMixin,) + cls.__bases__
