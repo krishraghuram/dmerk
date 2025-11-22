@@ -189,8 +189,10 @@ class NavigationSchema:
 
 
 class NavigationMixin:
+    KEY_TAB = "tab"
+    KEY_SHIFT = "shift"
     COMBINER = "+"
-    MODIFIER = "shift"
+    MODIFIER = KEY_SHIFT
     DIRECTIONS = ["up", "down", "left", "right"]
 
     def __init__(self, *args: Any, **kwargs: Any):
