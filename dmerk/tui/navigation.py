@@ -161,7 +161,12 @@ class NavigationSchema:
                 }
             ),
             ### Tab Compare ###
-            "ClearableInput": dd({Direction.DOWN: "Horizontal#horizontal"}),
+            "ClearableInput": dd(
+                {
+                    Direction.UP: "ContentTabs",
+                    Direction.DOWN: "Horizontal#horizontal",
+                }
+            ),
             "Horizontal#horizontal": dd(
                 {
                     Direction.UP: lambda w, d: (
@@ -280,6 +285,10 @@ class FocusPassthroughMixin:
         assert isinstance(self, DOMNode)
         super().__init__(*args, **kwargs)
         self._child_to_passthrough_focus: Widget | None = None
+        # TODO: we only used self._previously_focused in _descendant_had_focus
+        # We can easily change that function to also use self.app._previously_focused
+        # And only store _previously_focused at the app level,
+        # instead of storing it in every widget that extends FocusPassthroughMixin
         self._previously_focused: Widget | None = None
         self.can_focus: bool = True
 
