@@ -8,7 +8,7 @@ from collections import defaultdict
 from textual.css.query import NoMatches
 from textual.dom import DOMNode
 from textual.widget import Widget
-from textual.widgets import TabbedContent, DataTable, RichLog, Button
+from textual.widgets import TabbedContent, DataTable, RichLog, Button, Label
 from textual.widgets._tabbed_content import ContentTab, ContentTabs
 from textual.app import App
 from textual.events import Key, DescendantFocus, Focus, DescendantBlur, Blur
@@ -198,43 +198,52 @@ class NavigationSchema:
                     ),
                 }
             ),
-            # "Horizontal#horizontal": dd(
-            #     {
-            #         Direction.UP: lambda w, d: (
-            #             (RelativeTarget.FOCUS_PREVIOUS, False)
-            #             if w.query_one(DataTable).cursor_row == 0
-            #             or len(w.query(f"#{CompareWidget.BUTTON_RESET_COMPARE}")) > 0
-            #             else (None, True)
-            #         ),
-            #         Direction.DOWN: lambda w, d: (
-            #             (RelativeTarget.FOCUS_NEXT, False)
-            #             if w.query_one(DataTable).cursor_row
-            #             == len(w.query_one(DataTable).rows) - 1
-            #             else (None, True)
-            #         ),
-            #     }
-            # ),
-            # "Horizontal#horizontal > #left": dd(
-            #     {
-            #         # TODO: Dont just move focus to widget on right, also set cursor to same row
-            #         Direction.RIGHT: lambda w, d: (
-            #             ("Horizontal#horizontal > #right", False)
-            #             if w.query_one(DataTable).cursor_column
-            #             == len(w.query_one(DataTable).columns) - 1
-            #             else (None, True)
-            #         ),
-            #     }
-            # ),
-            # "Horizontal#horizontal > #right": dd(
-            #     {
-            #         # TODO: Dont just move focus to widget on left, also set cursor to same row
-            #         Direction.LEFT: lambda w, d: (
-            #             ("Horizontal#horizontal > #left", False)
-            #             if w.query_one(DataTable).cursor_column == 0
-            #             else (None, True)
-            #         )
-            #     }
-            # ),
+            "Horizontal#horizontal > #left > CompareWidget Label": dd(
+                {
+                    Direction.LEFT: lambda w, d: (
+                        (RelativeTarget.FOCUS_PREVIOUS, False)
+                        if not w.first_child
+                        else (None, True)
+                    ),
+                    Direction.RIGHT: lambda w, d: (
+                        (RelativeTarget.FOCUS_NEXT, False)
+                        if not w.last_child
+                        else (None, True)
+                    ),
+                    Direction.UP: "ClearableInput",
+                    Direction.DOWN: "Horizontal#horizontal > #left > CompareWidget DataTable",
+                }
+            ),
+            "Horizontal#horizontal > #left > CompareWidget DataTable": dd(
+                {
+                    # TODO: Dont just move focus horizontally, also set cursor to same row horizontally
+                    Direction.RIGHT: lambda w, d: (
+                        ("Horizontal#horizontal > #right", False)
+                        if cast(DataTable, w).cursor_column
+                        == len(cast(DataTable, w).columns) - 1
+                        else (None, True)
+                    ),
+                    Direction.UP: lambda w, d: (
+                        (
+                            "Horizontal#horizontal > #left > CompareWidget #breadcrumbs",
+                            False,
+                        )
+                        if cast(DataTable, w).cursor_row == 0
+                        else (None, True)
+                    ),
+                    Direction.DOWN: lambda w, d: (
+                        ("Horizontal#horizontal > #left > CompareWidget Button", False)
+                        if cast(DataTable, w).cursor_row
+                        == len(cast(DataTable, w).rows) - 1
+                        else (None, True)
+                    ),
+                }
+            ),
+            "Horizontal#horizontal > #left > CompareWidget Button": dd(
+                {
+                    Direction.UP: "Horizontal#horizontal > #left > CompareWidget DataTable",
+                }
+            ),
         }
 
     def navigate(self, widget: Widget, direction: Direction) -> Bubble:
@@ -362,7 +371,6 @@ class FocusPassthroughMixin:
                 raise ValueError(
                     "prev_idx == curr_idx in FocusPassthroughMixin.focus_direction"
                 )
-            logging.debug(f"{focus_direction=}")
             return focus_direction
         except ValueError:
             return DEFAULT
@@ -385,6 +393,14 @@ class FocusPassthroughMixin:
 
     def on_focus(self, event: Focus) -> None:
         assert isinstance(self, DOMNode)
+        ###
+        logging.debug(f"{self._descendant_had_focus()=}")
+        logging.debug(f"{self._focus_direction()=}")
+        logging.debug(f"{self._child_to_passthrough_focus=}")
+        logging.debug(f"{id(self._child_to_passthrough_focus)=}")
+        logging.debug(f"{[id(i) for i in self.query(Label)]}")
+        logging.debug(f"{self._child_to_passthrough_focus in list(self.query())}")
+        ###
         # Special Cases
         if isinstance(self, TabbedContent):
             for node in self.app.walk_children():
@@ -414,7 +430,7 @@ class FocusPassthroughMixin:
 
 
 # Patch textual widgets
-set_can_focus_classes = [Horizontal, Vertical]
+set_can_focus_classes = [Horizontal, Vertical, Label]
 for cls in set_can_focus_classes:
     cls.can_focus = True
 navigation_mixin_classes: list[type[Widget]] = [
@@ -425,6 +441,7 @@ navigation_mixin_classes: list[type[Widget]] = [
     Vertical,
     Button,
     Container,
+    Label,
 ]
 for cls in navigation_mixin_classes:
     cls.__bases__ = (NavigationMixin,) + cls.__bases__
