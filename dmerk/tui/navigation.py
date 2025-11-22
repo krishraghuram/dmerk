@@ -198,7 +198,7 @@ class NavigationSchema:
                     ),
                 }
             ),
-            "Horizontal#horizontal > #left > CompareWidget Label": dd(
+            "Horizontal#horizontal CompareWidget Label": dd(
                 {
                     Direction.LEFT: lambda w, d: (
                         (RelativeTarget.FOCUS_PREVIOUS, False)
@@ -211,7 +211,9 @@ class NavigationSchema:
                         else (None, True)
                     ),
                     Direction.UP: "ClearableInput",
-                    Direction.DOWN: "Horizontal#horizontal > #left > CompareWidget DataTable",
+                    Direction.DOWN: lambda w, d: (
+                        w.query_ancestor(CompareWidget).query_one(DataTable)
+                    ),
                 }
             ),
             "Horizontal#horizontal > #left > CompareWidget DataTable": dd(
@@ -239,9 +241,35 @@ class NavigationSchema:
                     ),
                 }
             ),
-            "Horizontal#horizontal > #left > CompareWidget Button": dd(
+            "Horizontal#horizontal > #right > CompareWidget DataTable": dd(
                 {
-                    Direction.UP: "Horizontal#horizontal > #left > CompareWidget DataTable",
+                    # TODO: Dont just move focus horizontally, also set cursor to same row horizontally
+                    Direction.LEFT: lambda w, d: (
+                        ("Horizontal#horizontal > #left", False)
+                        if cast(DataTable, w).cursor_column == 0
+                        else (None, True)
+                    ),
+                    Direction.UP: lambda w, d: (
+                        (
+                            "Horizontal#horizontal > #right > CompareWidget #breadcrumbs",
+                            False,
+                        )
+                        if cast(DataTable, w).cursor_row == 0
+                        else (None, True)
+                    ),
+                    Direction.DOWN: lambda w, d: (
+                        ("Horizontal#horizontal > #right > CompareWidget Button", False)
+                        if cast(DataTable, w).cursor_row
+                        == len(cast(DataTable, w).rows) - 1
+                        else (None, True)
+                    ),
+                }
+            ),
+            "Horizontal#horizontal CompareWidget Button": dd(
+                {
+                    Direction.UP: lambda w, d: (
+                        w.query_ancestor(CompareWidget).query_one(DataTable)
+                    ),
                 }
             ),
         }
