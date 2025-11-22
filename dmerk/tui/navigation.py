@@ -172,8 +172,14 @@ class NavigationSchema:
                         else (None, True)
                     ),
                     Direction.UP: lambda w, d: (
-                        ("ClearableInput", False)
+                        (RelativeTarget.FOCUS_PREVIOUS, False)
                         if w.query_one(DataTable).cursor_row == 0
+                        else (None, True)
+                    ),
+                    Direction.DOWN: lambda w, d: (
+                        (RelativeTarget.FOCUS_NEXT, False)
+                        if w.query_one(DataTable).cursor_row
+                        == len(w.query_one(DataTable).rows) - 1
                         else (None, True)
                     ),
                 }
@@ -187,8 +193,14 @@ class NavigationSchema:
                         else (None, True)
                     ),
                     Direction.UP: lambda w, d: (
-                        ("ClearableInput", False)
+                        (RelativeTarget.FOCUS_PREVIOUS, False)
                         if w.query_one(DataTable).cursor_row == 0
+                        else (None, True)
+                    ),
+                    Direction.DOWN: lambda w, d: (
+                        (RelativeTarget.FOCUS_NEXT, False)
+                        if w.query_one(DataTable).cursor_row
+                        == len(w.query_one(DataTable).rows) - 1
                         else (None, True)
                     ),
                 }
