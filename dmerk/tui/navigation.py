@@ -430,10 +430,22 @@ class FocusPassthroughMixin:
         logging.debug(f"{self._child_to_passthrough_focus in list(self.query())}")
         ###
         # Special Cases
+        # When we wrap focus from last widget on screen back to TabbedContent,
+        # reset all memory of _child_to_passthrough_focus for the entire app
         if isinstance(self, TabbedContent):
             for node in self.app.walk_children():
                 if isinstance(node, FocusPassthroughMixin):
                     node._child_to_passthrough_focus = None
+        # During the brief moment when we have both FilePicker and CompareWidget mounted,
+        # dont do anything
+        if (
+            isinstance(self, Container)
+            and self.id in ["left", "right"]
+            and len(self.children) == 2
+            and {type(i).__name__ for i in self.children}
+            == {"FilePicker", "CompareWidget"}
+        ):
+            return
         # If focus came from one of our descendants, don't trap it
         if self._descendant_had_focus():
             match self._focus_direction():
