@@ -30,7 +30,8 @@ class FilePicker(NavigationMixin, Widget):
     ):
         super().__init__(name=name, id=id, classes=classes, disabled=disabled)
         if not path:
-            path = Path(constants.APP_STATE_PATH) / ".." / "0.3.0" / "OLD" / "1"
+            # path = Path(constants.APP_STATE_PATH) / ".." / "0.3.0" / "OLD" / "1"
+            path = Path(constants.APP_STATE_PATH) / ".." / "0.3.0" / "IMP"
         if path.is_dir():
             self.path = path
         else:

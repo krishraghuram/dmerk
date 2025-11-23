@@ -456,7 +456,12 @@ class FocusPassthroughMixin:
         else:
             # Focus came from outside - pass through to child
             if self._child_to_passthrough_focus:
-                self._child_to_passthrough_focus.focus()
+                if self in self._child_to_passthrough_focus.ancestors:
+                    self._child_to_passthrough_focus.focus()
+                else:
+                    raise ValueError(
+                        "Child has been removed, but we are still tracking it!!!"
+                    )
             else:
                 match self._focus_direction():
                     case FocusDirection.PREVIOUS:
