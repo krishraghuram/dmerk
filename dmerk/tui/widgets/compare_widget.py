@@ -101,10 +101,13 @@ class CompareWidget(NavigationMixin, FocusPassthroughMixin, Widget):
     async def _reset_to_filepicker(self) -> None:
         from dmerk.tui.widgets.file_picker import FilePicker
 
-        cast(Widget, self.parent).mount(
+        await cast(Widget, self.parent).mount(
             FilePicker(filter_by=self.filter_by), after=self
         )
         await self.remove()
+        self.call_after_refresh(
+            cast(Widget, self.parent).query_one(FilePicker).query_one(DataTable).focus
+        )
 
     @work(thread=True)
     async def _main(self, path: Path) -> None:
@@ -130,6 +133,12 @@ class CompareWidget(NavigationMixin, FocusPassthroughMixin, Widget):
     async def _refresh_when_ready(self, attempt: int = 0) -> None:
         MAX_ATTEMPTS = 100
         if self.size.width > 0:
+            # TODO: Ideally we should have this check,
+            # adding it makes it so that,
+            # in some race conditions,
+            # the focus is lost (no widget is focused)
+            # if self is self.app.focused:
+            self.call_after_refresh(self.query_one(DataTable).focus)
             await self._refresh()
         elif attempt < MAX_ATTEMPTS:
             self.call_after_refresh(lambda: self._refresh_when_ready(attempt + 1))
@@ -595,3 +604,13 @@ class CompareWidget(NavigationMixin, FocusPassthroughMixin, Widget):
                 return self._get_name_matches(self.submerkle, other.submerkle)
         else:
             return set()
+
+    # Taken from textual's Widget, and removed loading from the check,
+    # because we want CompareWidget to be focusable even when loading
+    # https://github.com/Textualize/textual/blob/e66c098588360515864ce88982de494c64d2c097/src/textual/widget.py#L2310
+    @property
+    def focusable(self) -> bool:
+        """Can this widget currently be focused?"""
+        return (
+            self.allow_focus() and self.visible and not self._self_or_ancestors_disabled
+        )

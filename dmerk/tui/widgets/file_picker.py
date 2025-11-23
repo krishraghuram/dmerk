@@ -30,7 +30,7 @@ class FilePicker(NavigationMixin, Widget):
     ):
         super().__init__(name=name, id=id, classes=classes, disabled=disabled)
         if not path:
-            path = Path(constants.APP_STATE_PATH)
+            path = Path(constants.APP_STATE_PATH) / ".." / "0.3.0" / "OLD" / "1"
         if path.is_dir():
             self.path = path
         else:
@@ -93,20 +93,25 @@ class FilePicker(NavigationMixin, Widget):
     ) -> None:
         self.prev_cell_key = None
 
-    def _mount_compare_widget(self, path: Path) -> None:
-        cast(Widget, self.parent).mount(
+    async def _mount_compare_widget(self, path: Path) -> None:
+        await cast(Widget, self.parent).mount(
             CompareWidget(path, filter_by=self.filter_by), after=self
         )
-        self.remove()
+        await self.remove()
+        self.call_after_refresh(
+            cast(Widget, self.parent).query_one(CompareWidget).focus
+        )
 
-    def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
+    async def on_data_table_cell_selected(
+        self, message: DataTable.CellSelected
+    ) -> None:
         if message.cell_key.row_key.value is not None:
             new_path: Path = self.path / message.cell_key.row_key.value
             new_path = new_path.resolve()
             if new_path.is_file():
                 if self.prev_cell_key == message.cell_key:
                     if isinstance(self.parent, Widget):
-                        self._mount_compare_widget(new_path)
+                        await self._mount_compare_widget(new_path)
                     else:
                         raise ValueError(f"{self.parent=} is not a Widget!!!")
                 else:
