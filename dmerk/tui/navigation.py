@@ -3,7 +3,8 @@ from typing import Any, cast
 from enum import Enum
 
 from textual.widget import Widget
-from textual.widgets import DataTable
+from textual.widgets import DataTable, Input
+from textual.widgets._tabbed_content import ContentTabs
 from textual.geometry import Size, Region, Offset
 from textual.events import Key
 from textual.css.query import NoMatches
@@ -39,9 +40,18 @@ class NavigationMixin:
     def edge_center(direction: Direction, widget: Widget) -> Offset:
         """
         Return the edge center of widget along direction
+
+        TODO: Implement logic to offset slightly to account for visual perception vs geometric center
         """
-        # TODO: Implement logic to offset slightly to account for visual perception vs geometric center
         x, y, width, height = widget.region
+
+        # Special Cases (maybe impl visual center logic can help removing special cases)
+        # ContentTabs and Input take full width of screen, but the text is only few characters
+        if isinstance(widget, ContentTabs):
+            width = 20
+        elif isinstance(widget, Input):
+            width = 15
+
         match direction:
             case Direction.UP:
                 return Offset(int(x + width / 2), y)
