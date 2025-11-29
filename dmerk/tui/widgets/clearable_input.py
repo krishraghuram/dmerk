@@ -19,10 +19,8 @@ from textual.widget import Widget
 from textual.widgets import Input, Label
 from textual.widgets._input import InputType, InputValidationOn
 
-from dmerk.tui.navigation import NavigationMixin
 
-
-class ClearableInput(NavigationMixin, Widget):
+class ClearableInput(Widget):
 
     LabelText = Literal["⌫", "🗑️", "✖️"]
 

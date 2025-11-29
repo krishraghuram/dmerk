@@ -46,10 +46,7 @@ class Columns(Enum):
     DIGEST = Column("Digest", "DIGEST", lambda m: m.digest)
 
 
-from dmerk.tui.navigation import NavigationMixin
-
-
-class CompareWidget(NavigationMixin, Widget):
+class CompareWidget(Widget):
 
     BUTTON_RESET_COMPARE = "button-reset-compare"
     DEFAULT_SORT_BY = None

@@ -5,10 +5,8 @@ from typing import Any
 from textual.message import Message
 from textual.widgets import Button
 
-from dmerk.tui.navigation import NavigationMixin
 
-
-class SidebarButton(NavigationMixin, Button):
+class SidebarButton(Button):
 
     # Textual buttons have been changed
     # They cannot be pressed when already "active"

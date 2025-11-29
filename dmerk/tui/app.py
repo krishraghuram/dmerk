@@ -21,6 +21,7 @@ from textual.widgets import (
 
 import dmerk.constants as constants
 import dmerk.generate as generate
+from dmerk.tui.navigation import NavigationMixin
 from dmerk.tui.widgets import FavoritesSidebar, FileManager, FilePicker
 from dmerk.tui.widgets.clearable_input import ClearableInput
 from dmerk.tui.widgets.compare_widget import CompareWidget
@@ -45,7 +46,7 @@ class Tabs(Enum):
     Compare = "tab-compare"
 
 
-class DmerkApp(App[None]):
+class DmerkApp(App[None], NavigationMixin):
     """An TUI for dmerk"""
 
     TITLE = f"dmerk tui v{importlib.metadata.version('dmerk')}"

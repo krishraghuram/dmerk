@@ -16,7 +16,6 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import DataTable, Input, Label
 
-from dmerk.tui.navigation import NavigationMixin
 from dmerk.tui.widgets.clearable_input import ClearableInput
 from dmerk.utils import fuzzy_match, prefix_symbol_path
 
@@ -45,7 +44,7 @@ class Columns(Enum):
     )
 
 
-class FileManager(NavigationMixin, Widget):
+class FileManager(Widget):
     path = reactive(Path.home())
     time_format = reactive(next(TIME_FORMAT_CYCLER))
     sort_by = reactive(Columns.MODIFIED.value.key)
