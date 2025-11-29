@@ -82,27 +82,18 @@ class NavigationMixin:
                 return Offset(+1, +0)
 
     @staticmethod
-    def shift(direction: Direction) -> Offset:
-        shift = NavigationMixin.step(direction).transpose
-        shift = Offset(*[abs(i) for i in shift])
-        return shift
-
-    @staticmethod
     def ray_trace(direction: Direction, widget: Widget) -> Widget:
         """
         Trace along the given direction from given source widget and return the target widget to receive focus
         """
         source_edge_center = NavigationMixin.edge_center(direction, widget)
-        shift = NavigationMixin.shift(direction)
-        for j in [0, -1, 1, -2, 2, -3, 3]:
-            source_edge_center = source_edge_center + shift * j
-            step = NavigationMixin.step(direction)
-            spacing = NavigationMixin.spacing(direction, widget)
-            for i in range(1, spacing):
-                offset = source_edge_center + step * i
-                target = widget.screen.get_focusable_widget_at(*offset)
-                if target is not None and target != widget:
-                    return target
+        step = NavigationMixin.step(direction)
+        spacing = NavigationMixin.spacing(direction, widget)
+        for i in range(1, spacing):
+            offset = source_edge_center + step * i
+            target = widget.screen.get_focusable_widget_at(*offset)
+            if target is not None and target != widget:
+                return target
         raise NoMatches("No focusable widget found")
 
     @staticmethod
