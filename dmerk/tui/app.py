@@ -14,7 +14,6 @@ from textual.widgets import (
     Footer,
     Header,
     Input,
-    RichLog,
     TabbedContent,
     TabPane,
 )
@@ -28,6 +27,7 @@ from dmerk.tui.widgets import (
     FavoritesSidebar,
     FileManager,
     FilePicker,
+    RichLog,
 )
 from dmerk.utils import colorhash, prefix_symbol_path
 
