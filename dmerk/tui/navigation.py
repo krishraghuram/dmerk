@@ -1,14 +1,14 @@
 import logging
-from typing import Any, cast
 from enum import Enum
+from typing import Any, cast
 
+from textual.app import App
+from textual.css.query import NoMatches
+from textual.events import Key
+from textual.geometry import Offset, Region, Size
 from textual.widget import Widget
 from textual.widgets import DataTable, Input
 from textual.widgets._tabbed_content import ContentTabs
-from textual.geometry import Size, Region, Offset
-from textual.events import Key
-from textual.css.query import NoMatches
-from textual.app import App
 
 
 class Direction(Enum):
@@ -110,23 +110,8 @@ class NavigationMixin:
     def should_navigate(direction: Direction, widget: Widget) -> bool:
         navigate = True
 
-        # For data tables, we should only navigate if we are at edge
-        # BUG:
-        #   DataTable gets Key event first and then it bubbles to us (App)
-        #   So this means DataTable binding gets processed first before navigation code
-        #   So when on data table row/col 1 / len()-2 , the binding is processed first, so row/col becomes 0 / len()-1
-        #   And then our code also processes navigation, so we handle same event twice
-        if isinstance(widget, DataTable):
-            dt = widget
-            match direction:
-                case Direction.UP:
-                    navigate = navigate and dt.cursor_row == 0
-                case Direction.DOWN:
-                    navigate = navigate and dt.cursor_row == len(dt.rows) - 1
-                case Direction.LEFT:
-                    navigate = navigate and dt.cursor_column == 0
-                case Direction.RIGHT:
-                    navigate = navigate and dt.cursor_column == len(dt.columns) - 1
+        if hasattr(widget, "should_navigate"):
+            navigate = navigate and widget.should_navigate(direction)
 
         return navigate
 

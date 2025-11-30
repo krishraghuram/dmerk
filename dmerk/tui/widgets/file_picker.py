@@ -7,10 +7,9 @@ from textual.coordinate import Coordinate
 from textual.events import Resize
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import DataTable
 
 import dmerk.constants as constants
-from dmerk.tui.widgets.compare_widget import CompareWidget
+from dmerk.tui.widgets import CompareWidget, DataTable
 from dmerk.utils import fuzzy_match, prefix_symbol_path
 
 

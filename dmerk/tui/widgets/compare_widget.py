@@ -19,11 +19,12 @@ from textual.events import Click, DescendantBlur, Resize
 from textual.geometry import Size
 from textual.reactive import Reactive, reactive
 from textual.widget import Widget
-from textual.widgets import Button, DataTable, Label
+from textual.widgets import Button, Label
 from textual.widgets.data_table import RowKey
 from textual.worker import Worker, WorkerState
 
 from dmerk.merkle import Merkle
+from dmerk.tui.widgets import DataTable
 from dmerk.utils import PREFIX_SYMBOL_MERKLE, colorhash, fuzzy_match
 
 
@@ -96,7 +97,7 @@ class CompareWidget(Widget):
             self.filter_by = filter_by
 
     async def _reset_to_filepicker(self) -> None:
-        from dmerk.tui.widgets.file_picker import FilePicker
+        from dmerk.tui.widgets import FilePicker
 
         id_ = self.id.split("-")[-1] if self.id else ""
         id_ = "-".join(["filepicker", id_])

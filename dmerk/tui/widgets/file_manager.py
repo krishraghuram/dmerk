@@ -14,9 +14,9 @@ from textual.events import Click, Resize
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import DataTable, Input, Label
+from textual.widgets import Input, Label
 
-from dmerk.tui.widgets.clearable_input import ClearableInput
+from dmerk.tui.widgets import ClearableInput, DataTable
 from dmerk.utils import fuzzy_match, prefix_symbol_path
 
 TIME_FORMATS: dict[str, Callable[[float], str]] = {

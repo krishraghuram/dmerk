@@ -22,9 +22,13 @@ from textual.widgets import (
 import dmerk.constants as constants
 import dmerk.generate as generate
 from dmerk.tui.navigation import NavigationMixin
-from dmerk.tui.widgets import FavoritesSidebar, FileManager, FilePicker
-from dmerk.tui.widgets.clearable_input import ClearableInput
-from dmerk.tui.widgets.compare_widget import CompareWidget
+from dmerk.tui.widgets import (
+    ClearableInput,
+    CompareWidget,
+    FavoritesSidebar,
+    FileManager,
+    FilePicker,
+)
 from dmerk.utils import colorhash, prefix_symbol_path
 
 
