@@ -3,20 +3,19 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Callable, cast
+from typing import Callable
 
 from humanize import naturaltime
 from rich.text import Text
 from textual.app import ComposeResult
-from textual.containers import Horizontal
 from textual.coordinate import Coordinate
-from textual.events import Click, Resize
+from textual.events import Resize
 from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Input, Label
+from textual.widgets import Input
 
-from dmerk.tui.widgets import ClearableInput, DataTable
+from dmerk.tui.widgets import ClearableInput, DataTable, Breadcrumbs
 from dmerk.utils import fuzzy_match, prefix_symbol_path
 
 TIME_FORMATS: dict[str, Callable[[float], str]] = {
@@ -58,7 +57,7 @@ class FileManager(Widget):
 
     def compose(self) -> ComposeResult:
         yield ClearableInput(placeholder="Filter by...")
-        yield Horizontal(Label(Text(f"{self.path}", style="bold")))
+        yield Breadcrumbs(str(self.path))
         files_table: DataTable[None] = DataTable(header_height=3)
         yield files_table
 
@@ -84,25 +83,16 @@ class FileManager(Widget):
             return None
 
     async def _refresh(self) -> None:
-        await self._refresh_label()
+        await self._refresh_breadcrumbs()
         await self._refresh_table()
 
-    def on_click(self, message: Click) -> None:
-        if isinstance(message.widget, Label):
-            labels: list[Label] = []
-            for c in self.query_one(Horizontal).children:
-                if isinstance(c, Label) and isinstance(c.content, Text):
-                    labels.append(c)
-            idx = labels.index(message.widget)
-            parts = [cast(Text, l.content).plain for l in labels[: idx + 1]]
-            self.path = Path("".join(parts))
+    def on_breadcrumbs_changed(self, event: Breadcrumbs.Changed) -> None:
+        self.path = Path("".join(event.parts))
 
-    async def _refresh_label(self) -> None:
-        label_parts = ["/"]
-        label_parts = label_parts + [f"{p}/" for p in self.path.parts[1:]]
-        labels = [Label(Text(l, style="bold")) for l in label_parts]
-        await self.query_one(Horizontal).remove_children()
-        await self.query_one(Horizontal).mount_all(labels)
+    async def _refresh_breadcrumbs(self) -> None:
+        breadcrumb_parts = ["/"]
+        breadcrumb_parts = breadcrumb_parts + [f"{p}/" for p in self.path.parts[1:]]
+        self.query_one(Breadcrumbs).update(parts=breadcrumb_parts)
 
     def _get_header_label(self, column: Column) -> str:
         if self.sort_by == column.key:
