@@ -1,4 +1,5 @@
 from .data_table import DataTable  # isort:skip
+from .breadcrumbs import Breadcrumbs
 from .clearable_input import ClearableInput
 from .compare_widget import CompareWidget
 from .favorites_sidebar import FavoritesSidebar
@@ -15,4 +16,5 @@ __all__ = [
     "FilePicker",
     "ClearableInput",
     "CompareWidget",
+    "Breadcrumbs",
 ]

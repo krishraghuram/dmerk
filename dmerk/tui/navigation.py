@@ -7,7 +7,7 @@ from textual.css.query import NoMatches
 from textual.events import Key
 from textual.geometry import Offset, Region, Size
 from textual.widget import Widget
-from textual.widgets import DataTable, Input, Label
+from textual.widgets import DataTable, Input
 from textual.widgets._tabbed_content import ContentTabs
 
 
@@ -130,9 +130,3 @@ class NavigationMixin:
         except (ValueError, NoMatches) as e:
             logging.warning(str(e))
             return
-
-
-# Patch textual widgets
-set_can_focus_classes = [Label]
-for cls in set_can_focus_classes:
-    cls.can_focus = True

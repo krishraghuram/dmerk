@@ -90,19 +90,21 @@ Screen #tab-compare {
                 margin-right: 2;
             }
             width: 1fr;
-            Horizontal { /* CompareWidget Label */
-                margin-right: 2;
-                background: $panel-lighten-2;
+            Breadcrumbs {
                 width: 100%;
                 height: auto;
-                Label:hover {
-                    text-style: underline;
-                }
-                Label:focus {
-                    text-style: underline;
-                }
-                Label:last-child {
-                    width:100%
+                Horizontal {
+                    background: $panel-lighten-2;
+                    height: auto;
+                    Crumb:hover {
+                        text-style: underline;
+                    }
+                    Crumb:focus {
+                        text-style: underline;
+                    }
+                    Crumb:last-child {
+                        width:100%
+                    }
                 }
             }
             DataTable {
