@@ -64,6 +64,10 @@ class Breadcrumbs(Widget):
                 self.query_one(Horizontal).mount(n)
             elif not c and not n:
                 pass
+        # Need to call update_styles so that if the last-child had changed, the new last-child will get the appropriate style updates
+        # This is relevant because we have a c.remove() above
+        # Also, we need to call this after refresh, so that textual first updates the pseudo classes (such as last-child) on DOM nodes.
+        self.app.call_after_refresh(self.app.update_styles, self)
 
     def _click_crumb(self, widget: Crumb):
         crumbs: list[Crumb] = []
