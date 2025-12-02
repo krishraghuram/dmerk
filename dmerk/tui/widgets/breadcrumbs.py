@@ -89,13 +89,3 @@ class Breadcrumbs(Widget):
         self.parts = parts
         # Mutable reactives require manual trigger: https://textual.textualize.io/guide/reactivity/#mutable-reactives
         self.mutate_reactive(Breadcrumbs.parts)
-
-    # def append(self, part):
-    #     self.parts.append(part)
-    #     # Mutable reactives require manual trigger: https://textual.textualize.io/guide/reactivity/#mutable-reactives
-    #     self.mutate_reactive(Breadcrumbs.parts)
-
-    # def pop(self):
-    #     self.parts.pop()
-    #     # Mutable reactives require manual trigger: https://textual.textualize.io/guide/reactivity/#mutable-reactives
-    #     self.mutate_reactive(Breadcrumbs.parts)
