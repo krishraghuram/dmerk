@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import cast
 
@@ -131,3 +132,13 @@ class FilePicker(Widget):
             return highlighted_path.resolve()
         else:
             return None
+
+    def focus(self, attempt: int = 0):
+        MAX_ATTEMPTS = 100
+        try:
+            self.query_one(DataTable).focus()
+        except Exception as e:
+            if attempt < MAX_ATTEMPTS:
+                self.call_after_refresh(lambda: self.focus(attempt + 1))
+            else:
+                logging.error(f"Failed to focus FilePicker DataTable")

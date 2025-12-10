@@ -104,6 +104,7 @@ class CompareWidget(Widget):
             FilePicker(id=id_, filter_by=self.filter_by), after=self
         )
         await self.remove()
+        self.call_after_refresh(cast(Widget, self.parent).query_one(f"#{id_}").focus)
 
     @work(thread=True)
     async def _main(self, path: Path) -> None:
@@ -129,6 +130,7 @@ class CompareWidget(Widget):
     async def _refresh_when_ready(self, attempt: int = 0) -> None:
         MAX_ATTEMPTS = 100
         if self.size.width > 0:
+            self.call_after_refresh(self.query_one(DataTable).focus)
             await self._refresh()
         elif attempt < MAX_ATTEMPTS:
             self.call_after_refresh(lambda: self._refresh_when_ready(attempt + 1))
