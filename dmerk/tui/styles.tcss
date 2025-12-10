@@ -27,6 +27,12 @@ Screen #tab-generate {
                 Label:hover {
                     text-style: underline;
                 }
+                Label:focus {
+                    text-style: underline;
+                }
+                Label:last-child {
+                    width:100%
+                }
             }
             DataTable {
                 width: 100%;
@@ -91,6 +97,12 @@ Screen #tab-compare {
                 height: auto;
                 Label:hover {
                     text-style: underline;
+                }
+                Label:focus {
+                    text-style: underline;
+                }
+                Label:last-child {
+                    width:100%
                 }
             }
             DataTable {
