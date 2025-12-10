@@ -9,11 +9,12 @@ from textual.widget import Widget
 from textual.widgets import DataTable
 
 import dmerk.constants as constants
+from dmerk.tui.navigation import NavigationMixin
 from dmerk.tui.widgets.compare_widget import CompareWidget
 from dmerk.utils import fuzzy_match, prefix_symbol_path
 
 
-class FilePicker(Widget):
+class FilePicker(NavigationMixin, Widget):
 
     filter_by = reactive("")
 
