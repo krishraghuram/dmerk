@@ -1,4 +1,5 @@
 import functools
+from itertools import zip_longest
 import logging
 from collections import Counter
 from dataclasses import dataclass
@@ -15,7 +16,7 @@ from textual.containers import Horizontal, Vertical
 from textual.coordinate import Coordinate
 from textual.css.query import NoMatches
 from textual.dom import DOMNode
-from textual.events import Click, DescendantBlur, Resize
+from textual.events import Click, DescendantBlur, Resize, Key
 from textual.geometry import Size
 from textual.reactive import Reactive, reactive
 from textual.widget import Widget
@@ -49,6 +50,7 @@ class Columns(Enum):
 
 class CompareWidget(Widget):
 
+    ID_BREADCRUMBS = "breadcrumbs"
     BUTTON_RESET_COMPARE = "button-reset-compare"
     DEFAULT_SORT_BY = None
     DEFAULT_SORT_REVERSE = False
@@ -142,11 +144,11 @@ class CompareWidget(Widget):
         self.prev_screen_size = self.screen.size
         if not self.loading:
             compare_table: DataTable[None] = DataTable(header_height=3)
-            yield Vertical(
-                Horizontal(Label(Text(f"{self.merkle.path}", style="bold"))),
-                compare_table,
-                Button("RESET", "primary", id=self.BUTTON_RESET_COMPARE),
-            )
+            with Vertical():
+                with Horizontal(id=self.ID_BREADCRUMBS):
+                    yield Label(Text(f"{self.merkle.path}", style="bold"))
+                yield compare_table
+                yield Button("RESET", "primary", id=self.BUTTON_RESET_COMPARE)
 
     async def on_button_pressed(self, message: Button.Pressed) -> None:
         if message.button.id == self.BUTTON_RESET_COMPARE:
@@ -221,17 +223,24 @@ class CompareWidget(Widget):
                 self.sort_by = self.DEFAULT_SORT_BY
                 self.sort_reverse = self.DEFAULT_SORT_REVERSE
 
+    def _click_label(self, widget: Label):
+        labels: list[Label] = []
+        for c in self.query_one(Horizontal).children:
+            if isinstance(c, Label) and isinstance(c.content, Text):
+                labels.append(c)
+        idx = labels.index(widget)
+        merkle_subpath_parts = [cast(Text, l.content).plain for l in labels[: idx + 1]]
+        self.merkle_subpath = PurePath("".join(merkle_subpath_parts))
+
+    def on_key(self, event: Key):
+        if event.key == "enter":
+            focused = self.app.focused
+            if isinstance(focused, Label) and self in focused.ancestors:
+                self._click_label(focused)
+
     def on_click(self, message: Click) -> None:
         if isinstance(message.widget, Label):
-            labels: list[Label] = []
-            for c in self.query_one(Horizontal).children:
-                if isinstance(c, Label) and isinstance(c.content, Text):
-                    labels.append(c)
-            idx = labels.index(message.widget)
-            merkle_subpath_parts = [
-                cast(Text, l.content).plain for l in labels[: idx + 1]
-            ]
-            self.merkle_subpath = PurePath("".join(merkle_subpath_parts))
+            self._click_label(message.widget)
 
     def _sync_sort_fields(self) -> None:
         other = CompareWidget._get_other_compare_widget(self.id, self.parent)
@@ -254,9 +263,28 @@ class CompareWidget(Widget):
         label_parts = label_parts + [
             f"/{p}" for p in self.submerkle.path.relative_to(self.merkle.path).parts
         ]
-        labels = [Label(Text(l, style="bold")) for l in label_parts]
-        await self.query_one(Horizontal).remove_children()
-        await self.query_one(Horizontal).mount_all(labels)
+        new_labels = [Label(Text(l, style="bold")) for l in label_parts]
+        breadcrumbs_container = self.query_one(f"#{self.ID_BREADCRUMBS}")
+        existing_labels = list(breadcrumbs_container.query(Label))
+        mismatch_idx = None
+        for idx, (existing_label, new_label) in enumerate(
+            zip_longest(existing_labels, new_labels, fillvalue=None)
+        ):
+            if (
+                existing_label is None
+                or new_label is None
+                or existing_label.content != new_label.content
+            ):
+                mismatch_idx = idx
+            if mismatch_idx and idx >= mismatch_idx:
+                if existing_label and new_label:
+                    existing_label.update(new_label.content)
+                elif existing_label and not new_label:
+                    existing_label.remove()
+                elif not existing_label and new_label:
+                    breadcrumbs_container.mount(new_label)
+                elif not existing_label and not new_label:
+                    pass
 
     def _get_header_label(self, column: Column) -> str:
         if self.sort_by == column.key:
