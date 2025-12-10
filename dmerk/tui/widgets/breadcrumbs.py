@@ -14,6 +14,10 @@ from dataclasses import dataclass
 class Crumb(Label):
     can_focus = True
 
+    def __init__(self, part_idx, *args, **kwargs):
+        self.part_idx = part_idx
+        super().__init__(*args, **kwargs)
+
 
 class Breadcrumbs(Widget):
     @dataclass
@@ -22,6 +26,7 @@ class Breadcrumbs(Widget):
         parts: list[str]
 
     ID_BREADCRUMBS = "breadcrumbs"
+    IDX_ELLIPSIS_CRUMB = -1
 
     parts: reactive[list[str] | None] = reactive(None, init=False)
 
@@ -34,17 +39,54 @@ class Breadcrumbs(Widget):
 
     def compose(self):
         with Horizontal(id=self.ID_BREADCRUMBS):
-            for part in self.parts:
-                yield Crumb(Text(f"{part}", style="bold"))
+            for idx in range(len(self.parts)):
+                yield self.new_crumb(idx)
 
-    def watch_parts(self):
-        # Post message for parent to use
-        self.post_message(Breadcrumbs.Changed(self, self.parts))
+    @staticmethod
+    def crumbs_width(crumbs: list[Crumb]) -> int:
+        # BUG: This probably wont work well for non-ascii stuff
+        return sum([len(cast(Text, i.content).plain) for i in crumbs])
+
+    def new_crumb(self, idx):
+        idx = idx % len(self.parts)
+        return Crumb(idx, Text(self.parts[idx], style="bold"))
+
+    @classmethod
+    def ellipsis_crumb(cls):
+        return Crumb(cls.IDX_ELLIPSIS_CRUMB, Text("/...", style="bold"))
+
+    def new_crumbs(self, show_ellipsis: bool = True):
+        assert self.parts is not None
+        maxwidth = self.size.width
+        new_crumbs = [self.new_crumb(idx) for idx in range(len(self.parts))]
+        if show_ellipsis and self.crumbs_width(new_crumbs) > maxwidth:
+            # Need to ellipsize middle crumbs
+            # first_crumb, ellipsis_crumb and last_crumb always need to be included
+            # Pick crumbs backwards, starting from last crumb, until we hit width limit
+            first_crumb = self.new_crumb(0)
+            ellipsis_crumb = self.ellipsis_crumb()
+            last_crumb = self.new_crumb(-1)
+            new_crumbs = [last_crumb]
+            interior_indices = range(1, len(self.parts) - 1)
+            for idx in reversed(interior_indices):
+                next_crumb = self.new_crumb(idx)
+                temp_new_crumbs = [first_crumb, ellipsis_crumb, next_crumb, *new_crumbs]
+                if self.crumbs_width(temp_new_crumbs) < maxwidth:
+                    new_crumbs.append(next_crumb)
+                else:
+                    break
+            # Append the ellipsis_crumb and first_crumb at the end, and reverse to get in correct order
+            new_crumbs.append(ellipsis_crumb)
+            new_crumbs.append(first_crumb)
+            new_crumbs = list(reversed(new_crumbs))
+        return new_crumbs
+
+    def _refresh(self, show_ellipsis: bool = True):
         # Update crumbs
         # Find mismatch point, and update only Crumbs after that
         # If Crumb instance exists, update them, instead of creating new ones
         # If not, say, because new_crumbs is longer, add new Crumb instances at the end as needed
-        new_crumbs = [Crumb(Text(l, style="bold")) for l in self.parts]
+        new_crumbs = self.new_crumbs(show_ellipsis)
         current_crumbs = list(self.query(Crumb))
         mismatch_idx = None
         for idx, (c, n) in enumerate(zip_longest(current_crumbs, new_crumbs)):
@@ -58,6 +100,7 @@ class Breadcrumbs(Widget):
         for c, n in zip_longest(current_crumbs, new_crumbs):
             if c and n:
                 c.update(n.content)
+                c.part_idx = n.part_idx
             elif c and not n:
                 c.remove()
             elif not c and n:
@@ -69,25 +112,30 @@ class Breadcrumbs(Widget):
         # Also, we need to call this after refresh, so that textual first updates the pseudo classes (such as last-child) on DOM nodes.
         self.app.call_after_refresh(self.app.update_styles, self)
 
-    def _click_crumb(self, widget: Crumb):
-        crumbs: list[Crumb] = []
-        for c in self.query_one(Horizontal).children:
-            if isinstance(c, Crumb) and isinstance(c.content, Text):
-                crumbs.append(c)
-        idx = crumbs.index(widget)
-        self.parts = [cast(Text, l.content).plain for l in crumbs[: idx + 1]]
-        # Mutable reactives require manual trigger: https://textual.textualize.io/guide/reactivity/#mutable-reactives
-        self.mutate_reactive(Breadcrumbs.parts)
+    def watch_parts(self):
+        self.post_message(Breadcrumbs.Changed(self, self.parts))
+        self._refresh()
+
+    def _click_crumb(self, widget: Widget | None):
+        if not isinstance(widget, Crumb) or self.parts is None:
+            raise ValueError("Illegal State!!!")
+        try:
+            idx = widget.part_idx
+            if idx == self.IDX_ELLIPSIS_CRUMB:
+                self._refresh(False)
+            else:
+                self.parts = self.parts[: idx + 1]
+                # Mutable reactives require manual trigger: https://textual.textualize.io/guide/reactivity/#mutable-reactives
+                self.mutate_reactive(Breadcrumbs.parts)
+        except ValueError as e:
+            raise
 
     def on_key(self, event: Key):
         if event.key == "enter":
-            focused = self.app.focused
-            if isinstance(focused, Crumb) and self in focused.ancestors:
-                self._click_crumb(focused)
+            self._click_crumb(self.app.focused)
 
     def on_click(self, message: Click) -> None:
-        if isinstance(message.widget, Crumb):
-            self._click_crumb(message.widget)
+        self._click_crumb(message.widget)
 
     def update(self, parts):
         self.parts = parts

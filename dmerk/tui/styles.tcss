@@ -31,6 +31,7 @@ Screen #tab-generate {
                     }
                     Crumb:focus {
                         text-style: underline;
+                        color: $text-primary;
                     }
                     Crumb:last-child {
                         width:100%
@@ -104,6 +105,7 @@ Screen #tab-compare {
                     }
                     Crumb:focus {
                         text-style: underline;
+                        color: $text-primary;
                     }
                     Crumb:last-child {
                         width:100%
