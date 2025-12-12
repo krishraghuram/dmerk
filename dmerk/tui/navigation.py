@@ -12,34 +12,14 @@ from textual.widgets._tabbed_content import ContentTabs
 
 
 class Direction(Enum):
-    def __new__(cls, value: str, force: bool = False):
-        obj = object.__new__(cls)
-        obj._value_ = value
-        return obj
-
-    def __init__(self, _, force: bool = False):
-        self.force = force
-
     UP = "Up"
     DOWN = "Down"
     LEFT = "Left"
     RIGHT = "Right"
-    FORCE_UP = "ForceUp", True
-    FORCE_DOWN = "ForceDown", True
-    FORCE_LEFT = "ForceLeft", True
-    FORCE_RIGHT = "ForceRight", True
 
     @classmethod
     def from_key(cls, key: str) -> "Direction":
-        if key == "ctrl+up":
-            return cls.FORCE_UP
-        elif key == "ctrl+down":
-            return cls.FORCE_DOWN
-        elif key == "ctrl+left":
-            return cls.FORCE_LEFT
-        elif key == "ctrl+right":
-            return cls.FORCE_RIGHT
-        elif key == "up":
+        if key == "up":
             return cls.UP
         elif key == "down":
             return cls.DOWN
@@ -73,13 +53,13 @@ class NavigationMixin:
             width = 15
 
         match direction:
-            case Direction.UP | Direction.FORCE_UP:
+            case Direction.UP:
                 return Offset(int(x + width / 2), y)
-            case Direction.DOWN | Direction.FORCE_DOWN:
+            case Direction.DOWN:
                 return Offset(int(x + width / 2), y + height)
-            case Direction.LEFT | Direction.FORCE_LEFT:
+            case Direction.LEFT:
                 return Offset(x, int(y + height / 2))
-            case Direction.RIGHT | Direction.FORCE_RIGHT:
+            case Direction.RIGHT:
                 return Offset(x + width, int(y + height / 2))
 
     @staticmethod
@@ -90,25 +70,25 @@ class NavigationMixin:
         screen = widget.app.screen
         spacing = screen.region.get_spacing_between(widget.region)
         match direction:
-            case Direction.UP | Direction.FORCE_UP:
+            case Direction.UP:
                 return spacing.top
-            case Direction.DOWN | Direction.FORCE_DOWN:
+            case Direction.DOWN:
                 return spacing.bottom
-            case Direction.LEFT | Direction.FORCE_LEFT:
+            case Direction.LEFT:
                 return spacing.left
-            case Direction.RIGHT | Direction.FORCE_RIGHT:
+            case Direction.RIGHT:
                 return spacing.right
 
     @staticmethod
     def step(direction: Direction) -> Offset:
         match direction:
-            case Direction.UP | Direction.FORCE_UP:
+            case Direction.UP:
                 return Offset(+0, -1)
-            case Direction.DOWN | Direction.FORCE_DOWN:
+            case Direction.DOWN:
                 return Offset(+0, +1)
-            case Direction.LEFT | Direction.FORCE_LEFT:
+            case Direction.LEFT:
                 return Offset(-1, +0)
-            case Direction.RIGHT | Direction.FORCE_RIGHT:
+            case Direction.RIGHT:
                 return Offset(+1, +0)
 
     @staticmethod
@@ -143,7 +123,7 @@ class NavigationMixin:
             source = self.focused
             if source is None:
                 raise ValueError("source is None!!!")
-            if direction.force or self.should_navigate(direction, source):
+            if self.should_navigate(direction, source):
                 target = self.ray_trace(direction, source)
                 target.focus()
                 logging.debug(f"{direction=}, {source=}, {target=}")
