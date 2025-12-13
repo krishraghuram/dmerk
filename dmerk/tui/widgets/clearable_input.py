@@ -16,8 +16,10 @@ from textual.events import (
 from textual.suggester import Suggester
 from textual.validation import Validator
 from textual.widget import Widget
-from textual.widgets import Input, Label
+from textual.widgets import Label
 from textual.widgets._input import InputType, InputValidationOn
+
+from dmerk.tui.widgets import Input
 
 
 class ClearableInput(Widget):

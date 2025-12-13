@@ -9,7 +9,7 @@ from textual.events import Key as TextualKeyEvent
 from textual.geometry import Offset, Region, Size
 from textual.widget import Widget
 from textual.widgets import DataTable, Input
-from textual.widgets._tabbed_content import ContentTabs
+from textual.widgets._tabbed_content import ContentTabs, ContentTab
 
 
 class Key(Enum):
@@ -92,16 +92,13 @@ class NavigationMixin:
     def _(widget: Widget, direction: Direction) -> Offset:
         x, y, width, height = widget.region
 
-        # Special Cases (maybe impl visual center logic can help removing special cases)
-        # ContentTabs and Input take full width of screen, but the text is only few characters
-        if isinstance(widget, ContentTabs):
-            width = 20
-        elif isinstance(widget, Input):
-            width = 15
+        # Get edge center from widget, or compute by ourselves
+        if hasattr(widget, "edge_center"):
+            edge_center = widget.edge_center(direction)
+        else:
+            region = Region(x, y, width, height)
+            edge_center = NavigationMixin.edge_center(region, direction)
 
-        edge_center = NavigationMixin.edge_center(
-            Region(x, y, width, height), direction
-        )
         # Ensure that edge_center is physically in widget
         assert widget.region.contains(
             edge_center.x, edge_center.y
@@ -114,8 +111,8 @@ class NavigationMixin:
         x, y, width, height = region
         # Adding width,height to x,y will make them go outside the widget,
         # We need to add like "x+width-1" and "y+height-1"
-        height = height - 1
-        width = width - 1
+        height = max(height - 1, 0)
+        width = max(width - 1, 0)
 
         match direction:
             case Direction.UP:
@@ -197,3 +194,19 @@ class NavigationMixin:
         except (ValueError, NoMatches) as e:
             logging.warning(str(e))
             return
+
+
+# TODO: Replace monkey-patching of textual ContentTabs.edge_center with subclass
+def content_tabs_edge_center(self: ContentTabs, direction: Direction) -> Offset:
+    x, y, width, height = self.region
+    width = 0
+    tabs = list(self.query(ContentTab))
+    for tab in tabs:
+        width += len(str(tab.label))
+        width += tab.styles.padding.left
+        width += tab.styles.padding.right
+    region = Region(x, y, width, height)
+    return NavigationMixin.edge_center(region, direction)
+
+
+ContentTabs.edge_center = content_tabs_edge_center  # type: ignore[attr-defined]
