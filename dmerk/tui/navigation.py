@@ -1,6 +1,7 @@
 import logging
 from enum import Enum
 from typing import Any, cast
+from functools import singledispatchmethod
 
 from textual.app import App
 from textual.css.query import NoMatches
@@ -74,13 +75,21 @@ class NavigationMixin:
         assert isinstance(self, App)
         super().__init__(*args, **kwargs)
 
+    @singledispatchmethod
     @staticmethod
-    def edge_center(direction: Direction, widget: Widget) -> Offset:
+    def edge_center(widget_or_region: Widget | Region, direction: Direction) -> Offset:
         """
         Return the edge center of widget along direction
 
         TODO: Implement logic to offset slightly to account for visual perception vs geometric center
         """
+        raise NotImplementedError(
+            f"edge_center not implemented for type {type(widget_or_region)}"
+        )
+
+    @edge_center.register
+    @staticmethod
+    def _(widget: Widget, direction: Direction) -> Offset:
         x, y, width, height = widget.region
 
         # Special Cases (maybe impl visual center logic can help removing special cases)
@@ -90,6 +99,19 @@ class NavigationMixin:
         elif isinstance(widget, Input):
             width = 15
 
+        edge_center = NavigationMixin.edge_center(
+            Region(x, y, width, height), direction
+        )
+        # Ensure that edge_center is physically in widget
+        assert widget.region.contains(
+            edge_center.x, edge_center.y
+        ), f"{edge_center} not in {widget.region}!!!"
+        return edge_center
+
+    @edge_center.register
+    @staticmethod
+    def _(region: Region, direction: Direction) -> Offset:
+        x, y, width, height = region
         # Adding width,height to x,y will make them go outside the widget,
         # We need to add like "x+width-1" and "y+height-1"
         height = height - 1
@@ -97,18 +119,13 @@ class NavigationMixin:
 
         match direction:
             case Direction.UP:
-                edge_center = Offset(int(x + width / 2), y)
+                return Offset(int(x + width / 2), y)
             case Direction.DOWN:
-                edge_center = Offset(int(x + width / 2), y + height)
+                return Offset(int(x + width / 2), y + height)
             case Direction.LEFT:
-                edge_center = Offset(x, int(y + height / 2))
+                return Offset(x, int(y + height / 2))
             case Direction.RIGHT:
-                edge_center = Offset(x + width, int(y + height / 2))
-        # Ensure that edge_center is physically in widget
-        assert widget.region.contains(
-            edge_center.x, edge_center.y
-        ), f"{edge_center} not in {widget.region}!!!"
-        return edge_center
+                return Offset(x + width, int(y + height / 2))
 
     @staticmethod
     def spacing(direction: Direction, widget: Widget) -> int:
@@ -144,7 +161,7 @@ class NavigationMixin:
         """
         Trace along the given direction from given source widget and return the target widget to receive focus
         """
-        source_edge_center = NavigationMixin.edge_center(direction, widget)
+        source_edge_center = NavigationMixin.edge_center(widget, direction)
         step = NavigationMixin.step(direction)
         spacing = NavigationMixin.spacing(direction, widget)
         for i in range(1, spacing):
