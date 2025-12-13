@@ -90,15 +90,25 @@ class NavigationMixin:
         elif isinstance(widget, Input):
             width = 15
 
+        # Adding width,height to x,y will make them go outside the widget,
+        # We need to add like "x+width-1" and "y+height-1"
+        height = height - 1
+        width = width - 1
+
         match direction:
             case Direction.UP:
-                return Offset(int(x + width / 2), y)
+                edge_center = Offset(int(x + width / 2), y)
             case Direction.DOWN:
-                return Offset(int(x + width / 2), y + height)
+                edge_center = Offset(int(x + width / 2), y + height)
             case Direction.LEFT:
-                return Offset(x, int(y + height / 2))
+                edge_center = Offset(x, int(y + height / 2))
             case Direction.RIGHT:
-                return Offset(x + width, int(y + height / 2))
+                edge_center = Offset(x + width, int(y + height / 2))
+        # Ensure that edge_center is physically in widget
+        assert widget.region.contains(
+            edge_center.x, edge_center.y
+        ), f"{edge_center} not in {widget.region}!!!"
+        return edge_center
 
     @staticmethod
     def spacing(direction: Direction, widget: Widget) -> int:
