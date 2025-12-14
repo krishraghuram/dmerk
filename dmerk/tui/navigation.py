@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import logging
 from enum import Enum
 from typing import Any, cast
@@ -153,8 +154,16 @@ class NavigationMixin:
             case Direction.RIGHT:
                 return Offset(+1, +0)
 
+    @dataclass
+    class RayTraceState:
+        source: Widget
+        exit_point: Offset
+        direction: Direction
+        entry_point: Offset
+        target: Widget
+
     @staticmethod
-    def ray_trace(direction: Direction, widget: Widget) -> Widget:
+    def ray_trace(direction: Direction, widget: Widget) -> RayTraceState:
         """
         Trace along the given direction from given source widget and return the target widget to receive focus
         """
@@ -165,7 +174,13 @@ class NavigationMixin:
             offset = source_edge_center + step * i
             target = widget.screen.get_focusable_widget_at(*offset)
             if target is not None and target != widget:
-                return target
+                return NavigationMixin.RayTraceState(
+                    source=widget,
+                    exit_point=source_edge_center,
+                    direction=direction,
+                    entry_point=offset,
+                    target=target,
+                )
         raise NoMatches("No focusable widget found")
 
     @staticmethod
@@ -188,9 +203,9 @@ class NavigationMixin:
             if source is None:
                 raise ValueError("source is None!!!")
             if force_navigate or self.should_navigate(direction, source):
-                target = self.ray_trace(direction, source)
-                target.focus()
-                logging.debug(f"{direction=}, {source=}, {target=}")
+                ray_trace_state = self.ray_trace(direction, source)
+                ray_trace_state.target.focus()
+                logging.debug(f"{ray_trace_state=}")
         except (ValueError, NoMatches) as e:
             logging.warning(str(e))
             return
