@@ -1,3 +1,4 @@
+import logging
 from textual.coordinate import Coordinate
 from textual.geometry import Offset, Region
 from textual.widget import Widget
@@ -99,3 +100,30 @@ class DataTable(TextualDataTable[CellType]):
             case Direction.RIGHT:
                 table_edge_center = Offset(x + width, cursor_edge_center.y)
         return table_edge_center
+
+    def navigate(self, ray_trace_state: NavigationMixin.RayTraceState) -> None:
+        """
+        Set focus to self and attempt to set cursor coordinate based on navigation entry point
+
+        We are able to set the cursor coordinate by piggy backing on the fact that DataTable
+        attaches row,column coordinates to each cell's styles, as a "meta" attribute.
+
+        Thus, to go in the reverse direction, from ray_trace_state.entry_point,
+        we can use screen.get_style_at API to get the styles,
+        and use its meta attribute to get the cursor coordinates (row,column)
+
+        References:
+        [Setting styles.meta with row,column in DataTable._render_cell](https://github.com/Textualize/textual/blob/0b7a5a7512a8486c092aa23153795cfafdf4abcb/src/textual/widgets/_data_table.py#L2135)
+        [Usage of meta in _on_mouse_move to set hover_coordinate](https://github.com/Textualize/textual/blob/0b7a5a7512a8486c092aa23153795cfafdf4abcb/src/textual/widgets/_data_table.py#L2546)
+        [Usage of meta in _on_click to set cursor_coordinate](https://github.com/Textualize/textual/blob/0b7a5a7512a8486c092aa23153795cfafdf4abcb/src/textual/widgets/_data_table.py#L2670)
+        """
+        try:
+            styles = self.screen.get_style_at(*ray_trace_state.entry_point)
+            meta = styles.meta
+            self.cursor_coordinate = Coordinate(meta["row"], meta["column"])
+        except Exception as e:
+            logging.warning(
+                f"Failed to set cursor_coordinate in DataTable.navigate: {e}"
+            )
+        finally:
+            self.focus()
