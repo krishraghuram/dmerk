@@ -204,7 +204,10 @@ class NavigationMixin:
                 raise ValueError("source is None!!!")
             if force_navigate or self.should_navigate(direction, source):
                 ray_trace_state = self.ray_trace(direction, source)
-                ray_trace_state.target.focus()
+                if hasattr(ray_trace_state.target, "navigate"):
+                    ray_trace_state.target.navigate(ray_trace_state)
+                else:
+                    ray_trace_state.target.focus()
                 logging.debug(f"{ray_trace_state=}")
         except (ValueError, NoMatches) as e:
             logging.warning(str(e))
