@@ -1,9 +1,10 @@
 from textual.coordinate import Coordinate
+from textual.geometry import Offset, Region
 from textual.widget import Widget
 from textual.widgets import DataTable as TextualDataTable
 from textual.widgets.data_table import CellType
 
-from dmerk.tui.navigation import Direction
+from dmerk.tui.navigation import Direction, NavigationMixin
 
 
 class DataTable(TextualDataTable[CellType]):
@@ -41,3 +42,26 @@ class DataTable(TextualDataTable[CellType]):
                 return self.prev_cursor_coordinate.column == 0
             case Direction.RIGHT:
                 return self.prev_cursor_coordinate.column == len(self.columns) - 1
+
+    def edge_center(self, direction: Direction) -> Offset:
+        """
+        Return the physical screen coordinates of the edge center of the currently highlighted cell.
+
+        The calculation involves three coordinate transformations:
+        Table coordinates (row, column), to,
+        Virtual terminal coordinates (x, y) via _get_cell_region, to,
+        Physical terminal coordinates relative to current widget (self) by subtracting scroll_offset, to,
+        Physical terminal coordinates relative to screen by adding self.region.offset
+
+        Once we have the cell's physical screen region, we use NavigationMixin.edge_center
+        to compute the center point of the specified edge.
+        """
+        table_offset = self.region.offset
+        cursor_region = self._get_cell_region(self.cursor_coordinate)
+        cursor_offset = cursor_region.offset
+        scroll_offset = self.scroll_offset
+        offset = table_offset + cursor_offset - scroll_offset
+        abs_cursor_region = Region(
+            offset.x, offset.y, cursor_region.width, cursor_region.height
+        )
+        return NavigationMixin.edge_center(abs_cursor_region, direction)
