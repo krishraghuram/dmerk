@@ -45,7 +45,8 @@ class DataTable(TextualDataTable[CellType]):
 
     def edge_center(self, direction: Direction) -> Offset:
         """
-        Return the physical screen coordinates of the edge center of the currently highlighted cell.
+        Return the physical screen coordinates of the edge center of the DataTable widget in the given direction,
+        aligned with the currently highlighted cell.
 
         The calculation involves three coordinate transformations:
         Table coordinates (row, column), to,
@@ -53,8 +54,28 @@ class DataTable(TextualDataTable[CellType]):
         Physical terminal coordinates relative to current widget (self) by subtracting scroll_offset, to,
         Physical terminal coordinates relative to screen by adding self.region.offset
 
-        Once we have the cell's physical screen region, we use NavigationMixin.edge_center
-        to compute the center point of the specified edge.
+        Once we have the cell's physical screen coordinates, we compute the edge center of the entire
+        DataTable widget in the given direction, but keep the perpendicular coordinate from the cell's edge center.
+        This creates a "projected" point from the cursor toward the widget's edge.
+
+        Example:
+        Currently highlighted cell is shaded as ░
+        cursor_edge_center is the x,y coordinate of the edge center of the currently highlighted cell.
+        Depending on the direction (UP, DOWN, LEFT, RIGHT),
+        we return the coordinates marked by ⇡ ⇣ ⇠ ⇢ respectively
+        ```
+          (x, y)
+            ┌────⇡─────┬──────────┐ ▲
+            │    ┆     │          │ │
+            ├──────────┼──────────┤ │
+            ⇠┄┄┄┄░┄┄┄┄┄│┄┄┄┄┄┄┄┄┄┄⇢ │
+            ├──────────┼──────────┤ height
+            │    ┆     │          │ │
+            ├──────────┼──────────┤ │
+            │    ┆     │          │ │
+            └────⇣─────┴──────────┘ ▼
+            ◀─────── width ──────▶
+        ```
         """
         table_offset = self.region.offset
         cursor_region = self._get_cell_region(self.cursor_coordinate)
@@ -64,4 +85,17 @@ class DataTable(TextualDataTable[CellType]):
         abs_cursor_region = Region(
             offset.x, offset.y, cursor_region.width, cursor_region.height
         )
-        return NavigationMixin.edge_center(abs_cursor_region, direction)
+        cursor_edge_center = NavigationMixin.edge_center(abs_cursor_region, direction)
+        x, y, width, height = self.region
+        height = max(height - 1, 0)
+        width = max(width - 1, 0)
+        match direction:
+            case Direction.UP:
+                table_edge_center = Offset(cursor_edge_center.x, y)
+            case Direction.DOWN:
+                table_edge_center = Offset(cursor_edge_center.x, y + height)
+            case Direction.LEFT:
+                table_edge_center = Offset(x, cursor_edge_center.y)
+            case Direction.RIGHT:
+                table_edge_center = Offset(x + width, cursor_edge_center.y)
+        return table_edge_center
