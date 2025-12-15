@@ -144,6 +144,7 @@ class NavigationMixin:
 
     @staticmethod
     def step(direction: Direction) -> Offset:
+        """Get unit step along direction of navigation"""
         match direction:
             case Direction.UP:
                 return Offset(+0, -1)
@@ -153,6 +154,25 @@ class NavigationMixin:
                 return Offset(-1, +0)
             case Direction.RIGHT:
                 return Offset(+1, +0)
+
+    @staticmethod
+    def perpendicular_step(direction: Direction) -> Offset:
+        """Get unit step perpendicular to direction of navigation"""
+        # We return unit step without direction, hence we return unsigned/absolute step
+        # Direction handling is taken care by spiral_order generator, which yields -i first, then yields i
+        match direction:
+            case Direction.UP | Direction.DOWN:
+                return Offset(1, 0)
+            case Direction.LEFT | Direction.RIGHT:
+                return Offset(0, 1)
+
+    @staticmethod
+    def spiral_order(n: int):
+        """Generate [0, -1, 1, -2, 2, ...] up to ±(width//2)"""
+        yield 0
+        for i in range(1, n + 1):
+            yield -i
+            yield i
 
     @dataclass
     class RayTraceState:
@@ -165,22 +185,32 @@ class NavigationMixin:
     @staticmethod
     def ray_trace(direction: Direction, widget: Widget) -> RayTraceState:
         """
-        Trace along the given direction from given source widget and return the target widget to receive focus
+        Trace along direction with expanding cone from source widget.
+
+        Args:
+            direction: direction of navigation
+            widget: source widget to trace from
         """
         source_edge_center = NavigationMixin.edge_center(widget, direction)
-        step = NavigationMixin.step(direction)
+        ray_step = NavigationMixin.step(direction)
+        perp_step = NavigationMixin.perpendicular_step(direction)
         spacing = NavigationMixin.spacing(direction, widget)
-        for i in range(1, spacing):
-            offset = source_edge_center + step * i
-            target = widget.screen.get_focusable_widget_at(*offset)
-            if target is not None and target != widget:
-                return NavigationMixin.RayTraceState(
-                    source=widget,
-                    exit_point=source_edge_center,
-                    direction=direction,
-                    entry_point=offset,
-                    target=target,
-                )
+
+        # Perform ray tracing in an expanding cone
+        cone_angle_tangent = 0.1
+        for ray_dist in range(1, spacing):
+            max_perp_distance = int(ray_dist * cone_angle_tangent)
+            for perp_dist in NavigationMixin.spiral_order(max_perp_distance):
+                point = source_edge_center + ray_step * ray_dist + perp_step * perp_dist
+                target = widget.screen.get_focusable_widget_at(*point)
+                if target is not None and target != widget:
+                    return NavigationMixin.RayTraceState(
+                        source=widget,
+                        exit_point=source_edge_center,
+                        direction=direction,
+                        entry_point=point,
+                        target=target,
+                    )
         raise NoMatches("No focusable widget found")
 
     @staticmethod
