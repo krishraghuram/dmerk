@@ -136,8 +136,8 @@ class FilePicker(Widget):
         MAX_ATTEMPTS = 100
         try:
             self.query_one(DataTable).focus()
-        except Exception as e:
+        except Exception:
             if attempt < MAX_ATTEMPTS:
                 self.call_after_refresh(lambda: self.focus(attempt + 1))
             else:
-                logging.error(f"Failed to focus FilePicker DataTable")
+                logging.error("Failed to focus FilePicker DataTable")

@@ -127,7 +127,7 @@ class Breadcrumbs(Widget):
                 self.parts = self.parts[: idx + 1]
                 # Mutable reactives require manual trigger: https://textual.textualize.io/guide/reactivity/#mutable-reactives
                 self.mutate_reactive(Breadcrumbs.parts)
-        except ValueError as e:
+        except ValueError:
             raise
 
     def on_key(self, event: Key):

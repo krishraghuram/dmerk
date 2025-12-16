@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Callable
 
 from humanize import naturaltime
-from rich.text import Text
 from textual.app import ComposeResult
 from textual.coordinate import Coordinate
 from textual.events import Resize

@@ -3,7 +3,6 @@ import math
 
 from textual.coordinate import Coordinate
 from textual.geometry import Offset, Region
-from textual.widget import Widget
 from textual.widgets import DataTable as TextualDataTable
 from textual.widgets.data_table import CellType
 
