@@ -1,5 +1,5 @@
-from textual.widgets import RichLog as TextualRichLog
 from rich.console import RenderableType
+from textual.widgets import RichLog as TextualRichLog
 
 from dmerk.tui.navigation import Direction
 

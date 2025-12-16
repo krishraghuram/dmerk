@@ -1,14 +1,14 @@
+from dataclasses import dataclass
 from itertools import zip_longest
 from typing import cast
-from textual.message import Message
-from textual.widgets import Label
-from textual.containers import Horizontal
-from textual.widget import Widget
-from textual.reactive import reactive
-from textual.events import Key, Click
-from rich.text import Text
 
-from dataclasses import dataclass
+from rich.text import Text
+from textual.containers import Horizontal
+from textual.events import Click, Key
+from textual.message import Message
+from textual.reactive import reactive
+from textual.widget import Widget
+from textual.widgets import Label
 
 
 class Crumb(Label):

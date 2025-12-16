@@ -1,5 +1,5 @@
-from textual.widgets import Input as TextualInput
 from textual.geometry import Offset, Region
+from textual.widgets import Input as TextualInput
 
 from dmerk.tui.navigation import Direction, NavigationMixin
 

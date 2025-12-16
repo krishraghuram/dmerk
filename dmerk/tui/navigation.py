@@ -1,8 +1,8 @@
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, cast
 from functools import singledispatchmethod
+from typing import Any, cast
 
 from textual.app import App
 from textual.css.query import NoMatches
@@ -10,7 +10,7 @@ from textual.events import Key as TextualKeyEvent
 from textual.geometry import Offset, Region, Size
 from textual.widget import Widget
 from textual.widgets import DataTable, Input
-from textual.widgets._tabbed_content import ContentTabs, ContentTab
+from textual.widgets._tabbed_content import ContentTab, ContentTabs
 
 
 class Key(Enum):

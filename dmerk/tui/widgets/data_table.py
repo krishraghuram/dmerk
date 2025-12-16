@@ -1,5 +1,6 @@
 import logging
 import math
+
 from textual.coordinate import Coordinate
 from textual.geometry import Offset, Region
 from textual.widget import Widget
