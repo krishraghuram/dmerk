@@ -238,9 +238,9 @@ class NavigationMixin:
                     ray_trace_state.target.navigate(ray_trace_state)
                 else:
                     ray_trace_state.target.focus()
-                logging.debug(f"{ray_trace_state=}")
+                logging.debug(f"Success in NavigationMixin, {ray_trace_state=}")
         except (ValueError, NoMatches) as e:
-            logging.warning(str(e))
+            logging.debug(f"Exception in NavigationMixin: {repr(e)}")
             return
 
 
