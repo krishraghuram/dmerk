@@ -1,4 +1,5 @@
 import logging
+import math
 from textual.coordinate import Coordinate
 from textual.geometry import Offset, Region
 from textual.widget import Widget
@@ -101,6 +102,55 @@ class DataTable(TextualDataTable[CellType]):
                 table_edge_center = Offset(x + width, cursor_edge_center.y)
         return table_edge_center
 
+    def closest_cell_coordinate(self, point: Offset) -> Coordinate:
+        """
+        Find the table cell coordinate closest to a given point on screen
+
+        Algorithm:
+        1. Check if any table cell region contains the point
+        2. If not, expand the point into region of size (3x3, 5x5...) until at least one cell overlaps
+        3. If multiple cells overlap, select the one with maximum overlap area
+        4. Break ties by preferring closest center to point, then by lower row index, and lastly by lower column index
+
+        Args:
+            point: A point on the screen defined as an Offset(x,y)
+
+        Returns:
+            Table coordinate of the closest cell, as a Coordinate(row, column)
+
+        Raises:
+            ValueError: If no cell can be found (e.g., empty table)
+
+        TODO: Implement caching on this if performance is bad on large DataTables
+        """
+        search_radius = max(self.region.width, self.region.height)
+        for n in range(search_radius):
+            point_region = Region.from_corners(
+                *(point - Offset(n, n)),
+                *(point + Offset(n, n)),
+            )
+            matches = {}
+            for r in range(len(self.rows)):
+                for c in range(len(self.columns)):
+                    rel_cell_region = self._get_cell_region(Coordinate(r, c))
+                    abs_cell_region = rel_cell_region.translate(self.region.offset)
+                    intersection_area = abs_cell_region.intersection(point_region).area
+                    distance_between_centers = math.dist(
+                        abs_cell_region.center,
+                        point_region.center,
+                    )
+                    if intersection_area > 0:
+                        matches[Coordinate(r, c)] = (
+                            -intersection_area,  # -ve because we want to maximize area
+                            distance_between_centers,
+                            r,
+                            c,
+                        )
+            if len(matches) > 0:
+                closest_coordinate, _ = min(matches.items(), key=lambda x: x[1])
+                return closest_coordinate
+        raise ValueError("No cell found!!!")
+
     def navigate(self, ray_trace_state: NavigationMixin.RayTraceState) -> None:
         """
         Set focus to self and attempt to set cursor coordinate based on navigation entry point
@@ -118,12 +168,12 @@ class DataTable(TextualDataTable[CellType]):
         [Usage of meta in _on_click to set cursor_coordinate](https://github.com/Textualize/textual/blob/0b7a5a7512a8486c092aa23153795cfafdf4abcb/src/textual/widgets/_data_table.py#L2670)
         """
         try:
-            styles = self.screen.get_style_at(*ray_trace_state.entry_point)
-            meta = styles.meta
-            self.cursor_coordinate = Coordinate(meta["row"], meta["column"])
+            self.cursor_coordinate = self.closest_cell_coordinate(
+                ray_trace_state.entry_point
+            )
         except Exception as e:
             logging.warning(
-                f"Failed to set cursor_coordinate in DataTable.navigate: {e}"
+                f"Failed to set cursor_coordinate in DataTable.navigate: {repr(e)}"
             )
         finally:
             self.focus()
