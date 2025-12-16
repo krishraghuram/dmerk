@@ -133,7 +133,9 @@ class DataTable(TextualDataTable[CellType]):
             for r in range(len(self.rows)):
                 for c in range(len(self.columns)):
                     rel_cell_region = self._get_cell_region(Coordinate(r, c))
-                    abs_cell_region = rel_cell_region.translate(self.region.offset)
+                    abs_cell_region = rel_cell_region.translate(
+                        self.region.offset - self.scroll_offset
+                    )
                     intersection_area = abs_cell_region.intersection(point_region).area
                     distance_between_centers = math.dist(
                         abs_cell_region.center,
