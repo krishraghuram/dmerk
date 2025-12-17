@@ -1,6 +1,7 @@
 import hashlib
 import logging
-from pathlib import Path
+from typing import TypeVar
+from pathlib import Path, PurePath
 
 from ..merkle import Merkle
 from . import hashlib_file_digest
@@ -85,7 +86,10 @@ def _symlink_digest(symlink: Path) -> str:
     return digest
 
 
-def _directory_digest(contents: dict[Path, Merkle]) -> str:
+PathT = TypeVar("PathT", bound=PurePath)
+
+
+def _directory_digest(contents: dict[PathT, Merkle]) -> str:
     """
     Compute the digest of a directory from the digests of its contents
     """
@@ -94,10 +98,15 @@ def _directory_digest(contents: dict[Path, Merkle]) -> str:
     return digest
 
 
-def _directory_size(contents: dict[Path, Merkle], directory: Path) -> int:
+def _directory_size(
+    contents: dict[PathT, Merkle], directory: Path | None = None
+) -> int:
     """
     Compute the size of a directory from the contents
     """
+    dir_size = 0
+    if directory is not None:
+        # Python 3.9 Compat
+        dir_size = directory.stat().st_size
     contents_total_size = sum([v.size for v in contents.values()])
-    # Python 3.9 Compat
-    return contents_total_size + directory.stat().st_size
+    return contents_total_size + dir_size

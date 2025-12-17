@@ -25,6 +25,7 @@ from textual.worker import Worker, WorkerState
 
 from dmerk.merkle import Merkle
 from dmerk.utils import PREFIX_SYMBOL_MERKLE, colorhash, fuzzy_match
+from dmerk.generate import directory_digest, directory_size
 
 
 # Bug: https://trello.com/c/iizCU2oj
@@ -108,12 +109,13 @@ class CompareWidget(Widget):
     @work(thread=True)
     async def _main(self, path: Path) -> None:
         merkle = Merkle.load(path)
+        contents = {merkle.path: merkle}
         # Create a virtual/dummy parent just so as to start rendering from root, instead root's children
         self.merkle = Merkle(
             path=merkle.path.parent,
             type=Merkle.Type.DIRECTORY,
-            size=0,
-            digest="",
+            size=directory_size(contents, Path(merkle.path)),
+            digest=directory_digest(contents),
             children={Path(merkle.path): merkle},
         )
 
@@ -437,11 +439,9 @@ class CompareWidget(Widget):
         else:
             return 0
 
-    # Note that we CANNOT make this a staticmethod, since we use virtual/dummy parent merkle above (in worker _main)
-    # The virtual/dummy parent merkle has identical hash values regardless of which merkle tree is loaded
-    # And so, if this was a staticmethod, we'd have cache collisions (i.e., we'd incorrectly return the wrong merkle)
+    @staticmethod
     @functools.lru_cache(maxsize=16)
-    def _submerkle(self, merkle: Merkle, subpath: PurePath | None) -> Merkle:
+    def _submerkle(merkle: Merkle, subpath: PurePath | None) -> Merkle:
         if subpath and subpath != merkle.path:
             return merkle.traverse(subpath)
         else:
