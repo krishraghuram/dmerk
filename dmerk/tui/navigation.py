@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from enum import Enum
 from functools import singledispatchmethod
-from typing import Any
+from typing import Any, Generator, Protocol, runtime_checkable
 
 from textual.app import App
 from textual.css.query import NoMatches
@@ -45,7 +45,7 @@ class Key(Enum):
             case _:
                 raise ValueError(f"Unexpected value {key=} in Key.from_event")
 
-    def has_ctrl(self):
+    def has_ctrl(self) -> bool:
         cls = self.__class__
         ctrl_keys = (cls.CTRL_UP, cls.CTRL_DOWN, cls.CTRL_LEFT, cls.CTRL_RIGHT)
         return self in ctrl_keys
@@ -71,6 +71,20 @@ class Direction(Enum):
 
 
 class NavigationMixin:
+    @runtime_checkable
+    class _HasEdgeCenter(Protocol):
+        def edge_center(self, direction: Direction) -> Offset: ...
+
+    @runtime_checkable
+    class _HasShouldNavigate(Protocol):
+        def should_navigate(self, direction: Direction) -> bool: ...
+
+    @runtime_checkable
+    class _HasNavigate(Protocol):
+        def navigate(
+            self, ray_trace_state: "NavigationMixin.RayTraceState"
+        ) -> None: ...
+
     def __init__(self, *args: Any, **kwargs: Any):
         assert isinstance(self, App)
         super().__init__(*args, **kwargs)
@@ -93,7 +107,7 @@ class NavigationMixin:
         x, y, width, height = widget.region
 
         # Get edge center from widget, or compute by ourselves
-        if hasattr(widget, "edge_center"):
+        if isinstance(widget, NavigationMixin._HasEdgeCenter):
             edge_center = widget.edge_center(direction)
         else:
             region = Region(x, y, width, height)
@@ -166,7 +180,7 @@ class NavigationMixin:
                 return Offset(0, 1)
 
     @staticmethod
-    def spiral_order(n: int):
+    def spiral_order(n: int) -> Generator[int, None, None]:
         """Generate [0, -1, 1, -2, 2, ...] up to ±(width//2)"""
         yield 0
         for i in range(1, n + 1):
@@ -216,7 +230,7 @@ class NavigationMixin:
     def should_navigate(direction: Direction, widget: Widget) -> bool:
         navigate = True
 
-        if hasattr(widget, "should_navigate"):
+        if isinstance(widget, NavigationMixin._HasShouldNavigate):
             navigate = navigate and widget.should_navigate(direction)
 
         return navigate
@@ -233,7 +247,7 @@ class NavigationMixin:
                 raise ValueError("source is None!!!")
             if force_navigate or self.should_navigate(direction, source):
                 ray_trace_state = self.ray_trace(direction, source)
-                if hasattr(ray_trace_state.target, "navigate"):
+                if isinstance(ray_trace_state.target, NavigationMixin._HasNavigate):
                     ray_trace_state.target.navigate(ray_trace_state)
                 else:
                     ray_trace_state.target.focus()

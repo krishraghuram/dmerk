@@ -1,3 +1,5 @@
+from typing import Any
+
 from rich.console import RenderableType
 from textual.widgets import RichLog as TextualRichLog
 
@@ -5,7 +7,7 @@ from dmerk.tui.navigation import Direction
 
 
 class RichLog(TextualRichLog):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         kwargs["auto_scroll"] = False
         super().__init__(*args, **kwargs)
 

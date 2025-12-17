@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from itertools import zip_longest
-from typing import cast
+from typing import Any, cast
 
 from rich.text import Text
+from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.events import Click, Key
 from textual.message import Message
@@ -14,7 +15,7 @@ from textual.widgets import Label
 class Crumb(Label):
     can_focus = True
 
-    def __init__(self, part_idx, *args, **kwargs):
+    def __init__(self, part_idx: int, *args: Any, **kwargs: Any) -> None:
         self.part_idx = part_idx
         super().__init__(*args, **kwargs)
 
@@ -28,7 +29,7 @@ class Breadcrumbs(Widget):
     ID_BREADCRUMBS = "breadcrumbs"
     IDX_ELLIPSIS_CRUMB = -1
 
-    parts: reactive[list[str] | None] = reactive(None, init=False)
+    parts: reactive[list[str]] = reactive(list(), init=False)
 
     def __init__(self, initial: str | list[str]):
         super().__init__()
@@ -37,7 +38,7 @@ class Breadcrumbs(Widget):
         else:
             self.set_reactive(Breadcrumbs.parts, initial)
 
-    def compose(self):
+    def compose(self) -> ComposeResult:
         with Horizontal(id=self.ID_BREADCRUMBS):
             for idx in range(len(self.parts)):
                 yield self.new_crumb(idx)
@@ -47,16 +48,15 @@ class Breadcrumbs(Widget):
         # BUG: This probably wont work well for non-ascii stuff
         return sum([len(cast(Text, i.content).plain) for i in crumbs])
 
-    def new_crumb(self, idx):
+    def new_crumb(self, idx: int) -> Crumb:
         idx = idx % len(self.parts)
         return Crumb(idx, Text(self.parts[idx], style="bold"))
 
     @classmethod
-    def ellipsis_crumb(cls):
+    def ellipsis_crumb(cls) -> Crumb:
         return Crumb(cls.IDX_ELLIPSIS_CRUMB, Text("/...", style="bold"))
 
-    def new_crumbs(self, show_ellipsis: bool = True):
-        assert self.parts is not None
+    def new_crumbs(self, show_ellipsis: bool = True) -> list[Crumb]:
         maxwidth = self.size.width
         new_crumbs = [self.new_crumb(idx) for idx in range(len(self.parts))]
         if show_ellipsis and self.crumbs_width(new_crumbs) > maxwidth:
@@ -81,7 +81,7 @@ class Breadcrumbs(Widget):
             new_crumbs = list(reversed(new_crumbs))
         return new_crumbs
 
-    def _refresh(self, show_ellipsis: bool = True):
+    def _refresh(self, show_ellipsis: bool = True) -> None:
         # Update crumbs
         # Find mismatch point, and update only Crumbs after that
         # If Crumb instance exists, update them, instead of creating new ones
@@ -112,12 +112,12 @@ class Breadcrumbs(Widget):
         # Also, we need to call this after refresh, so that textual first updates the pseudo classes (such as last-child) on DOM nodes.
         self.app.call_after_refresh(self.app.update_styles, self)
 
-    def watch_parts(self):
+    def watch_parts(self) -> None:
         self.post_message(Breadcrumbs.Changed(self, self.parts))
         self._refresh()
 
-    def _click_crumb(self, widget: Widget | None):
-        if not isinstance(widget, Crumb) or self.parts is None:
+    def _click_crumb(self, widget: Widget | None) -> None:
+        if not isinstance(widget, Crumb):
             raise ValueError("Illegal State!!!")
         try:
             idx = widget.part_idx
@@ -130,14 +130,14 @@ class Breadcrumbs(Widget):
         except ValueError:
             raise
 
-    def on_key(self, event: Key):
+    def on_key(self, event: Key) -> None:
         if event.key == "enter":
             self._click_crumb(self.app.focused)
 
     def on_click(self, message: Click) -> None:
         self._click_crumb(message.widget)
 
-    def update(self, parts):
+    def update(self, parts: list[str]) -> None:
         self.parts = parts
         # Mutable reactives require manual trigger: https://textual.textualize.io/guide/reactivity/#mutable-reactives
         self.mutate_reactive(Breadcrumbs.parts)

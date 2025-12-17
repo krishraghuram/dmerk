@@ -132,7 +132,7 @@ class FilePicker(Widget):
         else:
             return None
 
-    def focus(self, attempt: int = 0):
+    def focus(self, attempt: int = 0) -> "FilePicker":
         MAX_ATTEMPTS = 100
         try:
             self.query_one(DataTable).focus()
@@ -141,3 +141,5 @@ class FilePicker(Widget):
                 self.call_after_refresh(lambda: self.focus(attempt + 1))
             else:
                 logging.error("Failed to focus FilePicker DataTable")
+        finally:
+            return self
