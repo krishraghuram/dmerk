@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import cast
 
@@ -6,10 +7,9 @@ from textual.coordinate import Coordinate
 from textual.events import Resize
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import DataTable
 
 import dmerk.constants as constants
-from dmerk.tui.widgets.compare_widget import CompareWidget
+from dmerk.tui.widgets import CompareWidget, DataTable
 from dmerk.utils import fuzzy_match, prefix_symbol_path
 
 
@@ -131,3 +131,15 @@ class FilePicker(Widget):
             return highlighted_path.resolve()
         else:
             return None
+
+    def focus(self, attempt: int = 0) -> "FilePicker":
+        MAX_ATTEMPTS = 100
+        try:
+            self.query_one(DataTable).focus()
+        except Exception:
+            if attempt < MAX_ATTEMPTS:
+                self.call_after_refresh(lambda: self.focus(attempt + 1))
+            else:
+                logging.error("Failed to focus FilePicker DataTable")
+        finally:
+            return self

@@ -20,12 +20,22 @@ Screen #tab-generate {
             ClearableInput {
                 height: auto;
             }
-            Horizontal { /* FileManager Label */
-                background: $panel-lighten-2;
-                height: auto;
+            Breadcrumbs {
                 width: 100%;
-                Label:hover {
-                    text-style: underline;
+                height: auto;
+                Horizontal {
+                    background: $panel-lighten-2;
+                    height: auto;
+                    Crumb:hover {
+                        text-style: underline;
+                    }
+                    Crumb:focus {
+                        text-style: underline;
+                        color: $text-primary;
+                    }
+                    Crumb:last-child {
+                        width:100%
+                    }
                 }
             }
             DataTable {
@@ -72,6 +82,9 @@ Screen #tab-compare {
             width: 1fr;
             overflow: auto;
             align: center top;
+            DataTable {
+                height: 100%;
+            }
         }
         CompareWidget {
             &:first-child {
@@ -81,18 +94,28 @@ Screen #tab-compare {
                 margin-right: 2;
             }
             width: 1fr;
-            Horizontal { /* CompareWidget Label */
-                margin-right: 2;
-                background: $panel-lighten-2;
+            Breadcrumbs {
                 width: 100%;
                 height: auto;
-                Label:hover {
-                    text-style: underline;
+                Horizontal {
+                    background: $panel-lighten-2;
+                    height: auto;
+                    Crumb:hover {
+                        text-style: underline;
+                    }
+                    Crumb:focus {
+                        text-style: underline;
+                        color: $text-primary;
+                    }
+                    Crumb:last-child {
+                        width:100%
+                    }
                 }
             }
             DataTable {
                 margin: 0 0 1 0;
                 width: 100%;
+                height: 100%;
             }
             Button {
                 width: 100%;
