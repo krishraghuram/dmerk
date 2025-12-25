@@ -2,8 +2,8 @@ import logging
 from pathlib import Path
 
 from ..merkle import Merkle
+from .default import PathT, _directory_digest, _directory_size
 from .default import generate as default_generate
-from .default import _directory_digest, _directory_size, PathT
 
 # Can add platform-specific implementations here if needed
 # (for cross-platform compatibility or performance reasons)

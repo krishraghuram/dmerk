@@ -1,7 +1,7 @@
 import hashlib
 import logging
-from typing import TypeVar
 from pathlib import Path, PurePath
+from typing import TypeVar
 
 from ..merkle import Merkle
 from . import hashlib_file_digest

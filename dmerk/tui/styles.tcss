@@ -4,7 +4,7 @@ Screen #tab-generate {
         FavoritesSidebar {
             width: 1fr;
             margin: 0 2;
-            SidebarButton {
+            StatefulButton {
                 width: 100%;
                 margin: 1 0;
                 height: 5;

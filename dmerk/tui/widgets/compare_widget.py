@@ -23,10 +23,10 @@ from textual.widgets import Button
 from textual.widgets.data_table import RowKey
 from textual.worker import Worker, WorkerState
 
+from dmerk.generate import directory_digest, directory_size
 from dmerk.merkle import Merkle
 from dmerk.tui.widgets import Breadcrumbs, DataTable
 from dmerk.utils import PREFIX_SYMBOL_MERKLE, colorhash, fuzzy_match
-from dmerk.generate import directory_digest, directory_size
 
 
 # Bug: https://trello.com/c/iizCU2oj
