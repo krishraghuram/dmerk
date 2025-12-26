@@ -14,7 +14,7 @@ def generate(directory: Path, fail_on_error: bool = False) -> Merkle:
     return default_generate(directory, fail_on_error)
 
 
-def directory_size(contents: dict[PathT, Merkle], directory: Path) -> int:
+def directory_size(contents: dict[PathT, Merkle], directory: Path | None = None) -> int:
     return _directory_size(contents, directory)
 
 

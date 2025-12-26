@@ -114,7 +114,9 @@ class CompareWidget(Widget):
         self.merkle = Merkle(
             path=merkle.path.parent,
             type=Merkle.Type.DIRECTORY,
-            size=directory_size(contents, Path(merkle.path)),
+            # Not passing merkle.path to directory_size, because that can lead to exception
+            #   in Path.stat() call if merkle tree is currently not mounted in filesystem
+            size=directory_size(contents),
             digest=directory_digest(contents),
             children={Path(merkle.path): merkle},
         )
