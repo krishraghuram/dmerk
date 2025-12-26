@@ -38,7 +38,6 @@ class FilePicker(Widget):
             self.filter_by = filter_by
 
     path = reactive(Path.home())
-    prev_cell_key = None
 
     def compose(self) -> ComposeResult:
         files_table: DataTable[None] = DataTable(header_height=3)
@@ -63,7 +62,6 @@ class FilePicker(Widget):
             return None
 
     async def _refresh_table(self) -> None:
-        self.prev_cell_key = None
         files_table = self.query_one(DataTable)
         files_table.clear(columns=True)
         files_table.add_column("\nName", key="NAME", width=self.__get_column_width())
@@ -87,11 +85,6 @@ class FilePicker(Widget):
     async def watch_filter_by(self) -> None:
         await self._refresh_table()
 
-    def on_data_table_cell_highlighted(
-        self, message: DataTable.CellHighlighted
-    ) -> None:
-        self.prev_cell_key = None
-
     def _mount_compare_widget(self, path: Path) -> None:
         id_ = self.id.split("-")[-1] if self.id else ""
         id_ = "-".join(["compare", id_])
@@ -105,19 +98,12 @@ class FilePicker(Widget):
             new_path: Path = self.path / message.cell_key.row_key.value
             new_path = new_path.resolve()
             if new_path.is_file():
-                if self.prev_cell_key == message.cell_key:
-                    if isinstance(self.parent, Widget):
-                        self._mount_compare_widget(new_path)
-                    else:
-                        raise ValueError(f"{self.parent=} is not a Widget!!!")
+                if isinstance(self.parent, Widget):
+                    self._mount_compare_widget(new_path)
                 else:
-                    pass
+                    raise ValueError(f"{self.parent=} is not a Widget!!!")
             elif new_path.is_dir():
-                if self.prev_cell_key == message.cell_key:
-                    self.path = new_path
-                else:
-                    pass
-        self.prev_cell_key = message.cell_key
+                self.path = new_path
 
     def path_selected(self, path: Path) -> None:
         self.path = path

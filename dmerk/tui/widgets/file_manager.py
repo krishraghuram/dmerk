@@ -48,7 +48,6 @@ class FileManager(Widget):
     sort_by = reactive(Columns.MODIFIED.value.key)
     sort_reverse = reactive(Columns.MODIFIED.value.sort_reverse)
     filter_by = reactive("")
-    prev_cell_key = None
 
     @property
     def sort_key(self) -> Callable[[Path], str | datetime]:
@@ -100,7 +99,6 @@ class FileManager(Widget):
             return "\n" + column.label
 
     async def _refresh_table(self) -> None:
-        self.prev_cell_key = None
         files_table = self.query_one(DataTable)
         files_table.clear(columns=True)
         for column in Columns:
@@ -135,8 +133,9 @@ class FileManager(Widget):
     async def on_resize(self, event: Resize) -> None:
         await self._refresh()
 
-    async def watch_path(self) -> None:
+    async def watch_path(self, new_path: Path) -> None:
         self.query_one(ClearableInput).clear()
+        self.post_message(FileManager.PathChange(new_path))
         await self._refresh()
 
     async def watch_time_format(self) -> None:
@@ -174,25 +173,15 @@ class FileManager(Widget):
             self.path = path
             super().__init__()
 
-    def on_data_table_cell_highlighted(
-        self, message: DataTable.CellHighlighted
-    ) -> None:
-        self.prev_cell_key = None
-
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if Columns.NAME.name in message.cell_key:
             if message.cell_key.row_key.value is not None:
                 new_path: Path = self.path / message.cell_key.row_key.value
                 new_path = new_path.resolve()
                 if new_path.is_dir():
-                    if self.prev_cell_key == message.cell_key:
-                        self.path = new_path
-                        self.post_message(FileManager.PathChange(new_path))
-                    else:
-                        self.post_message(FileManager.PathSelected(new_path))
+                    self.path = new_path
         elif Columns.MODIFIED.name in message.cell_key:
             self.time_format = next(TIME_FORMAT_CYCLER)
-        self.prev_cell_key = message.cell_key
 
     def path_selected(self, path: Path) -> None:
         self.path = path

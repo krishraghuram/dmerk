@@ -1,7 +1,9 @@
 import logging
 import math
+from enum import Enum
 
 from textual.coordinate import Coordinate
+from textual.events import DescendantBlur
 from textual.geometry import Offset, Region
 from textual.widgets import DataTable as TextualDataTable
 from textual.widgets.data_table import CellType
@@ -9,9 +11,37 @@ from textual.widgets.data_table import CellType
 from dmerk.tui.navigation import Direction, NavigationMixin
 
 
+class CellSelectedBehavior(Enum):
+    """
+    Describes how we handle emission of CellSelected event
+
+    SingleClick - default TextualDataTable behavior
+    https://textual.textualize.io/widgets/data_table/#cursors
+
+    TwoClick - emit CellSelected only on second click on the same cell (double click also works)
+    """
+
+    SingleClick = 0
+    TwoClick = 1
+
+
 class DataTable(TextualDataTable[CellType]):
 
+    cell_selected_behavior = CellSelectedBehavior.TwoClick
+
+    # Previous value of cursor_coordinate
     prev_cursor_coordinate = Coordinate(0, 0)
+    # Cell key of previous CellSelected event
+    prev_selected_cell_key = None
+
+    def clear(self, columns: bool = False) -> "DataTable[CellType]":
+        self.prev_cursor_coordinate = Coordinate(0, 0)
+        self.prev_selected_cell_key = None
+        return super().clear(columns)
+
+    def on_descendant_blur(self, message: DescendantBlur) -> None:
+        self.prev_cursor_coordinate = Coordinate(0, 0)
+        self.prev_selected_cell_key = None
 
     def watch_cursor_coordinate(
         self, old_cursor_coordinate: Coordinate, new_cursor_coordinate: Coordinate
@@ -179,3 +209,36 @@ class DataTable(TextualDataTable[CellType]):
             )
         finally:
             self.focus()
+
+    def on_data_table_cell_selected(
+        self, message: TextualDataTable.CellSelected
+    ) -> None:
+        """
+        Intercept CellSelected message, and only emit it if it happens twice for the same cell
+
+        We do this so that it requires a "double click" to select a cell, which is our desired behavior
+
+        BUG..?:
+        Doing two single clicks on the same cell also works, and this is acceptable for now.
+        Its a bit unclear if this should be considered a bug or a feature.
+        """
+        if self.cell_selected_behavior == CellSelectedBehavior.TwoClick:
+            if self.prev_selected_cell_key != message.cell_key:
+                message.stop()
+            self.prev_selected_cell_key = message.cell_key
+
+    def action_select_cursor(self) -> None:
+        """
+        Intercept select cursor action, and invoke it twice
+
+        We do this because,
+        Unlike a mouse click, where we only want a double click to emit CellSelected,
+        A single "enter" keypress should emit CellSelected event.
+
+        The above logic where we intercept CellSelected changes the mouse clicks to work as desired,
+        but it also breaks "enter" keypress, and so, we have this hack to overcome the CellSelected interception logic,
+        and actually emit CellSelected on a single enter keypress.
+        """
+        super().action_select_cursor()
+        if self.cell_selected_behavior == CellSelectedBehavior.TwoClick:
+            super().action_select_cursor()

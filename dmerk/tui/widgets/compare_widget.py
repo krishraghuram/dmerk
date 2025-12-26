@@ -15,7 +15,7 @@ from textual.containers import Vertical
 from textual.coordinate import Coordinate
 from textual.css.query import NoMatches
 from textual.dom import DOMNode
-from textual.events import DescendantBlur, Resize
+from textual.events import Resize
 from textual.geometry import Size
 from textual.reactive import Reactive, reactive
 from textual.widget import Widget
@@ -55,7 +55,6 @@ class CompareWidget(Widget):
     DEFAULT_SORT_REVERSE = False
 
     merkle_subpath: reactive[PurePath | None] = reactive(None)
-    prev_cell_key = None
     filter_by = reactive("")
     sort_by: Reactive[None | str] = reactive(DEFAULT_SORT_BY)
     sort_reverse: Reactive[bool] = reactive(DEFAULT_SORT_REVERSE)
@@ -157,26 +156,19 @@ class CompareWidget(Widget):
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if "NAME" in message.cell_key:
-            if self.prev_cell_key == message.cell_key:
-                path = message.cell_key.row_key.value
-                if path == "..":
+            path = message.cell_key.row_key.value
+            if path == "..":
+                if self.merkle_subpath:
+                    self.merkle_subpath = self.merkle_subpath.parent
+                else:
+                    raise ValueError("Illegal state, cannot go above the root merkle")
+            elif path is not None:
+                pure_path = PurePath(path)
+                if self.submerkle.children[pure_path].type == Merkle.Type.DIRECTORY:
                     if self.merkle_subpath:
-                        self.merkle_subpath = self.merkle_subpath.parent
+                        self.merkle_subpath = self.merkle_subpath / pure_path
                     else:
-                        raise ValueError(
-                            "Illegal state, cannot go above the root merkle"
-                        )
-                elif path is not None:
-                    pure_path = PurePath(path)
-                    if self.submerkle.children[pure_path].type == Merkle.Type.DIRECTORY:
-                        if self.merkle_subpath:
-                            self.merkle_subpath = self.merkle_subpath / pure_path
-                        else:
-                            self.merkle_subpath = pure_path
-        self.prev_cell_key = message.cell_key
-
-    def on_descendant_blur(self, message: DescendantBlur) -> None:
-        self.prev_cell_key = None
+                        self.merkle_subpath = pure_path
 
     async def on_resize(self, event: Resize) -> None:
         if self.prev_screen_size != self.screen.size:
