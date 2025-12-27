@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Any
 
@@ -7,13 +8,21 @@ from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
 
+import dmerk.constants as constants
 from dmerk.tui.widgets import StatefulButton
 
 
 class FavoritesSidebar(Widget):
 
+    MAX_BUTTONS = 6
+
+    DEFAULT_PATHS = [Path("/"), Path.home()]
+
+    STATE_FILE = Path(constants.APP_STATE_PATH) / "FavoritesSidebar.json"
+
     BINDINGS = [
         ("r", "remove", "Remove"),
+        ("d", "default", "Reset Favorites to Default"),
     ]
 
     def action_remove(self) -> None:
@@ -28,9 +37,15 @@ class FavoritesSidebar(Widget):
                 # Mutable reactives require manual trigger: https://textual.textualize.io/guide/reactivity/#mutable-reactives
                 self.mutate_reactive(FavoritesSidebar.items)
 
-    MAX_BUTTONS = 6
+    def action_default(self) -> None:
+        self.items.clear()
+        self.items.extend(
+            [(p, StatefulButton(self._label(p))) for p in self.DEFAULT_PATHS]
+        )
+        # Mutable reactives require manual trigger: https://textual.textualize.io/guide/reactivity/#mutable-reactives
+        self.mutate_reactive(FavoritesSidebar.items)
 
-    items: reactive[list[tuple[Path, StatefulButton]]] = reactive(list())
+    items: reactive[list[tuple[Path, StatefulButton]]] = reactive(list(), init=False)
 
     @staticmethod
     def _label(path: Path) -> str:
@@ -52,7 +67,12 @@ class FavoritesSidebar(Widget):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
-        paths = [Path("/"), Path.home()]
+        # Load paths, or use default paths
+        try:
+            with open(self.STATE_FILE, "r") as f:
+                paths = [Path(p) for p in json.load(f)]
+        except Exception:
+            paths = self.DEFAULT_PATHS
         # No need to trigger reactive here, because compose will run after init
         self.items.extend([(p, StatefulButton(self._label(p))) for p in paths])
 
@@ -62,6 +82,10 @@ class FavoritesSidebar(Widget):
                 yield button
 
     def watch_items(self) -> None:
+        # Persist paths
+        paths = [str(p) for p, _ in self.items]
+        with open(self.STATE_FILE, "w") as f:
+            json.dump(paths, f)
         # Remove buttons from DOM that are no longer in items
         buttons = [b for p, b in self.items]
         for b in self.query(StatefulButton):

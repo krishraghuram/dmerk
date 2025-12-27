@@ -57,10 +57,6 @@ class DmerkApp(App[None], NavigationMixin):
 
     CSS_PATH = "styles.tcss"
 
-    BINDINGS = [
-        ("d", "toggle_dark", "Toggle dark mode"),
-    ]
-
     BUTTON_GENERATE = "button-generate"
 
     def on_ready(self, event: Ready) -> None:
@@ -144,12 +140,6 @@ class DmerkApp(App[None], NavigationMixin):
             file_picker.filter_by = message.value
         for compare_widget in self.query(CompareWidget):
             compare_widget.filter_by = message.value
-
-    def action_toggle_dark(self) -> None:
-        """An action to toggle dark mode."""
-        self.theme = (
-            "textual-dark" if self.theme == "textual-light" else "textual-light"
-        )
 
     def on_file_manager_path_change(self, message: FileManager.PathChange) -> None:
         logging.debug(message)
