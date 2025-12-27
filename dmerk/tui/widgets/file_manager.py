@@ -13,8 +13,9 @@ from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Input
+from textual.widgets.data_table import CellDoesNotExist
 
-from dmerk.tui.widgets import Breadcrumbs, ClearableInput, DataTable
+from dmerk.tui.widgets import Breadcrumbs, ClearableInput, DataTable, FavoritesSidebar
 from dmerk.utils import fuzzy_match, prefix_symbol_path
 
 TIME_FORMATS: dict[str, Callable[[float], str]] = {
@@ -43,7 +44,13 @@ class Columns(Enum):
 
 
 class FileManager(Widget):
+
+    BINDINGS = [
+        ("f", "favorite", "Favorite"),
+    ]
+
     path = reactive(Path.home())
+    cursor_path: reactive[Path | None] = reactive(None, bindings=True)
     time_format = reactive(next(TIME_FORMAT_CYCLER))
     sort_by = reactive(Columns.MODIFIED.value.key)
     sort_reverse = reactive(Columns.MODIFIED.value.sort_reverse)
@@ -72,6 +79,24 @@ class FileManager(Widget):
                 pass
 
         self.watch(dt, "hover_coordinate", watch_hover_coordinate)
+
+        def watch_cursor_coordinate(old: Coordinate, new: Coordinate) -> None:
+            try:
+                cell_key = dt.coordinate_to_cell_key(new)
+            except CellDoesNotExist:
+                self.cursor_path = None
+            else:
+                if Columns.NAME.name in cell_key:
+                    if cell_key.row_key.value is not None:
+                        self.cursor_path = (
+                            self.path / cell_key.row_key.value
+                        ).resolve()
+                    else:
+                        self.cursor_path = None
+                else:
+                    self.cursor_path = None
+
+        self.watch(dt, "cursor_coordinate", watch_cursor_coordinate)
 
     def __get_column_width(self) -> int | None:
         if self.size.width != 0:
@@ -163,15 +188,26 @@ class FileManager(Widget):
         else:
             self.sort_reverse = not self.sort_reverse
 
-    class PathSelected(Message):
-        def __init__(self, path: Path) -> None:
-            self.path = path
-            super().__init__()
-
     class PathChange(Message):
         def __init__(self, path: Path) -> None:
             self.path = path
             super().__init__()
+
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        match action:
+            case "favorite":
+                return (
+                    self.app.query_one(FavoritesSidebar).can_add_favorite()
+                    and self.cursor_path is not None
+                    and self.cursor_path.is_dir()
+                )
+            case _:
+                return True
+
+    def action_favorite(self) -> None:
+        assert self.cursor_path is not None
+        self.app.query_one(FavoritesSidebar).add_favorite(self.cursor_path)
+        self.refresh_bindings()
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
         if Columns.NAME.name in message.cell_key:
@@ -185,16 +221,3 @@ class FileManager(Widget):
 
     def path_selected(self, path: Path) -> None:
         self.path = path
-
-    @property
-    def highlighted_path(self) -> Path | None:
-        files_table = self.query_one(DataTable)
-        cell_key = files_table.coordinate_to_cell_key(files_table.cursor_coordinate)
-        if Columns.NAME.name in cell_key:
-            if cell_key.row_key.value is not None:
-                highlighted_path = self.path / cell_key.row_key.value
-                return highlighted_path.resolve()
-            else:
-                return None
-        else:
-            return None

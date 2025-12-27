@@ -130,10 +130,10 @@ class DmerkApp(App[None], NavigationMixin):
 
     def on_button_pressed(self, message: Button.Pressed) -> None:
         if message.button.id == self.BUTTON_GENERATE:
-            highlighted_path = self.query_one(FileManager).highlighted_path
-            if highlighted_path is not None:
-                if highlighted_path.is_dir():
-                    self._main(highlighted_path)
+            cursor_path = self.query_one(FileManager).cursor_path
+            if cursor_path is not None:
+                if cursor_path.is_dir():
+                    self._main(cursor_path)
                 else:
                     logging.warning("Please choose a directory")
             else:
@@ -150,10 +150,6 @@ class DmerkApp(App[None], NavigationMixin):
         self.theme = (
             "textual-dark" if self.theme == "textual-light" else "textual-light"
         )
-
-    def on_file_manager_path_selected(self, message: FileManager.PathSelected) -> None:
-        logging.debug(message)
-        self.query_one(FavoritesSidebar).path_selected(message.path)
 
     def on_file_manager_path_change(self, message: FileManager.PathChange) -> None:
         logging.debug(message)

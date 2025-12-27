@@ -4,17 +4,33 @@ from typing import Any
 from textual.app import ComposeResult
 from textual.containers import Vertical
 from textual.message import Message
+from textual.reactive import reactive
 from textual.widget import Widget
 
 from dmerk.tui.widgets import StatefulButton
 
 
 class FavoritesSidebar(Widget):
-    N_BUTTONS = 6
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
-        self.paths = [Path("/"), Path.home()]
+    BINDINGS = [
+        ("r", "remove", "Remove"),
+    ]
+
+    def action_remove(self) -> None:
+        if isinstance(self.app.focused, StatefulButton):
+            idx_to_remove = None
+            for idx, (p, b) in enumerate(self.items):
+                if b == self.app.focused:
+                    idx_to_remove = idx
+                    break
+            if idx_to_remove is not None:
+                self.items.pop(idx_to_remove)
+                # Mutable reactives require manual trigger: https://textual.textualize.io/guide/reactivity/#mutable-reactives
+                self.mutate_reactive(FavoritesSidebar.items)
+
+    MAX_BUTTONS = 6
+
+    items: reactive[list[tuple[Path, StatefulButton]]] = reactive(list())
 
     @staticmethod
     def _label(path: Path) -> str:
@@ -31,20 +47,30 @@ class FavoritesSidebar(Widget):
     def _path(self, button: StatefulButton) -> Path | None:
         """
         Return the path for the button
-
-        Find the index of the button in the DOM tree, and return the path for that index, else return None
         """
-        idx = self.query_one(Vertical).children.index(button)
-        if idx < len(self.paths):
-            return self.paths[idx]
-        return None
+        return next((p for p, b in self.items if b == button), None)
+
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        paths = [Path("/"), Path.home()]
+        # No need to trigger reactive here, because compose will run after init
+        self.items.extend([(p, StatefulButton(self._label(p))) for p in paths])
 
     def compose(self) -> ComposeResult:
         with Vertical():
-            for path in self.paths:
-                yield StatefulButton(self._label(path))
-            for i in range(self.N_BUTTONS - len(self.paths)):
-                yield StatefulButton("")
+            for path, button in self.items:
+                yield button
+
+    def watch_items(self) -> None:
+        # Remove buttons from DOM that are no longer in items
+        buttons = [b for p, b in self.items]
+        for b in self.query(StatefulButton):
+            if b not in buttons:
+                b.remove()
+        # Mount buttons in items but not in DOM
+        for p, b in self.items:
+            if self not in b.ancestors:
+                self.query_one(Vertical).mount(b)
 
     class PathSelected(Message):
         def __init__(self, path: Path) -> None:
@@ -64,22 +90,23 @@ class FavoritesSidebar(Widget):
             if path is not None:
                 self.post_message(FavoritesSidebar.PathSelected(path))
 
-    def path_selected(self, path: Path) -> None:
+    def can_add_favorite(self) -> bool:
+        return len(self.items) < self.MAX_BUTTONS
+
+    def add_favorite(self, path: Path) -> None:
         for button in self.query(StatefulButton):
             if path == self._path(button):
                 # Selected path is already a favorite, dont add again
                 return
-            if button.label == "":
-                # Found a empty button, can add path as favorite
-                self.paths.append(path)
-                button.label = self._label(path)
-                return
-        # TODO:
-        # This is not done yet, because this is called when FileManager.PathSelected message is emitted,
-        # which happens every time user navigates in FileManager.
-        # So this will mean that we'll quickly fillup all StatefulButton as user navigates the FileManager.
-        # Instead, we want to change this to only be called when user wants to "add a new favorite sidebar item".
-        # For that, we'll have to use something like a keybinding for the user to enter "set favorite mode" in FileManager.
+        # Mount a new button
+        if self.can_add_favorite():
+            self.items.append((path, StatefulButton(self._label(path))))
+            # Mutable reactives require manual trigger: https://textual.textualize.io/guide/reactivity/#mutable-reactives
+            self.mutate_reactive(FavoritesSidebar.items)
+        else:
+            raise ValueError(
+                f"Reached limit of {self.MAX_BUTTONS}, cant add more favorites"
+            )
 
     def path_change(self, path: Path) -> None:
         # If there is a button in selected state, and if its path is not matching the path argument, deselect the button,
