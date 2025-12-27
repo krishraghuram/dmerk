@@ -37,6 +37,7 @@ dev = [
     "pytest-asyncio",
     "build",
     "twine",
+    "textual-dominfo",
 ]
 
 [project.urls]
