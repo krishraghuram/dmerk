@@ -7,17 +7,6 @@ from textual.widgets import Button
 
 class StatefulButton(Button):
 
-    DEFAULT_CSS = """
-    StatefulButton {
-        &.-selected {
-            background: $surface;
-            border-bottom: tall $surface-lighten-1;
-            border-top: tall $surface-darken-1;
-            tint: $background 30%;
-        }
-    }
-    """
-
     class State(Enum):
         # Default state, button is not selected
         DEFAULT = 0
@@ -43,12 +32,12 @@ class StatefulButton(Button):
 
     def reset_state(self) -> None:
         self.state = StatefulButton.State.DEFAULT
-        self.remove_class("-selected")
+        self.remove_class("-primary")
 
     def set_state(self) -> None:
         if self.state == StatefulButton.State.DEFAULT:
             self.state = StatefulButton.State.SELECTED
-            self.add_class("-selected")
+            self.add_class("-primary")
 
     def press(self, human_press: bool = True) -> "StatefulButton":
         """Respond to a button press.
