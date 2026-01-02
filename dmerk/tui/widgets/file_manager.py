@@ -7,14 +7,13 @@ from typing import Callable
 
 from humanize import naturaltime
 from textual.app import ComposeResult
+from textual.containers import Horizontal, Vertical
 from textual.coordinate import Coordinate
 from textual.events import Resize
-from textual.message import Message
 from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Input
 from textual.widgets.data_table import CellDoesNotExist
-from textual.containers import Horizontal, Vertical
 
 from dmerk.tui.widgets import Breadcrumbs, ClearableInput, DataTable, FavoritesSidebar
 from dmerk.utils import fuzzy_match, prefix_symbol_path

@@ -24,7 +24,6 @@ from dmerk.tui.navigation import NavigationMixin
 from dmerk.tui.widgets import (
     ClearableInput,
     CompareWidget,
-    FavoritesSidebar,
     FileManager,
     FilePicker,
     RichLog,

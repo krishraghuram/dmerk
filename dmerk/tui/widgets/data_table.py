@@ -2,11 +2,12 @@ import logging
 import math
 from enum import Enum
 
+from rich.text import TextType
 from textual.coordinate import Coordinate
 from textual.events import DescendantBlur
 from textual.geometry import Offset, Region
 from textual.widgets import DataTable as TextualDataTable
-from textual.widgets.data_table import CellType
+from textual.widgets.data_table import CellType, ColumnKey
 
 from dmerk.tui.navigation import Direction, NavigationMixin
 
@@ -256,7 +257,14 @@ class DataTable(TextualDataTable[CellType]):
         if self.cell_selected_behavior == CellSelectedBehavior.TwoClick:
             super().action_select_cursor()
 
-    def add_column(self, label, *, width=None, key=None, default=None):
+    def add_column(
+        self,
+        label: TextType,
+        *,
+        width: int | None = None,
+        key: str | None = None,
+        default: CellType | None = None,
+    ) -> ColumnKey:
         if (
             self.column_width_sizing == ColumnWidthSizing.Split
             and width is None
