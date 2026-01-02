@@ -98,13 +98,6 @@ class FileManager(Widget):
 
         self.watch(dt, "cursor_coordinate", watch_cursor_coordinate)
 
-    def __get_column_width(self) -> int | None:
-        if self.size.width != 0:
-            # the math is to prevent horizontal scrollbar from appearing
-            return int((self.size.width - 2) / 2) - 2
-        else:
-            return None
-
     async def _refresh(self) -> None:
         await self._refresh_breadcrumbs()
         await self._refresh_table()
@@ -130,7 +123,6 @@ class FileManager(Widget):
             files_table.add_column(
                 self._get_header_label(column.value),
                 key=column.value.key,
-                width=self.__get_column_width(),
             )
         files_table.add_row(*["\n..", "\n-"], key="..", height=3)
         files_list = [p for p in self.path.iterdir() if p.exists()]

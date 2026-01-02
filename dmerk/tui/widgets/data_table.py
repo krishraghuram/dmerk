@@ -25,9 +25,22 @@ class CellSelectedBehavior(Enum):
     TwoClick = 1
 
 
+class ColumnWidthSizing(Enum):
+    """
+    Allows choosing between two approachs to automatically sizing column width
+
+    Fit is the textual default behavior, column width will be set to "fit" the content
+    Split is the custom behavior, table width will be evenly "split" across the columns
+    """
+
+    Fit = 0
+    Split = 1
+
+
 class DataTable(TextualDataTable[CellType]):
 
     cell_selected_behavior = CellSelectedBehavior.TwoClick
+    column_width_sizing = ColumnWidthSizing.Split
 
     # Previous value of cursor_coordinate
     prev_cursor_coordinate = Coordinate(0, 0)
@@ -242,3 +255,21 @@ class DataTable(TextualDataTable[CellType]):
         super().action_select_cursor()
         if self.cell_selected_behavior == CellSelectedBehavior.TwoClick:
             super().action_select_cursor()
+
+    def add_column(self, label, *, width=None, key=None, default=None):
+        if (
+            self.column_width_sizing == ColumnWidthSizing.Split
+            and width is None
+            and self.size.width != 0
+        ):
+            # Split width evenly amongst columns
+            n_cols = len(self.columns) + 1
+            # The math here is to prevent horizontal scrollbar from appearing
+            # The vertical scrollbar may take width of 2
+            # Besides that, we have n_cols columns, and we have to split the rem width amongst them
+            # Each column has a built-in padding of 1 on both sides (see cell_padding in DataTable docs)
+            width = int((self.size.width - 2) / n_cols) - 2
+            # Overwrite width of existing columns
+            for col in self.columns.values():
+                col.width = width
+        return super().add_column(label, width=width, key=key, default=default)
