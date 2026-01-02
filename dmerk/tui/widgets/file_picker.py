@@ -57,7 +57,7 @@ class FilePicker(Widget):
     def __get_column_width(self) -> int | None:
         if self.size.width != 0:
             # the math is to prevent horizontal scrollbar from appearing
-            return int(self.size.width - 2)
+            return int(self.size.width - 2) - 2
         else:
             return None
 
