@@ -35,6 +35,7 @@ class ClearableInput(Widget):
         Horizontal {
             width: 100%;
             height: auto;
+            min-height: 3;
             Input {
                 width: 100%;
                 color: $text-warning;

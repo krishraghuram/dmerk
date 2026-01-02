@@ -100,7 +100,6 @@ class DmerkApp(App[None], NavigationMixin):
             with TabPane(Tabs.Generate.name, id=Tabs.Generate.value):
                 with Vertical():
                     with Horizontal(id="top"):
-                        yield FavoritesSidebar()
                         yield FileManager()
                     with Horizontal(id="bottom"):
                         yield RichLog()
@@ -140,16 +139,6 @@ class DmerkApp(App[None], NavigationMixin):
             file_picker.filter_by = message.value
         for compare_widget in self.query(CompareWidget):
             compare_widget.filter_by = message.value
-
-    def on_file_manager_path_change(self, message: FileManager.PathChange) -> None:
-        logging.debug(message)
-        self.query_one(FavoritesSidebar).path_change(message.path)
-
-    def on_favorites_sidebar_path_selected(
-        self, message: FavoritesSidebar.PathSelected
-    ) -> None:
-        logging.debug(message)
-        self.query_one(FileManager).path_selected(message.path)
 
 
 app = DmerkApp()

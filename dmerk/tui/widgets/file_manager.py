@@ -14,6 +14,7 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Input
 from textual.widgets.data_table import CellDoesNotExist
+from textual.containers import Horizontal, Vertical
 
 from dmerk.tui.widgets import Breadcrumbs, ClearableInput, DataTable, FavoritesSidebar
 from dmerk.utils import fuzzy_match, prefix_symbol_path
@@ -61,10 +62,13 @@ class FileManager(Widget):
         return Columns[self.sort_by].value.sort_key
 
     def compose(self) -> ComposeResult:
-        yield ClearableInput(placeholder="Filter by...")
-        yield Breadcrumbs(str(self.path))
-        files_table: DataTable[None] = DataTable(header_height=3)
-        yield files_table
+        with Horizontal():
+            yield FavoritesSidebar()
+            with Vertical():
+                yield ClearableInput(placeholder="Filter by...")
+                yield Breadcrumbs(str(self.path))
+                files_table: DataTable[None] = DataTable(header_height=3)
+                yield files_table
 
     def on_input_changed(self, message: Input.Changed) -> None:
         self.filter_by = message.value
@@ -147,8 +151,13 @@ class FileManager(Widget):
 
     async def watch_path(self, new_path: Path) -> None:
         self.query_one(ClearableInput).clear()
-        self.post_message(FileManager.PathChange(new_path))
+        self.query_one(FavoritesSidebar).path_change(new_path)
         await self._refresh()
+
+    def on_favorites_sidebar_path_selected(
+        self, message: FavoritesSidebar.PathSelected
+    ) -> None:
+        self.path = message.path
 
     async def watch_time_format(self) -> None:
         files_table = self.query_one(DataTable)
@@ -175,16 +184,11 @@ class FileManager(Widget):
         else:
             self.sort_reverse = not self.sort_reverse
 
-    class PathChange(Message):
-        def __init__(self, path: Path) -> None:
-            self.path = path
-            super().__init__()
-
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         match action:
             case "favorite":
                 return (
-                    self.app.query_one(FavoritesSidebar).can_add_favorite()
+                    self.query_one(FavoritesSidebar).can_add_favorite()
                     and self.cursor_path is not None
                     and self.cursor_path.is_dir()
                 )
@@ -193,7 +197,7 @@ class FileManager(Widget):
 
     def action_favorite(self) -> None:
         assert self.cursor_path is not None
-        self.app.query_one(FavoritesSidebar).add_favorite(self.cursor_path)
+        self.query_one(FavoritesSidebar).add_favorite(self.cursor_path)
         self.refresh_bindings()
 
     def on_data_table_cell_selected(self, message: DataTable.CellSelected) -> None:
@@ -205,6 +209,3 @@ class FileManager(Widget):
                     self.path = new_path
         elif Columns.MODIFIED.name in message.cell_key:
             self.time_format = next(TIME_FORMAT_CYCLER)
-
-    def path_selected(self, path: Path) -> None:
-        self.path = path

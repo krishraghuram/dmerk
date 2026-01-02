@@ -1,50 +1,55 @@
 Screen #tab-generate {
     #top {
         height: 4fr;
-        FavoritesSidebar {
-            width: 1fr;
-            margin: 0 2;
-            StatefulButton {
-                width: 100%;
-                margin: 1 0;
-                height: 5;
-                &:first-child {
-                    margin: 0 0;
-                }
-            }
-        }
         FileManager {
-            width: 4fr;
-            overflow: auto;
-            align: center top;
-            ClearableInput {
-                height: auto;
-            }
-            Breadcrumbs {
-                width: 100%;
-                height: auto;
-                Horizontal {
-                    background: $panel-lighten-2;
-                    height: auto;
-                    Crumb:hover {
-                        text-style: underline;
-                    }
-                    Crumb:focus {
-                        text-style: underline;
-                        color: $text-primary;
-                    }
-                    Crumb:last-child {
-                        width:100%
+            Horizontal {
+                height: 100%;
+                FavoritesSidebar {
+                    width: 1fr;
+                    margin: 0 2;
+                    StatefulButton {
+                        width: 100%;
+                        margin: 1 0;
+                        height: 5;
+                        &:first-child {
+                            margin: 0 0;
+                        }
                     }
                 }
-            }
-            DataTable {
-                width: 100%;
-                height: 1fr;
-                &:focus {
-                    /* Essentially $surface-lighten-0.5 on dark theme*/
-                    /* Doesn't work on light theme tho :( */
-                    background: $surface-lighten-2; 
+                & > Vertical {
+                    width: 4fr;
+                    overflow: auto;
+                    align: center top;
+                    ClearableInput {
+                        height: auto;
+                    }
+                    Breadcrumbs {
+                        width: 100%;
+                        height: auto;
+                        Horizontal {
+                            background: $panel-lighten-2;
+                            height: auto;
+                            Crumb:hover {
+                                text-style: underline;
+                            }
+                            Crumb:focus {
+                                text-style: underline;
+                                color: $text-primary;
+                            }
+                            Crumb:last-child {
+                                width:100%
+                            }
+                        }
+                    }
+                    DataTable {
+                        width: 100%;
+                        height: 1fr;
+                        &:focus {
+                            /* Essentially $surface-lighten-0.5 on dark theme*/
+                            /* Doesn't work on light theme tho :( */
+                            background: $surface-lighten-2; 
+                        }
+                    }
                 }
             }
         }
