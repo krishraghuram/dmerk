@@ -40,6 +40,7 @@ Screen #tab-generate {
             }
             DataTable {
                 width: 100%;
+                height: 1fr;
                 &:focus {
                     /* Essentially $surface-lighten-0.5 on dark theme*/
                     /* Doesn't work on light theme tho :( */
