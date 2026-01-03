@@ -3,7 +3,7 @@ from typing import Any
 from rich.console import RenderableType
 from textual.widgets import RichLog as TextualRichLog
 
-from dmerk.tui.navigation import Direction
+from dmerk.tui.mixins.navigation import Direction
 
 
 class RichLog(TextualRichLog):

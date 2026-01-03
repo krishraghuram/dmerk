@@ -1,7 +1,7 @@
 from textual.geometry import Offset, Region
 from textual.widgets import Input as TextualInput
 
-from dmerk.tui.navigation import Direction, NavigationMixin
+from dmerk.tui.mixins.navigation import Direction, NavigationMixin
 
 
 class Input(TextualInput):

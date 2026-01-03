@@ -20,7 +20,7 @@ from textual.widgets import (
 
 import dmerk.constants as constants
 import dmerk.generate as generate
-from dmerk.tui.navigation import NavigationMixin
+from dmerk.tui.mixins.navigation import NavigationMixin
 from dmerk.tui.widgets import (
     ClearableInput,
     CompareWidget,

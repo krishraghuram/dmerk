@@ -9,7 +9,7 @@ from textual.geometry import Offset, Region
 from textual.widgets import DataTable as TextualDataTable
 from textual.widgets.data_table import CellType, ColumnKey
 
-from dmerk.tui.navigation import Direction, NavigationMixin
+from dmerk.tui.mixins.navigation import Direction, NavigationMixin
 
 
 class CellSelectedBehavior(Enum):
