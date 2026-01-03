@@ -1,8 +1,9 @@
 import logging
 import math
 from enum import Enum
+from typing import TypeVar
 
-from rich.text import TextType
+from rich.text import Text, TextType
 from textual.coordinate import Coordinate
 from textual.events import DescendantBlur
 from textual.geometry import Offset, Region
@@ -281,3 +282,29 @@ class DataTable(TextualDataTable[CellType]):
             for col in self.columns.values():
                 col.width = width
         return super().add_column(label, width=width, key=key, default=default)
+
+    TooltipCell = TypeVar("TooltipCell", bound=str | Text)
+
+    def enable_tooltips(self: TextualDataTable[TooltipCell]) -> None:
+        """
+        Enable showing tooltips when hovering on a cell
+
+        This helps users view content that might otherwise be truncated
+        """
+
+        def watch_hover_coordinate(old: Coordinate, new: Coordinate) -> None:
+            try:
+                cell = self.get_cell_at(new)
+                if isinstance(cell, str):
+                    tooltip = cell.strip()
+                elif isinstance(cell, Text):
+                    tooltip = cell.plain.strip()
+                else:
+                    logging.warning(
+                        f"Tooltips can be shown only for tables with CellType 'str' or 'rich.text.Text', found {type(cell)}"
+                    )
+                self.tooltip = tooltip
+            except:
+                pass
+
+        self.watch(self, "hover_coordinate", watch_hover_coordinate)

@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import cast
 
 from textual.app import ComposeResult
-from textual.coordinate import Coordinate
 from textual.events import Resize
 from textual.reactive import reactive
 from textual.widget import Widget
@@ -44,15 +43,7 @@ class FilePicker(Widget):
         yield files_table
 
     def on_mount(self) -> None:
-        dt = self.query_one(DataTable)
-
-        def watch_hover_coordinate(old: Coordinate, new: Coordinate) -> None:
-            try:
-                dt.tooltip = dt.get_cell_at(new).strip()
-            except:
-                pass
-
-        self.watch(dt, "hover_coordinate", watch_hover_coordinate)
+        self.query_one(DataTable).enable_tooltips()
 
     async def _refresh_table(self) -> None:
         files_table = self.query_one(DataTable)

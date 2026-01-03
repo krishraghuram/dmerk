@@ -74,14 +74,7 @@ class FileManager(Widget):
 
     def on_mount(self) -> None:
         dt = self.query_one(DataTable)
-
-        def watch_hover_coordinate(old: Coordinate, new: Coordinate) -> None:
-            try:
-                dt.tooltip = dt.get_cell_at(new).strip()
-            except:
-                pass
-
-        self.watch(dt, "hover_coordinate", watch_hover_coordinate)
+        dt.enable_tooltips()
 
         def watch_cursor_coordinate(old: Coordinate, new: Coordinate) -> None:
             try:

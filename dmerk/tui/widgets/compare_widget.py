@@ -369,15 +369,7 @@ class CompareWidget(Widget):
         self.watch(self.query_one(DataTable), "scroll_y", watch_scroll_y, init=False)
 
         ### Watch for displaying tooltip ###
-        dt = self.query_one(DataTable)
-
-        def watch_hover_coordinate(old: Coordinate, new: Coordinate) -> None:
-            try:
-                dt.tooltip = dt.get_cell_at(new).plain.strip()
-            except:
-                pass
-
-        self.watch(dt, "hover_coordinate", watch_hover_coordinate)
+        self.query_one(DataTable).enable_tooltips()
 
     @staticmethod
     def _get_other_compare_widget(
