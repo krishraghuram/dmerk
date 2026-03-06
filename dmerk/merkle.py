@@ -7,10 +7,20 @@ import string
 from pathlib import Path, PurePath
 from typing import Any, Dict
 
+from dmerk import constants
+
 
 class Merkle:
     # Internal (real) slots
-    __slots__ = ("path", "type", "size", "digest", "_children_data", "_children")
+    __slots__ = (
+        "path",
+        "type",
+        "size",
+        "digest",
+        "_children_data",
+        "_children",
+        "_legacy",
+    )
     # Public slots
     SLOTS = ("path", "type", "size", "digest", "children")
     # Slots that represent data held within, used for equality testing, hash value etc.
@@ -55,30 +65,43 @@ class Merkle:
         self._children = pure_children
         if not self._children:
             self._children_data = _children_data
+        self._legacy = False
+
+    def _legacy_parse_children(self) -> Dict[PurePath, "Merkle"]:
+        assert self._children_data is not None
+        PosixPath = pathlib.PosixPath  # noqa: F841
+        WindowsPath = pathlib.WindowsPath  # noqa: F841
+        PurePosixPath = pathlib.PurePosixPath  # noqa: F841
+        PureWindowsPath = pathlib.PureWindowsPath  # noqa: F841
+        PurePath = pathlib.PurePath  # noqa: F841
+        globs = globals()
+        locs = locals()
+        return {
+            PurePath(eval(k, globs, locs)): Merkle._legacy_from_dict(v)
+            for k, v in self._children_data.items()
+        }
 
     @property
     def children(self) -> Dict[PurePath, "Merkle"]:
         """Lazily deserialize children only when accessed."""
-        if self._children is None:
-            if self._children_data is not None:
-                PosixPath = pathlib.PosixPath  # noqa: F841
-                WindowsPath = pathlib.WindowsPath  # noqa: F841
-                PurePosixPath = pathlib.PurePosixPath  # noqa: F841
-                PureWindowsPath = pathlib.PureWindowsPath  # noqa: F841
-                PurePath = pathlib.PurePath  # noqa: F841
-                globs = globals()
-                locs = locals()
-                self._children = {
-                    PurePath(eval(k, globs, locs)): Merkle.from_dict(v)
+        if self._children is not None:
+            return self._children
+        if self._children_data is not None:
+            if self._legacy:
+                children = self._legacy_parse_children()
+            else:
+                children = {
+                    PurePath(k): Merkle.from_dict(v)
                     for k, v in self._children_data.items()
                 }
-                self._children_data = None  # free memory
-            else:
-                self._children = {}
+            self._children_data = None  # free memory
+        else:
+            children = {}
+        self._children = children
         return self._children
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Merkle":
+    def _legacy_from_dict(cls, data: dict[str, Any]) -> "Merkle":
         """Create a Merkle instance from a dictionary without processing children."""
         if "__merkle__" not in data:
             logging.error("Not a valid Merkle dictionary")
@@ -103,13 +126,45 @@ class Merkle:
 
         children_data = data.get("children")
 
-        return Merkle(
+        m = Merkle(
             path=path,
             type=type_val,
             size=data["size"],
             digest=data["digest"],
             _children_data=children_data,
         )
+        m._legacy = True
+        return m
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Merkle":
+        """Create a Merkle instance from a dictionary without processing children."""
+        if "__merkle__" not in data:
+            logging.error("Not a valid Merkle dictionary")
+            raise ValueError("Not a valid Merkle dictionary")
+        path = PurePath(data["path"])
+        type_data = data["type"]
+        if isinstance(type_data, dict) and "__merkle_type__" in type_data:
+            try:
+                type_val = cls.Type[type_data["__merkle_type__"]]
+            except KeyError:
+                logging.error("Not a valid Merkle.Type dictionary")
+                raise ValueError("Not a valid Merkle.Type dictionary")
+        else:
+            logging.error("Not a valid Merkle.Type dictionary")
+            raise ValueError("Not a valid Merkle.Type dictionary")
+
+        children_data = data.get("children")
+
+        m = Merkle(
+            path=path,
+            type=type_val,
+            size=data["size"],
+            digest=data["digest"],
+            _children_data=children_data,
+        )
+        m._legacy = False
+        return m
 
     def __hash__(self) -> int:
         """
@@ -206,8 +261,11 @@ class Merkle:
     @staticmethod
     def load(filename: str | Path) -> "Merkle":
         with open(filename, mode="r", encoding="utf-8") as file:
-            file_content = file.read()
-            merkle_dict = json.loads(file_content)
+            merkle_dict = json.loads(file.read())
+        legacy = constants.PYPI_VERSION not in str(Path(filename).absolute())
+        if legacy:
+            return Merkle._legacy_from_dict(merkle_dict)
+        else:
             return Merkle.from_dict(merkle_dict)
 
     @staticmethod
@@ -220,12 +278,12 @@ class Merkle:
             }
             output["__merkle__"] = True  # To make deserialization work :)
             # Need the below hack because of https://github.com/python/cpython/issues/63020
-            output["path"] = repr(PurePath(output["path"]))
+            output["path"] = str(PurePath(output["path"]))
             if "children" in output:
                 output["children"] = {
-                    repr(PurePath(k)): v for k, v in output["children"].items()
+                    str(PurePath(k)): v for k, v in output["children"].items()
                 }
             return output
         elif isinstance(obj, Merkle.Type):
-            return {"__merkle_type__": str(obj)}
+            return {"__merkle_type__": obj.name}
         raise TypeError(f"Object of type {type(obj)} are not JSON serializable")

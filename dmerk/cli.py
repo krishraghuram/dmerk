@@ -12,6 +12,8 @@ import argcomplete
 
 import dmerk.compare as compare
 import dmerk.generate as generate
+from dmerk.constants import APP_STATE_PATH
+from dmerk.merkle import Merkle
 
 from .utils import load_or_generate
 
@@ -49,6 +51,55 @@ def _tui(args: argparse.Namespace) -> None:
     from dmerk.tui import run as run_tui
 
     run_tui()
+
+
+def _migrate(args: argparse.Namespace) -> None:
+    state_path = Path(APP_STATE_PATH)
+    parent = state_path.parent
+
+    found = 0
+    succeeded = 0
+    failed = 0
+    results = []  # (status, src_path, dest_path_or_error)
+
+    for src_file in parent.rglob("*.dmerk"):
+        if src_file.is_relative_to(state_path):
+            continue
+        found += 1
+        try:
+            merkle = Merkle.load(src_file)
+            dest_file = state_path / "migrated" / src_file.relative_to(parent)
+            dest_file.parent.mkdir(parents=True, exist_ok=True)
+            merkle.save(filename=dest_file)
+            succeeded += 1
+            results.append(("OK", str(src_file), str(dest_file)))
+        except Exception as e:
+            failed += 1
+            results.append(("FAIL", str(src_file), str(e)))
+            logging.error(f"Failed to migrate '{src_file}': {e}")
+
+    if found == 0:
+        print("No previous version files found. Nothing to migrate.")
+        return
+
+    # Summary
+    print(f"\n{'='*60}")
+    print("Migration Summary")
+    print(f"{'='*60}")
+    print(f"Files found:      {found}")
+    print(f"Files migrated:   {succeeded}")
+    print(f"Files failed:     {failed}")
+    if succeeded > 0:
+        print("\nSuccessful:")
+        for status, src, dest in results:
+            if status == "OK":
+                print(f"  {src} -> {dest}")
+    if failed > 0:
+        print("\nFailed:")
+        for status, src, err in results:
+            if status == "FAIL":
+                print(f"  {src}: {err}")
+    print(f"{'='*60}")
 
 
 class LazyVersionAction(argparse.Action):
@@ -161,6 +212,12 @@ def _main(args: list[str]) -> None:
         "tui", description="Launch the TUI (terminal user interface)"
     )
     parser_tui.set_defaults(func=_tui)
+
+    parser_migrate = subparsers.add_parser(
+        "migrate",
+        description="Migrate .dmerk files from previous versions to the current format.",
+    )
+    parser_migrate.set_defaults(func=_migrate)
 
     argcomplete.autocomplete(parser, always_complete_options=False)
     parsed_args = parser.parse_args(args)
