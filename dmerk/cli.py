@@ -84,12 +84,10 @@ def _main(args: list[str]) -> None:
     parser.add_argument(
         "--no-save",
         action="store_true",
-        help=textwrap.dedent(
-            """
+        help=textwrap.dedent("""
             If specified, the generated merkle tree will not be saved to file.
             This is almost never a good idea, as generating merkle tree is expensive operation, and is worth saving into a file.
-            """
-        ),
+            """),
     )
     subparsers = parser.add_subparsers(required=True)
 
@@ -126,8 +124,7 @@ def _main(args: list[str]) -> None:
 
     parser_compare = subparsers.add_parser(
         "compare",
-        description=textwrap.dedent(
-            """
+        description=textwrap.dedent("""
             (Shallow) Compare two directory merkle trees and return the diffs and matches.
 
             path1 and path2 are required, and they are the paths to the directories to compare,
@@ -147,8 +144,7 @@ def _main(args: list[str]) -> None:
             -sp1=Receipts/Rent \\
             -sp2=Receipts/Rent
             ```
-            """
-        ),
+            """),
         formatter_class=argparse.RawTextHelpFormatter,
     )
     parser_compare.add_argument("-p1", "--path1", required=True)

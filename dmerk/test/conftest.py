@@ -91,7 +91,7 @@ def assert_merkle(
             else:
                 assert_merkle(m1.children[path], m2.children[path])
     elif renamed_file is not None:
-        (old_file, new_file) = renamed_file
+        old_file, new_file = renamed_file
         assert m1.path == m2.path
         assert m1.type == m2.type
         assert m1.size == m2.size

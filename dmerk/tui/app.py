@@ -78,9 +78,7 @@ class DmerkApp(App[None], NavigationMixin):
         self.set_interval(10, self._log_cache_stats)
 
     def _log_cache_stats(self) -> None:
-        logging.debug(
-            textwrap.dedent(
-                f"""
+        logging.debug(textwrap.dedent(f"""
             {colorhash.cache_info()=}
             {prefix_symbol_path.cache_info()=}
             {CompareWidget._get_digest_matches.cache_info()=}
@@ -88,9 +86,7 @@ class DmerkApp(App[None], NavigationMixin):
             {CompareWidget._column_prefix.cache_info()=}
             {CompareWidget._column_suffix.cache_info()=}
             {CompareWidget._get_column_width.cache_info()=}
-            """
-            )
-        )
+            """))
 
     def compose(self) -> ComposeResult:
         """Called to add widgets to the app."""

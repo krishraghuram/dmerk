@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING, TypeVar, Callable, Iterable, Iterator
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, TypeVar
 
 from textual.reactive import reactive
-from textual.widgets import Input
 from textual.widget import Widget
+from textual.widgets import Input
 
 from dmerk.utils import fuzzy_match
 
@@ -31,7 +31,7 @@ class FilterMixin(_WidgetBase):
                 await self._refresh()
     """
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         # Skip check for the mixin itself, check subclasses
         if not (cls is FilterMixin or issubclass(cls, Widget)):

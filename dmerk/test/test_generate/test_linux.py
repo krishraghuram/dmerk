@@ -67,7 +67,7 @@ def test_specialfiles(generate_function, path_and_error, fail_on_error, request)
     Currently I've created create_test_directories.sh as a separate script because some commands inside it require sudo,
     and I don't want to run the entire suite of tests with root privileges.
     """
-    (path, error) = path_and_error
+    path, error = path_and_error
     print(f"\n\n\n\n\nStarting Test: {request.node.name}")
     print(f"With path '{path}' and error '{error}'")
     # Even with fail_on_error False, if the top-level dir does not exist, it will lead to NotADirectoryError

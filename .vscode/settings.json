@@ -3,5 +3,12 @@
         "dmerk"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "editor.formatOnSave": true,
+    "black-formatter.interpreter": [
+        "/home/raghuram/Workspace/dmerk/venv/bin/python"
+    ],
+    "black-formatter.path": [
+        "/home/raghuram/Workspace/dmerk/venv/bin/black"
+    ]
 }

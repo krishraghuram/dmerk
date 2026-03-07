@@ -12,7 +12,6 @@ from textual.coordinate import Coordinate
 from textual.events import Resize
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import Input
 from textual.widgets.data_table import CellDoesNotExist
 
 from dmerk.tui.mixins.filter import FilterMixin

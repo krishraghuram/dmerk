@@ -106,17 +106,12 @@ def test_compare_help(capsys, args):
         "Compare two directory merkle trees and return the diffs and matches."
         in captured.out
     )
-    assert (
-        textwrap.dedent(
-            """
+    assert textwrap.dedent("""
             path1 and path2 are required, and they are the paths to the directories to compare,
             but they can also be paths to .dmerk files that were created using generate.
             Example: `dmerk -p1=/home/raghuram/Documents -p2=/media/raghuram/BACKUP_DRIVE/Documents`
             Example: `dmerk -p1=Documents_e6eaccb4.dmerk -p2=Documents_b2a7cef7.dmerk`
-            """
-        )
-        in captured.out
-    )
+            """) in captured.out
 
 
 def test_compare_paths_required(capsys):
