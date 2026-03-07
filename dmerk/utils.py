@@ -2,6 +2,8 @@ import colorsys
 import functools
 from pathlib import Path
 
+from rapidfuzz import fuzz
+
 import dmerk.generate as generate
 from dmerk.merkle import Merkle
 
@@ -52,9 +54,13 @@ PREFIX_SYMBOL_MERKLE: dict[Merkle.Type | None, str] = {
 }
 
 
-def fuzzy_match(text: str, query: str | None = None) -> bool:
-    # TODO: Implement actual fuzzy matching
-    if query:
-        return query.casefold() in text.casefold()
-    else:
+def fuzzy_match(text: str, query: str | None = None, threshold: float = 80.0) -> bool:
+    """
+    Fuzzy match text against query using rapidfuzz.
+    If query is None or empty, it matches everything.
+    Default threshold is 80.0.
+    """
+    if not query:
         return True
+    score = fuzz.partial_ratio(query.casefold(), text.casefold())
+    return score >= threshold
