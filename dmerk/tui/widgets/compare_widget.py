@@ -164,7 +164,8 @@ class CompareWidget(FilterMixin, Widget):
                     raise ValueError("Illegal state, cannot go above the root merkle")
             elif path is not None:
                 pure_path = PurePath(path)
-                if self.submerkle.children[pure_path].type == Merkle.Type.DIRECTORY:
+                child = self.submerkle.children.get(pure_path)
+                if child and child.type == Merkle.Type.DIRECTORY:
                     if self.merkle_subpath:
                         self.merkle_subpath = self.merkle_subpath / pure_path
                     else:
