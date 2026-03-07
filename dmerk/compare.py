@@ -16,16 +16,20 @@ def compare(merkle_1: Merkle, merkle_2: Merkle) -> dict[str, list[Any]]:
     if merkle_1.digest == merkle_2.digest:
         out["matches"].append(([str(merkle_1.path)], [str(merkle_2.path)]))
     else:
+        digest_to_paths_1 = defaultdict(list)
+        digest_to_paths_2 = defaultdict(list)
         if hasattr(merkle_1, "children"):
-            digest_to_paths_1 = defaultdict(list)
             for sm in merkle_1.children.values():
                 digest_to_paths_1[sm.digest].append(sm.path)
             digest_set_1 = set(digest_to_paths_1.keys())
+        else:
+            digest_set_1 = set()
         if hasattr(merkle_2, "children"):
-            digest_to_paths_2 = defaultdict(list)
             for sm in merkle_2.children.values():
                 digest_to_paths_2[sm.digest].append(sm.path)
             digest_set_2 = set(digest_to_paths_2.keys())
+        else:
+            digest_set_2 = set()
 
         matching_digests = digest_set_1 & digest_set_2
         for digest in matching_digests:
