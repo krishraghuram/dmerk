@@ -8,13 +8,12 @@ from textual.reactive import reactive
 from textual.widget import Widget
 
 import dmerk.constants as constants
+from dmerk.tui.mixins.filter import FilterMixin
 from dmerk.tui.widgets import CompareWidget, DataTable
-from dmerk.utils import fuzzy_match, prefix_symbol_path
+from dmerk.utils import prefix_symbol_path
 
 
-class FilePicker(Widget):
-
-    filter_by = reactive("")
+class FilePicker(FilterMixin, Widget):
 
     def __init__(
         self,
@@ -51,7 +50,7 @@ class FilePicker(Widget):
         files_table.add_column("\nName", key="NAME")
         files_table.add_row(*["\n.."], key="..", height=3)
         files_list = [p for p in self.path.iterdir() if p.exists()]
-        files_list = [p for p in files_list if fuzzy_match(p.name, self.filter_by)]
+        files_list = list(self.filter(files_list, key=lambda p: p.name))
         files_list = sorted(files_list, key=lambda p: str.casefold(p.name))
         for file in files_list:
             files_table.add_row(

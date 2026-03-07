@@ -15,8 +15,9 @@ from textual.widget import Widget
 from textual.widgets import Input
 from textual.widgets.data_table import CellDoesNotExist
 
+from dmerk.tui.mixins.filter import FilterMixin
 from dmerk.tui.widgets import Breadcrumbs, ClearableInput, DataTable, FavoritesSidebar
-from dmerk.utils import fuzzy_match, prefix_symbol_path
+from dmerk.utils import prefix_symbol_path
 
 TIME_FORMATS: dict[str, Callable[[float], str]] = {
     "HUMAN_FRIENDLY": lambda timestamp: naturaltime(datetime.fromtimestamp(timestamp)),
@@ -43,7 +44,7 @@ class Columns(Enum):
     )
 
 
-class FileManager(Widget):
+class FileManager(FilterMixin, Widget):
 
     BINDINGS = [
         ("f", "favorite", "Favorite"),
@@ -54,7 +55,6 @@ class FileManager(Widget):
     time_format = reactive(next(TIME_FORMAT_CYCLER))
     sort_by = reactive(Columns.MODIFIED.value.key)
     sort_reverse = reactive(Columns.MODIFIED.value.sort_reverse)
-    filter_by = reactive("")
 
     @property
     def sort_key(self) -> Callable[[Path], str | datetime]:
@@ -69,13 +69,12 @@ class FileManager(Widget):
                 files_table: DataTable[None] = DataTable(header_height=3)
                 yield files_table
 
-    def on_input_changed(self, message: Input.Changed) -> None:
-        self.filter_by = message.value
-
     def on_mount(self) -> None:
+        # Enable DataTable Tooltips
         dt = self.query_one(DataTable)
         dt.enable_tooltips()
 
+        # Watch cursor_coordinate and update cursor_path
         def watch_cursor_coordinate(old: Coordinate, new: Coordinate) -> None:
             try:
                 cell_key = dt.coordinate_to_cell_key(new)
@@ -122,7 +121,7 @@ class FileManager(Widget):
             )
         files_table.add_row(*["\n..", "\n-"], key="..", height=3)
         files_list = [p for p in self.path.iterdir() if p.exists()]
-        files_list = [p for p in files_list if fuzzy_match(p.name, self.filter_by)]
+        files_list = list(self.filter(files_list, key=lambda p: p.name))
         files_list = sorted(
             files_list,
             key=self.sort_key,

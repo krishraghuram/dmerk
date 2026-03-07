@@ -25,8 +25,9 @@ from textual.worker import Worker, WorkerState
 
 from dmerk.generate import directory_digest, directory_size
 from dmerk.merkle import Merkle
+from dmerk.tui.mixins.filter import FilterMixin
 from dmerk.tui.widgets import Breadcrumbs, DataTable
-from dmerk.utils import PREFIX_SYMBOL_MERKLE, colorhash, fuzzy_match
+from dmerk.utils import PREFIX_SYMBOL_MERKLE, colorhash
 
 
 # Bug: https://trello.com/c/iizCU2oj
@@ -48,14 +49,13 @@ class Columns(Enum):
     DIGEST = Column("Digest", "DIGEST", lambda m: m.digest)
 
 
-class CompareWidget(Widget):
+class CompareWidget(FilterMixin, Widget):
 
     BUTTON_RESET_COMPARE = "button-reset-compare"
     DEFAULT_SORT_BY = None
     DEFAULT_SORT_REVERSE = False
 
     merkle_subpath: reactive[PurePath | None] = reactive(None)
-    filter_by = reactive("")
     sort_by: Reactive[None | str] = reactive(DEFAULT_SORT_BY)
     sort_reverse: Reactive[bool] = reactive(DEFAULT_SORT_REVERSE)
     prev_screen_size: Reactive[Size | None] = reactive(None)
@@ -277,11 +277,11 @@ class CompareWidget(Widget):
                 ),
             )
         child_merkles = (m for m in self.submerkle.children.values())
-        filtered_child_merkles = (
-            m for m in child_merkles if fuzzy_match(m.path.name, self.filter_by)
+        filtered_child_merkles_iter = self.filter(
+            child_merkles, key=lambda m: m.path.name
         )
         unmatched, matching = partition(
-            lambda m: m.digest in digest_matches, filtered_child_merkles
+            lambda m: m.digest in digest_matches, filtered_child_merkles_iter
         )
         matching_child_merkles = sorted(
             matching, key=self.matches_sort_key, reverse=self.sort_reverse
@@ -310,10 +310,10 @@ class CompareWidget(Widget):
 
     def _get_merkle_from_row_key(self, row_key: RowKey) -> Merkle:
         child_merkles = (m for m in self.submerkle.children.values())
-        filtered_child_merkles = (
-            m for m in child_merkles if fuzzy_match(m.path.name, self.filter_by)
+        filtered_child_merkles_iter = self.filter(
+            child_merkles, key=lambda m: m.path.name
         )
-        for m in filtered_child_merkles:
+        for m in filtered_child_merkles_iter:
             if str(m.path) == row_key:
                 return m
         else:
