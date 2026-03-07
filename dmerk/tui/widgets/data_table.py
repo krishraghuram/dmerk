@@ -8,7 +8,7 @@ from textual.coordinate import Coordinate
 from textual.events import DescendantBlur
 from textual.geometry import Offset, Region
 from textual.widgets import DataTable as TextualDataTable
-from textual.widgets.data_table import CellType, ColumnKey
+from textual.widgets.data_table import CellDoesNotExist, CellType, ColumnKey
 
 from dmerk.tui.mixins.navigation import Direction, NavigationMixin
 
@@ -303,8 +303,9 @@ class DataTable(TextualDataTable[CellType]):
                     logging.warning(
                         f"Tooltips can be shown only for tables with CellType 'str' or 'rich.text.Text', found {type(cell)}"
                     )
+                    tooltip = None
                 self.tooltip = tooltip
-            except:
+            except CellDoesNotExist:
                 pass
 
         self.watch(self, "hover_coordinate", watch_hover_coordinate)
