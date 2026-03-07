@@ -96,7 +96,7 @@ def test_merkle_repr(kwargs):
 @pytest.mark.parametrize("kwargs", MERKLE_KWARGS[1:2])
 def test_merkle_str(kwargs):
     m = Merkle(**kwargs)
-    str_m = '{"path": "PurePosixPath(\'/home/raghuram\')", "type": {"__merkle_type__": "Type.DIRECTORY"}, "size": 1000, "digest": "sha_digest_1", "children": {"PurePosixPath(\'/home/raghuram/file\')": {"path": "PurePosixPath(\'/home/raghuram/file\')", "type": {"__merkle_type__": "Type.FILE"}, "size": 100, "digest": "sha_digest_1_a", "children": {}, "__merkle__": true}}, "__merkle__": true}'
+    str_m = '{"path": "/home/raghuram", "type": {"__merkle_type__": "DIRECTORY"}, "size": 1000, "digest": "sha_digest_1", "children": {"/home/raghuram/file": {"path": "/home/raghuram/file", "type": {"__merkle_type__": "FILE"}, "size": 100, "digest": "sha_digest_1_a", "children": {}, "__merkle__": true}}, "__merkle__": true}'
     assert str(m) == str_m
 
 
