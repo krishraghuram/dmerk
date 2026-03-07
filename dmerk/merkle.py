@@ -1,26 +1,15 @@
 import enum
 import json
 import logging
-import pathlib
 import random
 import string
 from pathlib import Path, PurePath
 from typing import Any, Dict
 
-from dmerk import constants
-
 
 class Merkle:
     # Internal (real) slots
-    __slots__ = (
-        "path",
-        "type",
-        "size",
-        "digest",
-        "_children_data",
-        "_children",
-        "_legacy",
-    )
+    __slots__ = ("path", "type", "size", "digest", "_children_data", "_children")
     # Public slots
     SLOTS = ("path", "type", "size", "digest", "children")
     # Slots that represent data held within, used for equality testing, hash value etc.
@@ -65,21 +54,6 @@ class Merkle:
         self._children = pure_children
         if not self._children:
             self._children_data = _children_data
-        self._legacy = False
-
-    def _legacy_parse_children(self) -> Dict[PurePath, "Merkle"]:
-        assert self._children_data is not None
-        PosixPath = pathlib.PosixPath  # noqa: F841
-        WindowsPath = pathlib.WindowsPath  # noqa: F841
-        PurePosixPath = pathlib.PurePosixPath  # noqa: F841
-        PureWindowsPath = pathlib.PureWindowsPath  # noqa: F841
-        PurePath = pathlib.PurePath  # noqa: F841
-        globs = globals()
-        locs = locals()
-        return {
-            PurePath(eval(k, globs, locs)): Merkle._legacy_from_dict(v)
-            for k, v in self._children_data.items()
-        }
 
     @property
     def children(self) -> Dict[PurePath, "Merkle"]:
@@ -87,54 +61,13 @@ class Merkle:
         if self._children is not None:
             return self._children
         if self._children_data is not None:
-            if self._legacy:
-                children = self._legacy_parse_children()
-            else:
-                children = {
-                    PurePath(k): Merkle.from_dict(v)
-                    for k, v in self._children_data.items()
-                }
+            self._children = {
+                PurePath(k): Merkle.from_dict(v) for k, v in self._children_data.items()
+            }
             self._children_data = None  # free memory
         else:
-            children = {}
-        self._children = children
+            self._children = {}
         return self._children
-
-    @classmethod
-    def _legacy_from_dict(cls, data: dict[str, Any]) -> "Merkle":
-        """Create a Merkle instance from a dictionary without processing children."""
-        if "__merkle__" not in data:
-            logging.error("Not a valid Merkle dictionary")
-            raise ValueError("Not a valid Merkle dictionary")
-        PosixPath = pathlib.PosixPath  # noqa: F841
-        WindowsPath = pathlib.WindowsPath  # noqa: F841
-        PurePosixPath = pathlib.PurePosixPath  # noqa: F841
-        PureWindowsPath = pathlib.PureWindowsPath  # noqa: F841
-        PurePath = pathlib.PurePath  # noqa: F841
-        Type = cls.Type  # noqa: F841
-        path = PurePath(eval(data["path"]))
-        type_data = data["type"]
-        if isinstance(type_data, dict) and "__merkle_type__" in type_data:
-            try:
-                type_val = eval(type_data["__merkle_type__"])
-            except AttributeError:
-                logging.error("Not a valid Merkle.Type dictionary")
-                raise ValueError("Not a valid Merkle.Type dictionary")
-        else:
-            logging.error("Not a valid Merkle.Type dictionary")
-            raise ValueError("Not a valid Merkle.Type dictionary")
-
-        children_data = data.get("children")
-
-        m = Merkle(
-            path=path,
-            type=type_val,
-            size=data["size"],
-            digest=data["digest"],
-            _children_data=children_data,
-        )
-        m._legacy = True
-        return m
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Merkle":
@@ -156,15 +89,13 @@ class Merkle:
 
         children_data = data.get("children")
 
-        m = Merkle(
+        return Merkle(
             path=path,
             type=type_val,
             size=data["size"],
             digest=data["digest"],
             _children_data=children_data,
         )
-        m._legacy = False
-        return m
 
     def __hash__(self) -> int:
         """
@@ -262,11 +193,7 @@ class Merkle:
     def load(filename: str | Path) -> "Merkle":
         with open(filename, mode="r", encoding="utf-8") as file:
             merkle_dict = json.loads(file.read())
-        legacy = constants.PYPI_VERSION not in str(Path(filename).absolute())
-        if legacy:
-            return Merkle._legacy_from_dict(merkle_dict)
-        else:
-            return Merkle.from_dict(merkle_dict)
+        return Merkle.from_dict(merkle_dict)
 
     @staticmethod
     def json_encode(obj: Any) -> dict[str, Any]:
