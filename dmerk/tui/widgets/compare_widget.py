@@ -349,7 +349,6 @@ class CompareWidget(FilterMixin, Widget):
             except IndexError:
                 return None
 
-    # BUG: When clicking on a merkle subdirectory, the other CompareWidget gets reset to 0, and this makes navigation a pain
     async def _add_watches(self) -> None:
         ### Watch for synchronized scrolling ###
         def watch_scroll_y(old_scroll_y: float, new_scroll_y: float) -> None:
