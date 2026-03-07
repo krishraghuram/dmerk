@@ -23,7 +23,7 @@ def _generate(args: argparse.Namespace) -> None:
     merkle = generate.generate(path, fail_on_error=args.fail_on_error)
     filename = args.filename if args.filename else constants.APP_STATE_PATH
     if not args.no_save:
-        filename = merkle.save(filename=filename)
+        filename = merkle.save(filename=filename, compress=not args.no_compress)
     if args.no_save or args.print:
         print(merkle)
 
@@ -111,15 +111,12 @@ def _main(args: list[str]) -> None:
         action="store_true",
         help="immediately fail upon encountering errors (such as broken symlinks etc.)",
     )
-    # # TODO: compress generate output
-    # parser_generate.add_argument("-c", "--compress", help="compress the output file")
-    # # Use brotli(11) for compression
-    # # Ref: https://www.lucidchart.com/techblog/2019/12/06/json-compression-alternative-binary-formats-and-compression-methods/
-    # parser_generate.add_argument("--save-format", help="specify save format")
-    # parser_generate.add_argument("--compression-format", help="specify compression format")
-    # # What save formats and compression formats to support?
-    # # Potential save formats: json, json-like (ion, cbor), pickle etc.
-    # # Potential cmp formats: gzip, bzip2, xz, brotli, lzma etc.
+    parser_generate.add_argument(
+        "--no-compress",
+        action="store_true",
+        default=False,
+        help="save as uncompressed JSON (.dmerk) instead of gzip (.dmerk.gz)",
+    )
     parser_generate.set_defaults(func=_generate)
 
     parser_compare = subparsers.add_parser(

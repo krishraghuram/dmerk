@@ -41,24 +41,26 @@ def test_generate_help(capsys, args):
     with pytest.raises(SystemExit):
         cli._main(["generate", args])
     captured = capsys.readouterr()
+    normalized_output = " ".join(captured.out.split())
     assert (
-        "usage: dmerk generate [-h] [-p] [-f FILENAME] [--fail-on-error] path"
-        in captured.out
+        "usage: dmerk generate [-h] [-p] [-f FILENAME] [--fail-on-error] [--no-compress] path"
+        in normalized_output
     )
-    assert "Generate a merkle tree for a given directory" in captured.out
+    assert "Generate a merkle tree for a given directory" in normalized_output
 
 
 def test_generate_path_required(capsys):
     with pytest.raises(SystemExit):
         cli._main(["generate"])
     captured = capsys.readouterr()
+    normalized_output = " ".join(captured.err.split())
     assert (
-        "usage: dmerk generate [-h] [-p] [-f FILENAME] [--fail-on-error] path"
-        in captured.err
+        "usage: dmerk generate [-h] [-p] [-f FILENAME] [--fail-on-error] [--no-compress] path"
+        in normalized_output
     )
     assert (
         "dmerk generate: error: the following arguments are required: path"
-        in captured.err
+        in normalized_output
     )
 
 
@@ -85,7 +87,7 @@ def test_generate(capsys, fs):
 def test_generate_save(caplog, fs):
     with caplog.at_level(logging.INFO):
         path = str(fs.basepath.resolve())
-        saved_file = Path(constants.APP_STATE_PATH) / Path("NORMAL.dmerk")
+        saved_file = Path(constants.APP_STATE_PATH) / Path("NORMAL.dmerk.gz")
         cli._main(["generate", path])
         assert f"Generating merkle for path: '{path}'" in caplog.text
         assert f"Saved merkle for path: '{path}' to file: '{saved_file}'" in caplog.text

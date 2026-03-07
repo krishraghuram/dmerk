@@ -1,4 +1,5 @@
 import enum
+import gzip
 import json
 import logging
 import random
@@ -167,31 +168,48 @@ class Merkle:
         return self._traverse(subpath)
 
     @staticmethod
-    def _get_filename(path: str, prefix: Path | None = None) -> Path:
+    def _get_filename(
+        path: str,
+        prefix: Path | None = None,
+        compress: bool = True,
+    ) -> Path:
         if prefix is None:
             prefix = Path.cwd()
-        filename = prefix / Path(f"{path}.dmerk")
+        ext = ".dmerk.gz" if compress else ".dmerk"
+        filename = prefix / Path(f"{path}{ext}")
         while filename.exists():
             random_hex_string = "".join(random.choices(string.hexdigits.lower(), k=8))
-            filename = prefix / Path(f"{path}_{random_hex_string}.dmerk")
+            filename = prefix / Path(f"{path}_{random_hex_string}{ext}")
         return filename
 
-    def save(self, filename: str | Path | None = None) -> str | Path:
+    def save(
+        self,
+        filename: str | Path | None = None,
+        compress: bool = True,
+    ) -> str | Path:
         if filename is None:
-            filename = Merkle._get_filename(self.path.name)
+            filename = Merkle._get_filename(self.path.name, compress=compress)
         else:
             if isinstance(filename, str):
                 filename = Path(filename)
             if filename.is_dir():
-                filename = Merkle._get_filename(self.path.name, prefix=filename)
-        with open(filename, mode="w", encoding="utf-8") as file:
+                filename = Merkle._get_filename(
+                    self.path.name,
+                    prefix=filename,
+                    compress=compress,
+                )
+        opener = gzip.open if compress else open
+        with opener(filename, mode="wt", encoding="utf-8") as file:
             json.dump(self, file, default=Merkle.json_encode, ensure_ascii=False)
         logging.info(f"Saved merkle for path: '{self.path}' to file: '{filename}'")
         return filename
 
     @staticmethod
     def load(filename: str | Path) -> "Merkle":
-        with open(filename, mode="r", encoding="utf-8") as file:
+        with open(filename, mode="rb") as f:
+            magic = f.read(2)
+        opener = gzip.open if magic == b"\x1f\x8b" else open
+        with opener(filename, mode="rt", encoding="utf-8") as file:
             merkle_dict = json.loads(file.read())
         return Merkle.from_dict(merkle_dict)
 

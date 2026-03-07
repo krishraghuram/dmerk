@@ -239,11 +239,13 @@ def test_merkle_traverse(merkle: Merkle, subpath, return_value, exception):
 def test_merkle_get_filename(monkeypatch):
     path = Path("/home/raghuram/Documents")
     filename_1 = Merkle._get_filename(path.name)
-    assert filename_1 == Path.cwd() / Path(f"{path.name}.dmerk")
+    assert filename_1 == Path.cwd() / Path(f"{path.name}.dmerk.gz")
     monkeypatch.setattr(Path, "exists", lambda p: p.name == filename_1.name)
     monkeypatch.setattr(random, "choices", lambda *args, **kwargs: ["0"] * 8)
     filename_2 = Merkle._get_filename(path.name)
-    assert filename_2 == Path.cwd() / Path(f"{path.name}_00000000.dmerk")
+    assert filename_2 == Path.cwd() / Path(f"{path.name}_00000000.dmerk.gz")
+    filename_3 = Merkle._get_filename(path.name, compress=False)
+    assert filename_3 == Path.cwd() / Path(f"{path.name}.dmerk")
 
 
 def test_merkle_save_load():

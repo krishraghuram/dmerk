@@ -9,7 +9,9 @@ from dmerk.merkle import Merkle
 
 
 def load_or_generate(path: Path, no_save: bool) -> Merkle:
-    if path.is_file() and path.name.endswith(".dmerk"):
+    if path.is_file() and (
+        path.name.endswith(".dmerk") or path.name.endswith(".dmerk.gz")
+    ):
         merkle = Merkle.load(path)
     else:
         merkle = generate.generate(path)
