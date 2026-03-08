@@ -25,7 +25,7 @@ pip install dmerk
 
 #### Shell Autocomplete
 
-dmerk uses [argcomplete](https://github.com/kislyuk/argcomplete) to support shell autocompletion. In order to enable this, you need to,
+dmerk uses [argcomplete](https://github.com/kislyuk/argcomplete) to support shell autocompletion. In order to enable this, you need to:
 
 ```shell
 # zsh/bash shell(s)
@@ -47,6 +47,13 @@ dmerk tui
 
 The TUI is built with [Textual](https://textual.textualize.io/) and provides a powerful interface for all dmerk functionality. It's especially useful for the `compare` operation, allowing you to quickly navigate and compare different submerkles at various hierarchical levels of two merkle trees, which is more cumbersome with the CLI alone.
 
+#### TUI Features
+- **Keyboard navigation**: Use arrow keys to navigate between widgets; `Ctrl+Arrow` to force navigation
+- **Fuzzy filtering**: Type to filter files and directories with fuzzy matching
+- **Favorites sidebar**: Quick access to frequently used directories (`f` to add, `r` to remove, `d` to reset)
+- **Color-coded comparisons**: Matching items highlighted with digest-based colors
+- **Synchronized scrolling**: Compare widgets scroll together for matching items
+
 ### Generate
 
 Generate a merkle tree for a directory:
@@ -59,7 +66,10 @@ Options:
 - `-p, --print`: Print the merkle output to stdout
 - `-f FILENAME, --filename FILENAME`: Provide a custom filename or file path for saving
 - `--fail-on-error`: Immediately fail upon encountering errors (such as broken symlinks)
+- `--no-compress`: Save as uncompressed JSON (`.dmerk`) instead of gzip (`.dmerk.gz`)
 - `--no-save`: If specified, the generated merkle tree will not be saved to file (not recommended as generating merkle trees is computationally expensive)
+
+By default, output is saved as a gzip-compressed file with `.dmerk.gz` extension. This reduces file sizes by approximately 85% compared to uncompressed JSON.
 
 ### Compare
 
@@ -71,7 +81,7 @@ dmerk compare -p1 PATH1 -p2 PATH2 [-sp1 SUBPATH1] [-sp2 SUBPATH2]
 
 The paths `PATH1` and `PATH2` are required and can be either:
 - Paths to directories to compare
-- Paths to `.dmerk` files created using the generate command
+- Paths to `.dmerk` or `.dmerk.gz` files created using the generate command
 
 Options:
 - `--no-save`: If specified, the generated merkle trees will not be saved to file (only applies when comparing directories)
@@ -79,15 +89,15 @@ Options:
 Examples:
 ```
 dmerk compare -p1=/home/raghuram/Documents -p2=/media/raghuram/BACKUP_DRIVE/Documents
-dmerk compare -p1=Documents_e6eaccb4.dmerk -p2=Documents_b2a7cef7.dmerk
+dmerk compare -p1=Documents_e6eaccb4.dmerk.gz -p2=Documents_b2a7cef7.dmerk.gz
 ```
 
-When using `.dmerk` files, you can optionally provide subpaths to compare specific subdirectories:
+When using `.dmerk` or `.dmerk.gz` files, you can optionally provide subpaths to compare specific subdirectories:
 
 ```
 dmerk compare \
--p1=Documents_e6eaccb4.dmerk \
--p2=Documents_b2a7cef7.dmerk \
+-p1=Documents_e6eaccb4.dmerk.gz \
+-p2=Documents_b2a7cef7.dmerk.gz \
 -sp1=Receipts/Rent \
 -sp2=Receipts/Rent
 ```
@@ -101,6 +111,7 @@ This is particularly useful because the compare operation performs a "shallow co
 * Handles regular files, directories, and symlinks to regular files/directories
 * Processes hidden files and directories
 * Uses MD5 as the digest algorithm for speed (configurable options planned)
+* Gzip compression by default (~85% file size reduction)
 
 ### Requirements
 * Read permission for files
@@ -147,13 +158,14 @@ For more information, see the [Textual DevTools documentation](https://textual.t
 ### Code Quality
 
 We maintain code quality through automated checks that run as Git hooks:
-- Pre-commit: lint, format, and type checking
+- Pre-commit: isort, lint, format, and type checking
 - Pre-push: unit tests
 
 You can also run these checks manually:
 
 ```bash
 # Run individual checks
+nox --session isort
 nox --session lint
 nox --session format
 nox --session mypy
@@ -162,8 +174,8 @@ nox --session test
 
 ### Build and Publish
 
-```
+```bash
 python -m build
-python -m pip install --force-reinstall ../dmerk/dist/dmerk-0.1.0-py3-none-any.whl
+python -m pip install --force-reinstall dist/dmerk-0.3.1-py3-none-any.whl
 python -m twine upload dist/*
 ```

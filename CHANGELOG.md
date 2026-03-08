@@ -1,5 +1,70 @@
 # Changelog
 
+# Release 0.3.1 (2026-03-07)
+
+## Breaking Changes
+* Serialization format changed - older `.dmerk` files will not be readable !!!
+
+## Highlights
+
+### 🗜️ Gzip Compression (Default)
+Generated merkle files are now compressed by default using gzip, reducing file sizes by ~85%. Files are saved as `.dmerk.gz` instead of `.dmerk`. Use `--no-compress` (via CLI) for uncompressed output. Loading automatically detects the format, so both `.dmerk` and `.dmerk.gz` files work seamlessly.
+
+### ⌨️ Keyboard Navigation
+New `NavigationMixin` enables arrow-key navigation between widgets using a ray-tracing algorithm. Press arrow keys to move focus between UI elements. Use `Ctrl+Arrow` to force navigation even when a widget could handle the key internally.
+
+### 🔍 Fuzzy Filtering
+Filter inputs now use proper fuzzy matching via `rapidfuzz` (partial ratio matching with 80% threshold) instead of simple substring matching, making it easier to find files and directories, and robust against typos.
+
+### ⚡ Performance Improvements
+- LRU caching added to expensive operations (`_get_digest_matches`, `_get_name_matches`, `colorhash`, `prefix_symbol_path`, `_submerkle`)
+- Generator expressions replace list comprehensions where appropriate
+- Cache statistics logged periodically for debugging
+
+## New Features
+* **Gzip compression**: `.dmerk` files now compressed by default (~85% size reduction)
+* **Fuzzy filtering**: Upgraded from substring matching to `rapidfuzz` partial ratio matching
+* **Keyboard navigation**: Arrow keys navigate between widgets using ray-tracing algorithm
+* **Favorites persistence**: Sidebar favorites saved to disk and restored on startup
+* **Add/remove favorites**: `f` key adds directory to favorites, `r` removes focused favorite, `d` resets to defaults
+* **Size column**: CompareWidget now displays file/directory sizes with human-readable formatting
+
+## Improvements
+
+### TUI
+* **Double-click selection**: DataTable requires double-click (or two clicks on same cell) to select; single click just highlights. Enter key still selects immediately.
+* **Breadcrumbs widget**: Extracted path display into reusable `Breadcrumbs` component with click navigation and ellipsization for long paths
+* **FilterMixin**: Consolidated filtering logic into a reusable mixin with `filter()` method returning iterators
+* **DmerkRefreshable protocol**: Automatic refresh when `filter_by` changes for widgets implementing the protocol
+* **FavoritesSidebar Integration**: Moved inside FileManager widget for better encapsulation
+* **StatefulButton**: Renamed from `SidebarButton`, simplified to two states (DEFAULT/SELECTED), now generic and reusable
+
+### Serialization (Breaking Changes)
+* Paths stored as plain strings instead of `repr()` output
+* Enum types stored by name instead of `repr()` output
+* Removed `eval()` from deserialization for security and simplicity
+
+### Code Quality
+* Extracted `NavigationMixin` into `dmerk/tui/mixins/navigation.py`
+* Extracted `FilterMixin` into `dmerk/tui/mixins/filter.py`
+* Consolidated path normalization into `Merkle._absolute_pure_path()`
+* Added `directory_size()` and `Merkle hash into `dmerk/generate/__init__.py`
+* Added `isort` to development workflow
+* Improved type hints throughout
+
+## Bug Fixes
+* **Race condition fix**: Stale row keys no longer cause `KeyError` during rapid directory navigation in CompareWidget
+* **Cache collision fix**: Virtual parent merkles now have unique digests (computed from contents) to prevent cross-tree cache hits
+* **UnboundLocalError fix**: Edge case in `compare.py` when merkles have no children now handled correctly
+* **Bare except clause**: Replaced with specific `CellDoesNotExist` exception in DataTable tooltip handling
+
+## Dependencies
+* Added `rapidfuzz` for fuzzy matching
+* Added `more-itertools` for `partition()` utility
+* Added `isort` to dev dependencies
+
+---
+
 # Release 0.3.0 (2025-11-08)
 
 ## New Features
@@ -49,7 +114,7 @@
 * Better error handling for invalid Merkle files
 * Fixed various minor UI and display issues
 
-
+---
 
 # Release 0.2.0 (2025-05-17)
 
@@ -162,7 +227,7 @@
 * Added platformdirs for proper app state management
 * Development dependencies: textual-dev, nox, flake8, black, mypy, coverage, pytest
 
-
+---
 
 # Release 0.1.0 (2023-01-21)
 
