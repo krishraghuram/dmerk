@@ -24,6 +24,17 @@ class Merkle:
         def __repr__(self) -> str:
             return str(self)
 
+    @staticmethod
+    def _absolute_pure_path(path: PurePath | Path) -> PurePath:
+        """Convert path to absolute PurePath."""
+        if isinstance(path, Path):
+            return PurePath(path.absolute() if not path.is_absolute() else path)
+        elif isinstance(path, PurePath):
+            if not path.is_absolute():
+                raise ValueError(f"Cannot handle non-absolute PurePath {path} !!!")
+            return path
+        raise TypeError(f"Expected Path or PurePath, got {type(path)}")
+
     def __init__(
         self,
         path: PurePath | Path,
@@ -34,17 +45,10 @@ class Merkle:
         children: dict[Path, "Merkle"] | None = None,
         _children_data: dict[str, Any] | None = None,
     ) -> None:
-        # Make paths absolute and pure
-        if isinstance(path, Path):
-            pure_path = PurePath(path.absolute() if not path.is_absolute() else path)
-        else:
-            if not path.is_absolute():
-                raise ValueError(f"Cannot handle non-absolute PurePath {path} !!!")
-            pure_path = path
+        pure_path = self._absolute_pure_path(path)
         if children:
             pure_children = {
-                PurePath(k.absolute() if not k.is_absolute() else k): v
-                for k, v in children.items()
+                self._absolute_pure_path(k): v for k, v in children.items()
             }
         else:
             pure_children = None
