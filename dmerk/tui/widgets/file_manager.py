@@ -155,9 +155,6 @@ class FileManager(FilterMixin, Widget):
         await self._refresh()
         files_table.move_cursor(**cursor_position._asdict())
 
-    async def watch_filter_by(self) -> None:
-        await self._refresh()
-
     async def watch_sort_by(self) -> None:
         await self._refresh()
 

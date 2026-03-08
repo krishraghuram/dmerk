@@ -176,9 +176,6 @@ class CompareWidget(FilterMixin, Widget):
             await self._refresh()
         self.prev_screen_size = self.screen.size
 
-    async def watch_filter_by(self) -> None:
-        await self._refresh()
-
     async def watch_merkle_subpath(self) -> None:
         await self._refresh()
 

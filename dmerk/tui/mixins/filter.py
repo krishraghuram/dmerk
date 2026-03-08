@@ -4,6 +4,7 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Input
 
+from dmerk.tui.mixins.refresh import DmerkRefreshable
 from dmerk.utils import fuzzy_match
 
 if TYPE_CHECKING:
@@ -18,17 +19,20 @@ class FilterMixin(_WidgetBase):
     """
     Mixin providing filtering functionality for Textual widgets.
 
-    Must be used with a textual.widget.Widget subclass. Provides:
+    Must be used with a textual.widget.Widget subclass.
+
+    Provides the following:
     - filter_by: reactive[str] - current filter text
     - on_input_changed: handles Input.Changed events
-    - filter: filters iterables by fuzzy-matching
-
-    Widgets must override watch_filter_by to refresh when filter changes.
+    - filter(): filters iterables by fuzzy-matching
+    - Auto-refresh: If widget implements DmerkRefreshable, it will be automatically refreshed when filter_by changes.
+    - Otherwise, widget needs to implement watch_filter_by to be notified of filter_by changes.
 
     Example:
         class MyWidget(FilterMixin, Static):
-            async def watch_filter_by(self) -> None:
-                await self._refresh()
+            # Auto-called when filter changes
+            async def _refresh(self) -> None:
+                await self._refresh_table()
     """
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -59,3 +63,7 @@ class FilterMixin(_WidgetBase):
         if not self.filter_by:
             return iter(items)
         return (item for item in items if fuzzy_match(key(item), self.filter_by))
+
+    async def watch_filter_by(self) -> None:
+        if isinstance(self, DmerkRefreshable):
+            await self._refresh()

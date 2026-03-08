@@ -44,7 +44,7 @@ class FilePicker(FilterMixin, Widget):
     def on_mount(self) -> None:
         self.query_one(DataTable).enable_tooltips()
 
-    async def _refresh_table(self) -> None:
+    async def _refresh(self) -> None:
         files_table = self.query_one(DataTable)
         files_table.clear(columns=True)
         files_table.add_column("\nName", key="NAME")
@@ -60,13 +60,10 @@ class FilePicker(FilterMixin, Widget):
             )
 
     async def on_resize(self, event: Resize) -> None:
-        await self._refresh_table()
+        await self._refresh()
 
     async def watch_path(self) -> None:
-        await self._refresh_table()
-
-    async def watch_filter_by(self) -> None:
-        await self._refresh_table()
+        await self._refresh()
 
     def _mount_compare_widget(self, path: Path) -> None:
         id_ = self.id.split("-")[-1] if self.id else ""
