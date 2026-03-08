@@ -129,10 +129,8 @@ class Merkle:
             return False
         else:
             return all(
-                [
-                    (getattr(self, slotname, None) == getattr(other, slotname, None))
-                    for slotname in Merkle.DATA_SLOTS
-                ]
+                (getattr(self, slotname, None) == getattr(other, slotname, None))
+                for slotname in Merkle.DATA_SLOTS
             )
 
     def __repr__(self) -> str:
